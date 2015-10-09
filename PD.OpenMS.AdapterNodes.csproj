@@ -39,18 +39,41 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="InfragisticsWPF4.DataPresenter.v13.1, Version=13.1.20131.2073, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\InfragisticsWPF4.DataPresenter.v13.1.dll</HintPath>
+    </Reference>
+    <Reference Include="InfragisticsWPF4.Editors.v13.1, Version=13.1.20131.2073, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\InfragisticsWPF4.Editors.v13.1.dll</HintPath>
+    </Reference>
+    <Reference Include="InfragisticsWPF4.v13.1, Version=13.1.20131.2073, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\InfragisticsWPF4.v13.1.dll</HintPath>
+    </Reference>
     <Reference Include="log4net">
       <HintPath>..\MetX\Platform\bin_x64\Release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Windows.Forms.DataVisualization.Design" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Thermo.Discoverer.EntityDataFramework.Controls, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Discoverer.EntityDataFramework.Controls.dll</HintPath>
+    </Reference>
     <Reference Include="Thermo.Magellan.BL.Data">
       <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.BL.Data.dll</HintPath>
     </Reference>
@@ -60,9 +83,21 @@
     <Reference Include="Thermo.Magellan.BL.Processing.Interfaces">
       <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.BL.Processing.Interfaces.dll</HintPath>
     </Reference>
+    <Reference Include="Thermo.Magellan.BL.Reporting, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.BL.Reporting.dll</HintPath>
+    </Reference>
     <Reference Include="Thermo.Magellan.BL.Reporting.Interfaces, Version=2.0.1.690, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.BL.Reporting.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Magellan.BL.ReportingData, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.BL.ReportingData.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Magellan.BL.ReportProcessing, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.BL.ReportProcessing.dll</HintPath>
     </Reference>
     <Reference Include="Thermo.Magellan.core, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
@@ -80,6 +115,10 @@
     <Reference Include="Thermo.Magellan.MassSpec">
       <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.MassSpec.dll</HintPath>
     </Reference>
+    <Reference Include="Thermo.Magellan.Math, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.Math.dll</HintPath>
+    </Reference>
     <Reference Include="Thermo.Magellan.Proteomics, Version=2.0.1.690, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.Proteomics.dll</HintPath>
@@ -91,8 +130,18 @@
     <Reference Include="Thermo.Magellan.Utilities">
       <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.Utilities.dll</HintPath>
     </Reference>
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CustomValueEditors\AdHocSpectrumView.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CustomValueEditors\AdHocSpectrumView.Designer.cs">
+      <DependentUpon>AdHocSpectrumView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CustomValueEditors\ShowSpectrumButtonValueEditor.xaml.cs">
+      <DependentUpon>ShowSpectrumButtonValueEditor.xaml</DependentUpon>
+    </Compile>
     <Compile Include="OpenMSCommons.cs" />
     <Compile Include="OpenMSEntities.cs" />
     <Compile Include="OpenMSConsensus.cs" />
@@ -105,6 +154,17 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="CustomValueEditors\ShowSpectrumButtonValueEditor.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="CustomValueEditors\AdHocSpectrumView.resx">
+      <DependentUpon>AdHocSpectrumView.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -46,7 +46,19 @@ namespace PD.OpenMS.AdapterNodes
     {
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
-            // connect RNPxl table and MS/MS spectrum info table
+            // Add "Show spectrum" buttons to table
+
+            // Create column
+            var accessor = PropertyAccessorFactory.CreateDynamicPropertyAccessor<RNPxlItem, string>(
+                    new PropertyDescription
+                    {
+                        DisplayName = "Show Spectrum",
+                    });
+
+            // Set the value editor that displays a button (see ShowSpectrumButtonValueEditor.xaml)
+            accessor.GridDisplayOptions.GridCellControlGuid = "7875B499-672B-40D7-838E-91B65C7471E2";
+            EntityDataService.RegisterProperties(ProcessingNodeNumber, new[] { accessor });
+
             var rnpxl_items = EntityDataService.CreateEntityItemReader().ReadAll<RNPxlItem>().ToList();
 
             // store in RT-m/z-dictionary for associating RNPxl table with PD spectra later
@@ -54,6 +66,9 @@ namespace PD.OpenMS.AdapterNodes
             // (convert to string, round to 1 decimal)
             var rt_mz_to_rnpxl_id = new Dictionary<string, Dictionary<string, RNPxlItem>>();
 
+            // Prepare a list that contains the button values
+            var updates = new List<Tuple<object[], object[]>>();
+            
             foreach (var r in rnpxl_items)
             {
                 string rt_str = String.Format("{0:0.0}", r.rt);
@@ -71,10 +86,6 @@ namespace PD.OpenMS.AdapterNodes
                 rt_mz_to_rnpxl_id[rt_str] = mz_dict;
             }
 
-            // connect with MS/MS spectrum info table
-            EntityDataService.RegisterEntityConnection<RNPxlItem, MSnSpectrumInfo>(ProcessingNodeNumber);
-            var rnpxl_to_spectrum_connections = new List<Tuple<RNPxlItem, MSnSpectrumInfo>>();
-
             var msn_spectrum_info_items = EntityDataService.CreateEntityItemReader().ReadAll<MSnSpectrumInfo>().ToList();
             foreach (var m in msn_spectrum_info_items)
             {
@@ -87,12 +98,19 @@ namespace PD.OpenMS.AdapterNodes
                     if (mz_dict.ContainsKey(mz_str))
                     {
                         RNPxlItem r = mz_dict[mz_str];
-                        rnpxl_to_spectrum_connections.Add(Tuple.Create(r, m));
+
+                        // Concatenate the spectrum ids and use them as the value that is stored in the button-cell. This value is not visible to the user but
+                        // is used to re-read the spectrum when the button is pressed (see ShowSpectrumButtonValueEditor.xaml.cs).
+                        var idString = string.Concat(m.WorkflowID, ";", m.SpectrumID);
+
+                        // use r.WorkflowID, r.Id to specify which RNPxlItem to update
+                        updates.Add(Tuple.Create(new[] { (object)r.WorkflowID, (object)r.Id }, new object[] { idString }));
                     }
-                }
+                } 
             }
 
-            EntityDataService.ConnectItems(rnpxl_to_spectrum_connections);
+            // Write back the data
+            EntityDataService.UpdateItems(EntityDataService.GetEntity<RNPxlItem>().Name, new[] { accessor.Name }, updates);
         }
     }
 }
