@@ -51,7 +51,6 @@ namespace PD.OpenMS.AdapterNodes
 	{
         #region Parameters
 
-        //
         [BooleanParameter(
             Category = "1. General",
             DisplayName = "Preprocess using ID filtering",
@@ -59,7 +58,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "true",
             Position = 1)]
         public BooleanParameter param_general_run_id_filtering;
-        //
+
         [BooleanParameter(
             Category = "1. General",
             DisplayName = "Preprocess using XIC filtering",
@@ -67,7 +66,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "true",
             Position = 2)]
         public BooleanParameter param_general_run_xic_filtering;
-        //
+
         [BooleanParameter(
             Category = "1. General",
             DisplayName = "XIC filtering uses RT alignment",
@@ -75,7 +74,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "true",
             Position = 3)]
         public BooleanParameter param_general_run_map_alignment;
-        //
+
         [FastaFileParameter(
             Category = "1. General",
             DisplayName = "Protein database",
@@ -84,7 +83,7 @@ namespace PD.OpenMS.AdapterNodes
             ValueRequired = true,
             Position = 4)]
         public FastaFileParameter param_general_fasta_db;
-        //
+
         [IntegerParameter(
             Category = "1. General",
             DisplayName = "CPU cores",
@@ -93,7 +92,7 @@ namespace PD.OpenMS.AdapterNodes
             MinimumValue = "1",
             Position = 5)]
         public IntegerParameter param_general_num_threads;
-        //
+
         [IntegerParameter(
             Category = "2. Cross-links",
             DisplayName = "Length",
@@ -102,7 +101,7 @@ namespace PD.OpenMS.AdapterNodes
             MinimumValue = "0",
             Position = 6)]
         public IntegerParameter param_cross_linking_length;
-        //
+
         [StringParameter(
             Category = "2. Cross-links",
             DisplayName = "Sequence",
@@ -110,7 +109,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "",
             Position = 7)]
         public StringParameter param_cross_linking_sequence;
-        //
+
         [StringParameter(
             Category = "2. Cross-links",
             DisplayName = "Target nucleotides",
@@ -119,7 +118,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 8)]
         public StringParameter param_cross_linking_target_nucleotides;
-        //
+
         [StringParameter(
             Category = "2. Cross-links",
             DisplayName = "Mapping",
@@ -128,7 +127,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 9)]
         public StringParameter param_cross_linking_mapping;
-        //
+
         [StringParameter(
             Category = "2. Cross-links",
             DisplayName = "Restrictions",
@@ -137,7 +136,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 10)]
         public StringParameter param_cross_linking_restrictions;
-        //
+
         [StringParameter(
             Category = "2. Cross-links",
             DisplayName = "Modifications",
@@ -146,7 +145,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 11)]
         public StringParameter param_cross_linking_modifications;
-        //
+
         [BooleanParameter(
             Category = "2. Cross-links",
             DisplayName = "Localization",
@@ -154,7 +153,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "true",
             Position = 12)]
         public BooleanParameter param_cross_linking_localization;
-        //
+
         [BooleanParameter(
             Category = "2. Cross-links",
             DisplayName = "Cysteine adduct",
@@ -162,7 +161,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "false",
             Position = 13)]
         public BooleanParameter param_cross_linking_cysteine_adduct;
-        //
+
         [BooleanParameter(
             Category = "2. Cross-links",
             DisplayName = "Filter fractional mass",
@@ -170,7 +169,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "false",
             Position = 14)]
         public BooleanParameter param_cross_linking_filter_fractional_mass;
-        //
+
         [BooleanParameter(
             Category = "2. Cross-links",
             DisplayName = "Carbon-labeled fragments",
@@ -178,7 +177,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "false",
             Position = 15)]
         public BooleanParameter param_cross_linking_carbon_labeled_fragments;
-        //
+
         [MassToleranceParameter(
             Category = "3. Peptide identification",
             DisplayName = "Precursor mass tolerance",
@@ -190,7 +189,7 @@ namespace PD.OpenMS.AdapterNodes
             Position = 16,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_rnpxlsearch_precursor_mass_tolerance;
-        //
+
         [MassToleranceParameter(
             Category = "3. Peptide identification",
             DisplayName = "Fragment mass tolerance",
@@ -202,7 +201,7 @@ namespace PD.OpenMS.AdapterNodes
             Position = 17,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_rnpxlsearch_fragment_mass_tolerance;
-        //
+
         [IntegerParameter(
             Category = "3. Peptide identification",
             DisplayName = "Charge low",
@@ -211,7 +210,7 @@ namespace PD.OpenMS.AdapterNodes
             MinimumValue = "1",
             Position = 18)]
         public IntegerParameter param_rnpxlsearch_charge_low;
-        //
+
         [IntegerParameter(
             Category = "3. Peptide identification",
             DisplayName = "Charge high",
@@ -220,15 +219,16 @@ namespace PD.OpenMS.AdapterNodes
             MinimumValue = "1",
             Position = 19)]
         public IntegerParameter param_rnpxlsearch_charge_high;
-        //
-        [StringParameter(
+
+        [StringSelectionParameter(
             Category = "3. Peptide identification",
             DisplayName = "Enzyme",
-            Description = "Which enzyme was used for cleaving the proteins. Valid: 'Trypsin', 'Asp-N', 'CNBr', 'Formic_acid', 'Chymotrypsin', 'Lys-C', 'Asp-N_ambic', 'Arg-C', 'V8-DE', 'glutamyl endopeptidase', 'leukocyte elastase', 'no cleavage', 'PepsinA', 'Lys-C/P', '2-iodobenzoate', 'prolineendopeptidase', 'V8-E', 'TrypChymo', 'unspecific cleavage', 'Trypsin/P'",
+            Description = "The enzyme used for cleaving the proteins",
             DefaultValue = "Trypsin",
+            SelectionValues = new string[] { "Trypsin", "Asp-N", "CNBr", "Formic_acid", "Chymotrypsin", "Lys-C", "Asp-N_ambic", "Arg-C", "V8-DE", "glutamyl endopeptidase", "leukocyte elastase", "no cleavage", "PepsinA", "Lys-C/P", "2-iodobenzoate", "prolineendopeptidase", "V8-E", "TrypChymo", "unspecific cleavage", "Trypsin/P" },
             Position = 20)]
-        public StringParameter param_rnpxlsearch_enzyme;
-        //
+        public SimpleSelectionParameter<string> param_rnpxlsearch_enzyme;
+
         [IntegerParameter(
             Category = "3. Peptide identification",
             DisplayName = "Missed cleavages",
@@ -237,7 +237,7 @@ namespace PD.OpenMS.AdapterNodes
             MinimumValue = "0",
             Position = 21)]
         public IntegerParameter param_rnpxlsearch_missed_cleavages;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "Static N-terminal modification",
@@ -247,7 +247,7 @@ namespace PD.OpenMS.AdapterNodes
             IntendedPurpose = ParameterPurpose.StaticTerminalModification,
             Position = 22)]
         public ModificationParameter param_rnpxlsearch_static_n_terminal_mod;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "Static C-terminal modification",
@@ -257,7 +257,7 @@ namespace PD.OpenMS.AdapterNodes
             IntendedPurpose = ParameterPurpose.StaticTerminalModification,
             Position = 23)]
         public ModificationParameter param_rnpxlsearch_static_c_terminal_mod;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "1. Static modification",
@@ -269,7 +269,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_1;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "2. Static modification",
@@ -281,7 +281,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_2;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "3. Static modification",
@@ -293,7 +293,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_3;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "4. Static modification",
@@ -305,7 +305,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_4;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "5. Static modification",
@@ -317,7 +317,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_5;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "6. Static modification",
@@ -329,7 +329,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_6;
-        //
+
         [IntegerParameter(
             Category = "3. Peptide identification",
             DisplayName = "Max. number of dynamic modifications",
@@ -338,7 +338,7 @@ namespace PD.OpenMS.AdapterNodes
             MinimumValue = "0",
             Position = 30)]
         public IntegerParameter param_rnpxlsearch_num_dynamic_mods;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "1. Dynamic N-terminal modification",
@@ -348,7 +348,7 @@ namespace PD.OpenMS.AdapterNodes
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             Position = 40)]
         public ModificationParameter param_rnpxlsearch_dynamic_n_terminal_mod_1;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "2. Dynamic N-terminal modification",
@@ -358,7 +358,7 @@ namespace PD.OpenMS.AdapterNodes
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             Position = 41)]
         public ModificationParameter param_rnpxlsearch_dynamic_n_terminal_mod_2;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "3. Dynamic N-terminal modification",
@@ -368,7 +368,7 @@ namespace PD.OpenMS.AdapterNodes
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             Position = 42)]
         public ModificationParameter param_rnpxlsearch_dynamic_n_terminal_mod_3;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "1. Dynamic C-terminal modification",
@@ -378,7 +378,7 @@ namespace PD.OpenMS.AdapterNodes
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             Position = 43)]
         public ModificationParameter param_rnpxlsearch_dynamic_c_terminal_mod_1;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "2. Dynamic C-terminal modification",
@@ -388,7 +388,7 @@ namespace PD.OpenMS.AdapterNodes
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             Position = 44)]
         public ModificationParameter param_rnpxlsearch_dynamic_c_terminal_mod_2;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "3. Dynamic C-terminal modification",
@@ -398,7 +398,7 @@ namespace PD.OpenMS.AdapterNodes
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             Position = 45)]
         public ModificationParameter param_rnpxlsearch_dynamic_c_terminal_mod_3;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "1. Dynamic modification",
@@ -410,7 +410,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_1;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "2. Dynamic modification",
@@ -422,7 +422,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_2;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "3. Dynamic modification",
@@ -434,7 +434,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_3;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "4. Dynamic modification",
@@ -446,7 +446,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_4;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "5. Dynamic modification",
@@ -458,7 +458,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_5;
-        //
+
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "6. Dynamic modification",
@@ -470,7 +470,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_6;
-        //
+
         [DoubleParameter(
             Category = "4. ID filtering",
             DisplayName = "q-value threshold",
@@ -478,7 +478,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "0.01",
             Position = 52)]
         public DoubleParameter param_id_filtering_q_value_threshold;
-        //
+
         [BooleanParameter(
             Category = "4. ID filtering",
             DisplayName = "Use same settings as in main peptide identification",
@@ -486,7 +486,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "true",
             Position = 53)]
         public BooleanParameter param_id_filtering_use_same_settings;
-        //
+
         [MassToleranceParameter(
             Category = "4. ID filtering",
             DisplayName = "Precursor mass tolerance",
@@ -499,7 +499,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_id_filtering_precursor_mass_tolerance;
-        //
+
         [MassToleranceParameter(
             Category = "4. ID filtering",
             DisplayName = "Fragment mass tolerance",
@@ -512,7 +512,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_id_filtering_fragment_mass_tolerance;
-        //
+
         [IntegerParameter(
             Category = "4. ID filtering",
             DisplayName = "Charge low",
@@ -522,7 +522,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 56)]
         public IntegerParameter param_id_filtering_charge_low;
-        //
+
         [IntegerParameter(
             Category = "4. ID filtering",
             DisplayName = "Charge high",
@@ -532,16 +532,17 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 57)]
         public IntegerParameter param_id_filtering_charge_high;
-        //
-        [StringParameter(
+
+        [StringSelectionParameter(
             Category = "4. ID filtering",
             DisplayName = "Enzyme",
-            Description = "Which enzyme was used for cleaving the proteins. Valid: 'Trypsin', 'Asp-N', 'CNBr', 'Formic_acid', 'Chymotrypsin', 'Lys-C', 'Asp-N_ambic', 'Arg-C', 'V8-DE', 'glutamyl endopeptidase', 'leukocyte elastase', 'no cleavage', 'PepsinA', 'Lys-C/P', '2-iodobenzoate', 'prolineendopeptidase', 'V8-E', 'TrypChymo', 'unspecific cleavage', 'Trypsin/P'",
+            Description = "The enzyme used for cleaving the proteins",
             DefaultValue = "Trypsin",
             IsAdvanced = true,
+            SelectionValues = new string[] { "Trypsin", "Asp-N", "CNBr", "Formic_acid", "Chymotrypsin", "Lys-C", "Asp-N_ambic", "Arg-C", "V8-DE", "glutamyl endopeptidase", "leukocyte elastase", "no cleavage", "PepsinA", "Lys-C/P", "2-iodobenzoate", "prolineendopeptidase", "V8-E", "TrypChymo", "unspecific cleavage", "Trypsin/P" },
             Position = 58)]
-        public StringParameter param_id_filtering_enzyme;
-        //
+        public SimpleSelectionParameter<string> param_id_filtering_enzyme;
+
         [IntegerParameter(
             Category = "4. ID filtering",
             DisplayName = "Missed cleavages",
@@ -551,7 +552,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 59)]
         public IntegerParameter param_id_filtering_missed_cleavages;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "Static N-terminal modification",
@@ -562,7 +563,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 60)]
         public ModificationParameter param_id_filtering_static_n_terminal_mod;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "Static C-terminal modification",
@@ -573,7 +574,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 61)]
         public ModificationParameter param_id_filtering_static_c_terminal_mod;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "1. Static modification",
@@ -586,7 +587,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_1;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "2. Static modification",
@@ -599,7 +600,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_2;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "3. Static modification",
@@ -612,7 +613,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_3;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "4. Static modification",
@@ -625,7 +626,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_4;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "5. Static modification",
@@ -638,7 +639,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_5;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "6. Static modification",
@@ -651,7 +652,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_6;
-        //
+
         [IntegerParameter(
             Category = "4. ID filtering",
             DisplayName = "Max. number of dynamic modifications",
@@ -661,7 +662,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 68)]
         public IntegerParameter param_id_filtering_num_dynamic_mods;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "1. Dynamic N-terminal modification",
@@ -672,7 +673,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 69)]
         public ModificationParameter param_id_filtering_dynamic_n_terminal_mod_1;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "2. Dynamic N-terminal modification",
@@ -683,7 +684,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 70)]
         public ModificationParameter param_id_filtering_dynamic_n_terminal_mod_2;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "3. Dynamic N-terminal modification",
@@ -694,7 +695,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 71)]
         public ModificationParameter param_id_filtering_dynamic_n_terminal_mod_3;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "1. Dynamic C-terminal modification",
@@ -705,7 +706,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 72)]
         public ModificationParameter param_id_filtering_dynamic_c_terminal_mod_1;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "2. Dynamic C-terminal modification",
@@ -716,7 +717,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 73)]
         public ModificationParameter param_id_filtering_dynamic_c_terminal_mod_2;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "3. Dynamic C-terminal modification",
@@ -727,7 +728,7 @@ namespace PD.OpenMS.AdapterNodes
             IsAdvanced = true,
             Position = 74)]
         public ModificationParameter param_id_filtering_dynamic_c_terminal_mod_3;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "1. Dynamic modification",
@@ -740,7 +741,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_1;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "2. Dynamic modification",
@@ -753,7 +754,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_2;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "3. Dynamic modification",
@@ -766,7 +767,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_3;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "4. Dynamic modification",
@@ -779,7 +780,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_4;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "5. Dynamic modification",
@@ -792,7 +793,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_5;
-        //
+
         [ModificationParameter(
             Category = "4. ID filtering",
             DisplayName = "6. Dynamic modification",
@@ -805,7 +806,7 @@ namespace PD.OpenMS.AdapterNodes
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_6;
-        //
+
         [IntegerParameter(
             Category = "5. XIC filtering",
             DisplayName = "Fold change",
@@ -814,7 +815,7 @@ namespace PD.OpenMS.AdapterNodes
             MinimumValue = "0",
             Position = 81)]
         public IntegerParameter param_xic_filtering_fold_change;
-        //
+
         [DoubleParameter(
             Category = "5. XIC filtering",
             DisplayName = "Max. RT difference [min]",
@@ -822,7 +823,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "0.33",
             Position = 82)]
         public DoubleParameter param_xic_filtering_rt_threshold;
-        //
+
         [MassToleranceParameter(
             Category = "5. XIC filtering",
             DisplayName = "Max. m/z difference",
@@ -832,7 +833,7 @@ namespace PD.OpenMS.AdapterNodes
             IntendedPurpose = ParameterPurpose.MassTolerance,
             Position = 83)]
         public MassToleranceParameter param_xic_filtering_mz_threshold;
-        //
+
         [DoubleParameter(
             Category = "6. RT alignment",
             DisplayName = "Max. RT difference [min]",
@@ -840,7 +841,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "0.33",
             Position = 84)]
         public DoubleParameter param_alignment_rt_threshold;
-        //
+
         [MassToleranceParameter(
             Category = "6. RT alignment",
             DisplayName = "Max. m/z difference",
