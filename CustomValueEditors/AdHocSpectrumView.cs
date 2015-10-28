@@ -35,12 +35,12 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
             {
                 m_peakList = value;
 
-                chart1.Series[0].Points.Clear();
-                foreach (var peak in m_peakList)
-                {
-                    chart1.Series[0].Points.AddXY(peak.Item1, peak.Item2);
-                }
-                chart1.Series[0].LegendText = "Mass Spectrum";
+                //chart1.Series[0].Points.Clear();
+                //foreach (var peak in m_peakList)
+                //{
+                //    chart1.Series[0].Points.AddXY(peak.Item1, peak.Item2);
+                //}
+                //chart1.Series[0].LegendText = "Mass Spectrum";
             }
         }
 
@@ -65,6 +65,11 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
         }
 
         private void AdHocSpectrumView_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void zedGraphControl1_Load(object sender, EventArgs e)
         {
 
         }

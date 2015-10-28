@@ -152,8 +152,12 @@
     <Compile Include="OpenMSFeatureFinderNode.cs" />
     <Compile Include="OpenMSFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="pwiz\LabelBoundsCache.cs" />
+    <Compile Include="pwiz\MSGraphItem.cs" />
     <Compile Include="pwiz\MSGraphPane.cs" />
     <Compile Include="pwiz\MSPointList.cs" />
+    <Compile Include="pwiz\Resources.Designer.cs" />
+    <Compile Include="pwiz\SpectrumGraphItem.cs" />
     <Compile Include="RNPxlConsensusNode.cs" />
     <Compile Include="RNPxlItem.cs" />
     <Compile Include="RNPxlNode.cs" />
