@@ -131,6 +131,10 @@
       <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.Utilities.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
+    <Reference Include="ZedGraph, Version=5.1.5.32171, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\ZedGraph.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomValueEditors\AdHocSpectrumView.cs">
@@ -148,6 +152,8 @@
     <Compile Include="OpenMSFeatureFinderNode.cs" />
     <Compile Include="OpenMSFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="pwiz\MSGraphPane.cs" />
+    <Compile Include="pwiz\MSPointList.cs" />
     <Compile Include="RNPxlConsensusNode.cs" />
     <Compile Include="RNPxlItem.cs" />
     <Compile Include="RNPxlNode.cs" />
