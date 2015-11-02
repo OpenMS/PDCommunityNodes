@@ -74,7 +74,6 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
             set
             {
                 m_overviewText = value;
-                richTextBox1.Text = m_overviewText;
             }
         }
 
@@ -91,6 +90,11 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
         private void zedGraphControl1_Load(object sender, EventArgs e)
         {
             
+        }
+
+        private void zedGraphControl1_Load_1(object sender, EventArgs e)
+        {
+
         }
     }
 }
