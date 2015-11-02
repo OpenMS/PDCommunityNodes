@@ -13,13 +13,13 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
     /// <summary>
     /// Show a spectrum with some information in a very basic ad-hoc view using the M$ Chart control. 
     /// </summary>
-    public partial class AdHocSpectrumView : Form
+    public partial class SpectrumView : Form
     {
         private List<Tuple<double, double>> m_peakList;
         private string m_overviewText;
         private MSGraphPane m_msGraphPane;
 
-        public AdHocSpectrumView()
+        public SpectrumView()
         {
             InitializeComponent();
             m_msGraphPane = new MSGraphPane();
@@ -83,7 +83,7 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
             Close();
         }
 
-        private void AdHocSpectrumView_Load(object sender, EventArgs e)
+        private void SpectrumView_Load(object sender, EventArgs e)
         {
             
         }
@@ -91,11 +91,6 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
         private void zedGraphControl1_Load(object sender, EventArgs e)
         {
             
-        }
-
-        private void zedGraphControl1_Load_1(object sender, EventArgs e)
-        {
-
         }
     }
 }

@@ -137,11 +137,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CustomValueEditors\AdHocSpectrumView.cs">
+    <Compile Include="CustomValueEditors\SpectrumView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CustomValueEditors\AdHocSpectrumView.Designer.cs">
-      <DependentUpon>AdHocSpectrumView.cs</DependentUpon>
+    <Compile Include="CustomValueEditors\SpectrumView.Designer.cs">
+      <DependentUpon>SpectrumView.cs</DependentUpon>
     </Compile>
     <Compile Include="CustomValueEditors\ShowSpectrumButtonValueEditor.xaml.cs">
       <DependentUpon>ShowSpectrumButtonValueEditor.xaml</DependentUpon>
@@ -171,8 +171,8 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="CustomValueEditors\AdHocSpectrumView.resx">
-      <DependentUpon>AdHocSpectrumView.cs</DependentUpon>
+    <EmbeddedResource Include="CustomValueEditors\SpectrumView.resx">
+      <DependentUpon>SpectrumView.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

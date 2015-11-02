@@ -159,9 +159,9 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
             //sb.AppendLine(String.Format("Charge: {0}", spectrumInfo.Charge));
             //sb.AppendLine(String.Format("m/z: {0}", spectrumInfo.MassOverCharge));
 
-            string ot = "m/z " + String.Format("{0:0.0000}", spectrumInfo.MassOverCharge) + "  /  RT " + String.Format("{0:0.00}", spectrumInfo.RetentionTime) + "  /  Charge " + spectrumInfo.Charge;
+            string ot = "m/z " + String.Format("{0:0.0000}", spectrumInfo.MassOverCharge) + "  |  RT " + String.Format("{0:0.00}", spectrumInfo.RetentionTime) + "  |  Charge " + spectrumInfo.Charge;
 
-            var view = new AdHocSpectrumView
+            var view = new SpectrumView
                        {
                            //OverviewText = sb.ToString(),
                            OverviewText = ot,

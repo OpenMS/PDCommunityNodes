@@ -5,7 +5,7 @@
 
 namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
 {
-    partial class AdHocSpectrumView
+    partial class SpectrumView
     {
         /// <summary>
         /// Required designer variable.
@@ -50,19 +50,19 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
             this.zedGraphControl1.ScrollMinY2 = 0D;
             this.zedGraphControl1.Size = new System.Drawing.Size(940, 412);
             this.zedGraphControl1.TabIndex = 1;
-            this.zedGraphControl1.Load += new System.EventHandler(this.zedGraphControl1_Load_1);
+            this.zedGraphControl1.Load += new System.EventHandler(this.zedGraphControl1_Load);
             // 
-            // AdHocSpectrumView
+            // SpectrumView
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(940, 412);
             this.Controls.Add(this.zedGraphControl1);
-            this.Name = "AdHocSpectrumView";
+            this.Name = "SpectrumView";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
-            this.Text = "AdHoc Spectrum View";
-            this.Load += new System.EventHandler(this.AdHocSpectrumView_Load);
+            this.Text = "Spectrum View";
+            this.Load += new System.EventHandler(this.SpectrumView_Load);
             this.ResumeLayout(false);
 
         }
