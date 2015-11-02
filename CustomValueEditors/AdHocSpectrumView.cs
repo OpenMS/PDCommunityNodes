@@ -17,10 +17,12 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
     {
         private List<Tuple<double, double>> m_peakList;
         private string m_overviewText;
+        private MSGraphPane m_msGraphPane;
 
         public AdHocSpectrumView()
         {
             InitializeComponent();
+            m_msGraphPane = new MSGraphPane();
         }
 
         /// <summary>
@@ -35,12 +37,29 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
             {
                 m_peakList = value;
 
-                //chart1.Series[0].Points.Clear();
-                //foreach (var peak in m_peakList)
-                //{
-                //    chart1.Series[0].Points.AddXY(peak.Item1, peak.Item2);
-                //}
-                //chart1.Series[0].LegendText = "Mass Spectrum";
+                Graphics g = zedGraphControl1.CreateGraphics();
+                zedGraphControl1.GraphPane = m_msGraphPane;
+                m_msGraphPane.ReSize(g, new RectangleF(zedGraphControl1.Left, zedGraphControl1.Bounds.Top, zedGraphControl1.Width, zedGraphControl1.Height));
+                zedGraphControl1.Refresh();
+
+                var mzs = new List<double>();
+                var ints = new List<double>();
+                var annots = new List<string>();
+                foreach (var peak in m_peakList)
+                {
+                    mzs.Add(peak.Item1);
+                    ints.Add(peak.Item2);
+                    annots.Add("");
+                }
+                m_msGraphPane.AddStick("TODO", mzs.ToArray(), ints.ToArray(), Color.Blue);
+
+                SpectrumGraphItem sgi = new SpectrumGraphItem(mzs, ints, annots);
+                sgi.CustomizeXAxis((Axis)m_msGraphPane.XAxis);
+                sgi.CustomizeYAxis((Axis)m_msGraphPane.YAxis);
+                //sgi.CustomizeCurve(m_msGraphPane.CurveList[0]);
+                m_msGraphPane.Draw(g);
+
+                zedGraphControl1.AxisChange();
             }
         }
 
@@ -66,12 +85,12 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
 
         private void AdHocSpectrumView_Load(object sender, EventArgs e)
         {
-
+            
         }
 
         private void zedGraphControl1_Load(object sender, EventArgs e)
         {
-
+            
         }
     }
 }

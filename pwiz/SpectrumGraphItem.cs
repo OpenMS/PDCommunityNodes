@@ -23,16 +23,31 @@ using System.Linq;
 using System.Text;
 using ZedGraph;
 using pwiz.MSGraph;
-using pwiz.Skyline.Properties;
 
 namespace pwiz.Skyline.Controls.Graphs
 {
-    public abstract class AbstractSpectrumGraphItem : AbstractMSGraphItem
+    public class SpectrumGraphItem : AbstractMSGraphItem
     {
-        private List<double> RNPxl_MZs;
-        private List<double> RNPxl_Intensities;
-        private List<string> RNPxl_Annotations;
-        private double RNPxl_Tolerance = 0.3; //TODO
+        // missing stuff lifted over from "actual" SpectrumGraphItem
+        // (this class here used to be an AbstractSpectrumGraphItem)
+        public override string Title
+        {
+            get
+            {
+                return "TODO: Title";
+            }
+        }
+        protected bool IsMatch(double predictedMz)
+        {
+            return "is this needed?" != "probably not!";
+        }
+        // that's it. rest is from AbstractSpectrumGraphItem.
+
+        //TODO: public
+        public List<double> RNPxl_MZs;
+        public List<double> RNPxl_Intensities;
+        public List<string> RNPxl_Annotations;
+        public double RNPxl_Tolerance = 0.3; //TODO
 
         private const string FONT_FACE = "Arial"; // Not L10N
         private static readonly Color COLOR_A = Color.YellowGreen;
@@ -73,7 +88,7 @@ namespace pwiz.Skyline.Controls.Graphs
         private FontSpec FONT_SPEC_SELECTED { get { return GetFontSpec(COLOR_SELECTED, ref _fontSpecSelected); } }
         // ReSharper restore InconsistentNaming
 
-        protected AbstractSpectrumGraphItem(List<double> mzs, List<double> intensities, List<string> annotations)
+        public SpectrumGraphItem(List<double> mzs, List<double> intensities, List<string> annotations)
         {
             RNPxl_MZs = mzs;
             RNPxl_Intensities = intensities;
@@ -83,8 +98,6 @@ namespace pwiz.Skyline.Controls.Graphs
             FontSize = 10;
             LineWidth = 1;
         }
-
-        protected abstract bool IsMatch(double predictedMz);
 
         private static FontSpec CreateFontSpec(Color color, float size)
         {
@@ -167,8 +180,8 @@ namespace pwiz.Skyline.Controls.Graphs
             //ReSharper restore UseObjectOrCollectionInitializer
         }
 
-        //public override PointAnnotation AnnotatePoint(PointPair point)
-        //{
+        public override PointAnnotation AnnotatePoint(PointPair point)
+        {
         //    //LibraryRankedSpectrumInfo.RankedMI rmi;
         //    //if (!_ionMatches.TryGetValue(point.X, out rmi) || !IsVisibleIon(rmi))
         //    //    return null;
@@ -189,7 +202,8 @@ namespace pwiz.Skyline.Controls.Graphs
         //    if (IsMatch(rmi.PredictedMz))
         //        fontSpec = FONT_SPEC_SELECTED;
         //    return new PointAnnotation(GetLabel(rmi), fontSpec);
-        //}
+            return new PointAnnotation("TODO: annotation", FONT_SPEC_NONE);
+        }
 
         //public IEnumerable<string> IonLabels
         //{
@@ -294,7 +308,7 @@ namespace pwiz.Skyline.Controls.Graphs
 
     public sealed class UnavailableMSGraphItem : NoDataMSGraphItem
     {
-        public UnavailableMSGraphItem() : base(Resources.UnavailableMSGraphItem_UnavailableMSGraphItem_Spectrum_information_unavailable)
+        public UnavailableMSGraphItem() : base("TODO: empty graph")
         {
         }
     }
@@ -368,12 +382,16 @@ namespace pwiz.Skyline.Controls.Graphs
 
         public void CustomizeYAxis(Axis axis)
         {
-            CustomizeAxis(axis, Resources.AbstractMSGraphItem_CustomizeYAxis_Intensity);
+            //CustomizeAxis(axis, Resources.AbstractMSGraphItem_CustomizeYAxis_Intensity);
+
+            CustomizeAxis(axis, "Intensity");
         }
 
         public void CustomizeXAxis(Axis axis)
         {
-            CustomizeAxis(axis, Resources.AbstractMSGraphItem_CustomizeXAxis_MZ);
+            //CustomizeAxis(axis, Resources.AbstractMSGraphItem_CustomizeXAxis_MZ);
+
+            CustomizeAxis(axis, "m/z");
         }
 
         private static void CustomizeAxis(Axis axis, string title)
