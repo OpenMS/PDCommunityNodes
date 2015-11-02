@@ -51,7 +51,8 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
                     ints.Add(peak.Item2);
                     annots.Add("");
                 }
-                m_msGraphPane.AddStick("TODO", mzs.ToArray(), ints.ToArray(), Color.Blue);
+
+                m_msGraphPane.AddStick(m_overviewText, mzs.ToArray(), ints.ToArray(), Color.Blue);
 
                 SpectrumGraphItem sgi = new SpectrumGraphItem(mzs, ints, annots);
                 sgi.CustomizeXAxis((Axis)m_msGraphPane.XAxis);
