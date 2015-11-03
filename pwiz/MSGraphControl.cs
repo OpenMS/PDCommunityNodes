@@ -256,7 +256,8 @@ namespace pwiz.MSGraph
         #endregion
 
         #region Rescaling of graph items after zoom or resize events
-        void MSGraphControl_ZoomEvent( ZedGraphControl sender, ZoomState oldState, ZoomState newState )
+        //void MSGraphControl_ZoomEvent( ZedGraphControl sender, ZoomState oldState, ZoomState newState , PointF mousePosition)
+        void MSGraphControl_ZoomEvent( ZedGraphControl sender, ZoomState oldState, ZoomState newState)
         {
             //MSGraphPane pane = MasterPane.FindChartRect(mousePosition) as MSGraphPane;
             //if( pane == null )
@@ -264,8 +265,8 @@ namespace pwiz.MSGraph
             //pane = MasterPane.FindChartRect( mousePosition ) as MSGraphPane;
             //if( pane == null )
             //    return;
-
             MSGraphPane pane = GraphPane;
+            //
 
             Graphics g = CreateGraphics();
             pane.SetScale(g);

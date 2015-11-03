@@ -37,10 +37,10 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
             {
                 m_peakList = value;
 
-                Graphics g = zedGraphControl1.CreateGraphics();
-                zedGraphControl1.GraphPane = m_msGraphPane;
-                m_msGraphPane.ReSize(g, new RectangleF(zedGraphControl1.Left, zedGraphControl1.Bounds.Top, zedGraphControl1.Width, zedGraphControl1.Height));
-                zedGraphControl1.Refresh();
+                Graphics g = msGraphControl.CreateGraphics();
+                msGraphControl.GraphPane = m_msGraphPane;
+                m_msGraphPane.ReSize(g, new RectangleF(msGraphControl.Left, msGraphControl.Bounds.Top, msGraphControl.Width, msGraphControl.Height));
+                msGraphControl.Refresh();
 
                 var mzs = new List<double>();
                 var ints = new List<double>();
@@ -60,7 +60,7 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
                 //sgi.CustomizeCurve(m_msGraphPane.CurveList[0]);
                 m_msGraphPane.Draw(g);
 
-                zedGraphControl1.AxisChange();
+                msGraphControl.AxisChange();
             }
         }
 
@@ -78,17 +78,12 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            Close();
-        }
-
         private void SpectrumView_Load(object sender, EventArgs e)
         {
             
         }
 
-        private void zedGraphControl1_Load(object sender, EventArgs e)
+        private void msGraphControl_Load(object sender, EventArgs e)
         {
             
         }

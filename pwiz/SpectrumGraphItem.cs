@@ -285,7 +285,7 @@ namespace pwiz.Skyline.Controls.Graphs
         {
             // Try to show enough decimal places to distinguish by tolerance
             int places = 1;
-            while (places < 4 && ((int) (RNPxl_Tolerance * Math.Pow(10, places))) == 0)
+            while (places < 4 && ((int) (RNPxl_Tolerance * Math.Pow(10, places))) == 0) //TODO
                 places++;
             return Math.Round(mz, places);
         }
