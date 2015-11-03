@@ -3,6 +3,8 @@
 // All rights reserved
 //-----------------------------------------------------------------------------
 
+using pwiz.MSGraph;
+
 namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
 {
     partial class SpectrumView
@@ -33,7 +35,7 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
         /// </summary>
         private void InitializeComponent()
         {
-            this.zedGraphControl1 = new ZedGraph.ZedGraphControl();
+            this.zedGraphControl1 = new MSGraphControl();
             this.SuspendLayout();
             // 
             // zedGraphControl1
@@ -69,7 +71,7 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
 
         #endregion
 
-        private ZedGraph.ZedGraphControl zedGraphControl1;
+        private MSGraphControl zedGraphControl1;
 
 
     }
