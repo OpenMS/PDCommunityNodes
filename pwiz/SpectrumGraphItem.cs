@@ -39,7 +39,7 @@ namespace pwiz.Skyline.Controls.Graphs
         }
         protected bool IsMatch(double predictedMz)
         {
-            return "is this needed?" != "probably not!";
+            return "is this method still needed?" != "probably not!";
         }
         // that's it. rest is from AbstractSpectrumGraphItem.
 

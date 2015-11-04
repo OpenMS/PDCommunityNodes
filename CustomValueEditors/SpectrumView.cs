@@ -49,17 +49,19 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
                 {
                     mzs.Add(peak.Item1);
                     ints.Add(peak.Item2);
-                    annots.Add("");
+                    annots.Add("123");
                 }
 
-                m_msGraphPane.AddStick(m_overviewText, mzs.ToArray(), ints.ToArray(), Color.Blue);
+                //m_msGraphPane.AddStick(m_overviewText, mzs.ToArray(), ints.ToArray(), Color.Blue);
 
                 SpectrumGraphItem sgi = new SpectrumGraphItem(mzs, ints, annots);
-                sgi.CustomizeXAxis((Axis)m_msGraphPane.XAxis);
-                sgi.CustomizeYAxis((Axis)m_msGraphPane.YAxis);
-                //sgi.CustomizeCurve(m_msGraphPane.CurveList[0]);
-                m_msGraphPane.Draw(g);
+                msGraphControl.AddGraphItem(m_msGraphPane, sgi);
 
+                //sgi.CustomizeXAxis(m_msGraphPane.XAxis);
+                //sgi.CustomizeYAxis(m_msGraphPane.YAxis);
+                //sgi.CustomizeCurve(m_msGraphPane.CurveList[0]);
+
+                m_msGraphPane.Draw(g);
                 msGraphControl.AxisChange();
             }
         }
