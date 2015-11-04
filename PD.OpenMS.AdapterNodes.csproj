@@ -162,7 +162,7 @@
     <Compile Include="pwiz\MSGraphItem.cs" />
     <Compile Include="pwiz\MSGraphPane.cs" />
     <Compile Include="pwiz\MSPointList.cs" />
-    <Compile Include="pwiz\SpectrumGraphItem.cs" />
+    <Compile Include="pwiz\RNPxlSpectrumGraphItem.cs" />
     <Compile Include="RNPxlConsensusNode.cs" />
     <Compile Include="RNPxlItem.cs" />
     <Compile Include="RNPxlNode.cs" />

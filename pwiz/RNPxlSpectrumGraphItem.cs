@@ -26,7 +26,7 @@ using pwiz.MSGraph;
 
 namespace pwiz.Skyline.Controls.Graphs
 {
-    public class SpectrumGraphItem : AbstractMSGraphItem
+    public class RNPxlSpectrumGraphItem : AbstractMSGraphItem
     {
         public override string Title
         {
@@ -87,7 +87,7 @@ namespace pwiz.Skyline.Controls.Graphs
         private FontSpec FONT_SPEC_SELECTED { get { return GetFontSpec(COLOR_SELECTED, ref _fontSpecSelected); } }
         // ReSharper restore InconsistentNaming
 
-        public SpectrumGraphItem(string title, List<double> mzs, List<double> intensities, List<string> annotations)
+        public RNPxlSpectrumGraphItem(string title, List<double> mzs, List<double> intensities, List<string> annotations)
         {
             m_title = title;
             RNPxl_MZs = mzs;
@@ -143,23 +143,19 @@ namespace pwiz.Skyline.Controls.Graphs
                 //                                                                      rmi.IonType : rmi.IonType2;
 
                 //
-                if (annotation == "")
-                {
-                    continue;
-                }
-                char first_char = annotation[0];
+                string first_two_chars = annotation.Length >= 2 ? annotation.Substring(0,2) : "--";
                 //
 
                 Color color;
-                switch (first_char)
+                switch (first_two_chars)
                 {
                     default: color = COLOR_NONE; break;
-                    case 'a': color = COLOR_A; break;
-                    case 'x': color = COLOR_X; break;
-                    case 'b': color = COLOR_B; break;
-                    case 'y': color = COLOR_Y; break;
-                    case 'c': color = COLOR_C; break;
-                    case 'z': color = COLOR_Z; break;
+                    case "[a": color = COLOR_A; break;
+                    case "[x": color = COLOR_X; break;
+                    case "[b": color = COLOR_B; break;
+                    case "[y": color = COLOR_Y; break;
+                    case "[c": color = COLOR_C; break;
+                    case "[z": color = COLOR_Z; break;
 
                     //case IonType.precursor: color = COLOR_PRECURSOR; break;
                 }
@@ -182,27 +178,34 @@ namespace pwiz.Skyline.Controls.Graphs
 
         public override PointAnnotation AnnotatePoint(PointPair point)
         {
-        //    //LibraryRankedSpectrumInfo.RankedMI rmi;
-        //    //if (!_ionMatches.TryGetValue(point.X, out rmi) || !IsVisibleIon(rmi))
-        //    //    return null;
+            // inefficient hack for now (TODO)
+            string label = "";
+            for (int i = 0; i < RNPxl_MZs.Count; ++i)
+            {
+                var mz = RNPxl_MZs[i];
+                var it = RNPxl_Intensities[i];
+                if (point.X == mz && point.Y == it)
+                {
+                    label = RNPxl_Annotations[i];
+                    break;
+                }
+            }
 
-        //    FontSpec fontSpec;
-        //    switch (rmi.IonType)
-        //    {
-        //        default: fontSpec = FONT_SPEC_NONE; break;
-        //        case IonType.a: fontSpec = FONT_SPEC_A; break;
-        //        case IonType.x: fontSpec = FONT_SPEC_X; break;
-        //        case IonType.b: fontSpec = FONT_SPEC_B; break;
-        //        case IonType.y: fontSpec = FONT_SPEC_Y; break;
-        //        case IonType.c: fontSpec = FONT_SPEC_C; break;
-        //        case IonType.z: fontSpec = FONT_SPEC_Z; break;
+            string first_two_chars = label.Length >= 2 ? label.Substring(0, 2) : "--";
 
-        //        //case IonType.precursor: fontSpec = FONT_SPEC_PRECURSOR; break;
-        //    }
-        //    if (IsMatch(rmi.PredictedMz))
-        //        fontSpec = FONT_SPEC_SELECTED;
-        //    return new PointAnnotation(GetLabel(rmi), fontSpec);
-            return new PointAnnotation("TODO: annotation", FONT_SPEC_NONE);
+            FontSpec fontSpec;
+            switch (first_two_chars)
+            {
+                default: fontSpec = FONT_SPEC_NONE; break;
+                case "[a": fontSpec = FONT_SPEC_A; break;
+                case "[x": fontSpec = FONT_SPEC_X; break;
+                case "[b": fontSpec = FONT_SPEC_B; break;
+                case "[y": fontSpec = FONT_SPEC_Y; break;
+                case "[c": fontSpec = FONT_SPEC_C; break;
+                case "[z": fontSpec = FONT_SPEC_Z; break;
+                //case IonType.precursor: fontSpec = FONT_SPEC_PRECURSOR; break;
+            }
+            return new PointAnnotation(label, fontSpec);
         }
 
         //public IEnumerable<string> IonLabels

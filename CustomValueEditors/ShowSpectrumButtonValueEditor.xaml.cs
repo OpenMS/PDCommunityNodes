@@ -117,13 +117,17 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
                 return;
             }
 
-            var idStrings = ((string)cellContents).Split(';');
-            if (idStrings.Count() != 2)
+            var strings = ((string)cellContents).Split(';');
+
+            if (strings.Count() != 3)
             {
-                ShowCouldNotShowSpectrumError("Unexpected number of IDs"); // for other entity types like TargetProtein the number of IDs may be different.
+                ShowCouldNotShowSpectrumError("Unexpected number of IDs");
                 return;
             }
 
+            string annotations = strings[2];
+            string[] idStrings = {strings[0], strings[1]};
+            
             object[] ids;
             try
             {
@@ -163,8 +167,8 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
 
             var view = new SpectrumView
                        {
-                           //Title = sb.ToString(),
                            Title = ot,
+                           Annotations = annotations,
                            // Show centroids when available, otherwise profiles.
                            PeakList = spectrum.HasPeakCentroids ? spectrum.PeakCentroids.Select(c => Tuple.Create(c.Position, c.Intensity)).ToList() : spectrum.ProfilePoints.ToList().Select(p => Tuple.Create(p.Position, p.Intensity)).ToList()
                        };
