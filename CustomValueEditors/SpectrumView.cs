@@ -16,7 +16,7 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
     public partial class SpectrumView : Form
     {
         private List<Tuple<double, double>> m_peakList;
-        private string m_overviewText;
+        private string m_title;
         private MSGraphPane m_msGraphPane;
 
         public SpectrumView()
@@ -52,9 +52,9 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
                     annots.Add("123");
                 }
 
-                //m_msGraphPane.AddStick(m_overviewText, mzs.ToArray(), ints.ToArray(), Color.Blue);
+                //m_msGraphPane.AddStick(m_title, mzs.ToArray(), ints.ToArray(), Color.Blue);
 
-                SpectrumGraphItem sgi = new SpectrumGraphItem(mzs, ints, annots);
+                SpectrumGraphItem sgi = new SpectrumGraphItem(m_title, mzs, ints, annots);
                 msGraphControl.AddGraphItem(m_msGraphPane, sgi);
 
                 //sgi.CustomizeXAxis(m_msGraphPane.XAxis);
@@ -72,11 +72,11 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
         /// <value>
         /// The overview text.
         /// </value>
-        public string OverviewText
+        public string Title
         {
             set
             {
-                m_overviewText = value;
+                m_title = value;
             }
         }
 

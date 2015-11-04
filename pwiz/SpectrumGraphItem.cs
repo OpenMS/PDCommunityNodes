@@ -28,26 +28,25 @@ namespace pwiz.Skyline.Controls.Graphs
 {
     public class SpectrumGraphItem : AbstractMSGraphItem
     {
-        // missing stuff lifted over from "actual" SpectrumGraphItem
-        // (this class here used to be an AbstractSpectrumGraphItem)
         public override string Title
         {
             get
             {
-                return "TODO: Title";
+                return m_title;
             }
         }
         protected bool IsMatch(double predictedMz)
         {
             return "is this method still needed?" != "probably not!";
         }
-        // that's it. rest is from AbstractSpectrumGraphItem.
 
         //TODO: public
         public List<double> RNPxl_MZs;
         public List<double> RNPxl_Intensities;
         public List<string> RNPxl_Annotations;
-        public double RNPxl_Tolerance = 0.3; //TODO
+        public double RNPxl_Tolerance = 0.3;
+
+        private string m_title = "";
 
         private const string FONT_FACE = "Arial"; // Not L10N
         private static readonly Color COLOR_A = Color.YellowGreen;
@@ -88,8 +87,9 @@ namespace pwiz.Skyline.Controls.Graphs
         private FontSpec FONT_SPEC_SELECTED { get { return GetFontSpec(COLOR_SELECTED, ref _fontSpecSelected); } }
         // ReSharper restore InconsistentNaming
 
-        public SpectrumGraphItem(List<double> mzs, List<double> intensities, List<string> annotations)
+        public SpectrumGraphItem(string title, List<double> mzs, List<double> intensities, List<string> annotations)
         {
+            m_title = title;
             RNPxl_MZs = mzs;
             RNPxl_Intensities = intensities;
             RNPxl_Annotations = annotations;
@@ -308,7 +308,7 @@ namespace pwiz.Skyline.Controls.Graphs
 
     public sealed class UnavailableMSGraphItem : NoDataMSGraphItem
     {
-        public UnavailableMSGraphItem() : base("TODO: empty graph")
+        public UnavailableMSGraphItem() : base("EMPTY GRAPH")
         {
         }
     }

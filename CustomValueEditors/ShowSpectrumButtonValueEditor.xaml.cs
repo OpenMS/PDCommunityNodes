@@ -163,8 +163,8 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
 
             var view = new SpectrumView
                        {
-                           //OverviewText = sb.ToString(),
-                           OverviewText = ot,
+                           //Title = sb.ToString(),
+                           Title = ot,
                            // Show centroids when available, otherwise profiles.
                            PeakList = spectrum.HasPeakCentroids ? spectrum.PeakCentroids.Select(c => Tuple.Create(c.Position, c.Intensity)).ToList() : spectrum.ProfilePoints.ToList().Select(p => Tuple.Create(p.Position, p.Intensity)).ToList()
                        };
