@@ -57,6 +57,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // Set the value editor that displays a button (see ShowSpectrumButtonValueEditor.xaml)
             accessor.GridDisplayOptions.GridCellControlGuid = "7875B499-672B-40D7-838E-91B65C7471E2";
+            accessor.GridDisplayOptions.VisiblePosition = 9;
             EntityDataService.RegisterProperties(ProcessingNodeNumber, new[] { accessor });
 
             var rnpxl_items = EntityDataService.CreateEntityItemReader().ReadAll<RNPxlItem>().ToList();
@@ -101,7 +102,10 @@ namespace PD.OpenMS.AdapterNodes
 
                         // Concatenate the spectrum ids and use them as the value that is stored in the button-cell. This value is not visible to the user but
                         // is used to re-read the spectrum when the button is pressed (see ShowSpectrumButtonValueEditor.xaml.cs).
-                        var idString = string.Concat(m.WorkflowID, ";", m.SpectrumID);
+                        
+                        // for simplicity, we also store the entire annotation string in the button value in order to avoid
+                        // storing IDs for RNPxlItems and re-reading them in ShowSpectrumButtonValueEditor.xaml.cs (TODO: improve style)
+                        var idString = string.Concat(m.WorkflowID, ";", m.SpectrumID, ";", r.fragment_annotation);
 
                         // use r.WorkflowID, r.Id to specify which RNPxlItem to update
                         updates.Add(Tuple.Create(new[] { (object)r.WorkflowID, (object)r.Id }, new object[] { idString }));

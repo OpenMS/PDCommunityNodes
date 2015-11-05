@@ -131,13 +131,17 @@
       <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.Utilities.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
+    <Reference Include="ZedGraph, Version=5.1.5.32171, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\ZedGraph.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CustomValueEditors\AdHocSpectrumView.cs">
+    <Compile Include="CustomValueEditors\SpectrumView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CustomValueEditors\AdHocSpectrumView.Designer.cs">
-      <DependentUpon>AdHocSpectrumView.cs</DependentUpon>
+    <Compile Include="CustomValueEditors\SpectrumView.Designer.cs">
+      <DependentUpon>SpectrumView.cs</DependentUpon>
     </Compile>
     <Compile Include="CustomValueEditors\ShowSpectrumButtonValueEditor.xaml.cs">
       <DependentUpon>ShowSpectrumButtonValueEditor.xaml</DependentUpon>
@@ -148,6 +152,17 @@
     <Compile Include="OpenMSFeatureFinderNode.cs" />
     <Compile Include="OpenMSFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="pwiz\LabelBoundsCache.cs" />
+    <Compile Include="pwiz\MSGraphControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="pwiz\MSGraphControl.designer.cs">
+      <DependentUpon>MSGraphControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="pwiz\MSGraphItem.cs" />
+    <Compile Include="pwiz\MSGraphPane.cs" />
+    <Compile Include="pwiz\MSPointList.cs" />
+    <Compile Include="pwiz\RNPxlSpectrumGraphItem.cs" />
     <Compile Include="RNPxlConsensusNode.cs" />
     <Compile Include="RNPxlItem.cs" />
     <Compile Include="RNPxlNode.cs" />
@@ -162,8 +177,17 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="CustomValueEditors\AdHocSpectrumView.resx">
-      <DependentUpon>AdHocSpectrumView.cs</DependentUpon>
+    <EmbeddedResource Include="CustomValueEditors\SpectrumView.resx">
+      <DependentUpon>SpectrumView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="pwiz\MSGraphControl.ja.resx">
+      <DependentUpon>MSGraphControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="pwiz\MSGraphControl.resx">
+      <DependentUpon>MSGraphControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="pwiz\MSGraphControl.zh-CHS.resx">
+      <DependentUpon>MSGraphControl.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
