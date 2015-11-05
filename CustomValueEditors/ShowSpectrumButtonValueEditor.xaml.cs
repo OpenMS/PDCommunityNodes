@@ -154,15 +154,6 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
 
             var spectrum = dds.GetSpectrum(spectrumInfo);
 
-            // Build some contents for the overview panel in the ad-hoc view.  
-            //var sb = new StringBuilder();
-            //sb.AppendLine(String.Format("MS-Order: {0}", spectrumInfo.MSOrder));
-            //sb.AppendLine(String.Format("Centroids: {0}", spectrum.HasPeakCentroids?"Yes":"No"));
-            //sb.AppendLine(String.Format("Profiles: {0}", spectrum.HasProfilePoints?"Yes":"No"));
-            //sb.AppendLine(String.Format("Mass Analyzer: {0}", spectrumInfo.MassAnalyzer));
-            //sb.AppendLine(String.Format("Charge: {0}", spectrumInfo.Charge));
-            //sb.AppendLine(String.Format("m/z: {0}", spectrumInfo.MassOverCharge));
-
             string ot = "m/z " + String.Format("{0:0.0000}", spectrumInfo.MassOverCharge) + "  |  RT " + String.Format("{0:0.00}", spectrumInfo.RetentionTime) + "  |  Charge " + spectrumInfo.Charge;
 
             var view = new SpectrumView

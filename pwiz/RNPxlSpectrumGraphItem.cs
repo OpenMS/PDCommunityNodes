@@ -136,17 +136,8 @@ namespace pwiz.Skyline.Controls.Graphs
                 var intensity = RNPxl_Intensities[i];
                 var annotation = RNPxl_Annotations[i];
 
-                //if (!IsVisibleIon(rmi))
-                //    continue;
-
-                //IonType type = IsVisibleIon(rmi.IonType, rmi.Ordinal, rmi.Charge) ?
-                //                                                                      rmi.IonType : rmi.IonType2;
-
-                //
-                string first_two_chars = annotation.Length >= 2 ? annotation.Substring(0,2) : "--";
-                //
-
                 Color color;
+                string first_two_chars = annotation.Length >= 2 ? annotation.Substring(0, 2) : "--";
                 switch (first_two_chars)
                 {
                     default: color = COLOR_NONE; break;
@@ -156,17 +147,8 @@ namespace pwiz.Skyline.Controls.Graphs
                     case "[y": color = COLOR_Y; break;
                     case "[c": color = COLOR_C; break;
                     case "[z": color = COLOR_Z; break;
-
                     //case IonType.precursor: color = COLOR_PRECURSOR; break;
                 }
-
-                //if (IsMatch(rmi.PredictedMz))
-                //{
-                //    color = COLOR_SELECTED;
-                //}
-
-                //double mz = rmi.ObservedMz;
-
                 var stick = new LineObj(color, mz, intensity, mz, 0);
                 stick.IsClippedToChartRect = true;
                 stick.Location.CoordinateFrame = CoordType.AxisXYScale;
@@ -208,82 +190,6 @@ namespace pwiz.Skyline.Controls.Graphs
             return new PointAnnotation(label, fontSpec);
         }
 
-        //public IEnumerable<string> IonLabels
-        //{
-        //    get
-        //    {
-        //        foreach (var rmi in _ionMatches.Values)
-        //            yield return GetLabel(rmi);
-        //    }
-        //}
-       
-        //private string GetLabel(LibraryRankedSpectrumInfo.RankedMI rmi)
-        //{
-        //    string[] parts = new string[2];
-        //    int i = 0;
-        //    bool visible1 = IsVisibleIon(rmi.IonType, rmi.Ordinal, rmi.Charge);
-        //    bool visible2 = IsVisibleIon(rmi.IonType2, rmi.Ordinal2, rmi.Charge2);
-        //    // Show the m/z values in the labels, if they should both be visible, and
-        //    // they have different display values.
-        //    bool showMzInLabel = ShowMz && visible1 && visible2 &&
-        //        GetDisplayMz(rmi.PredictedMz) != GetDisplayMz(rmi.PredictedMz2);
-
-        //    if (visible1)
-        //    {
-        //        parts[i++] = GetLabel(rmi.IonType, rmi.Ordinal, rmi.Losses,
-        //            rmi.Charge, rmi.PredictedMz, rmi.Rank, showMzInLabel);
-        //    }
-        //    if (visible2)
-        //    {
-        //        parts[i] = GetLabel(rmi.IonType2, rmi.Ordinal2, rmi.Losses2,
-        //            rmi.Charge2, rmi.PredictedMz2, 0, showMzInLabel);
-        //    }
-        //    StringBuilder sb = new StringBuilder();
-        //    foreach (string part in parts)
-        //    {
-        //        if (part == null)
-        //            continue;
-        //        if (sb.Length > 0)
-        //        {
-        //            if (showMzInLabel)
-        //                sb.AppendLine();
-        //            else
-        //                sb.Append(", "); // Not L10N
-        //        }
-        //        sb.Append(part);
-        //    }
-        //    // If predicted m/z should be displayed, but hasn't been yet, then display now.
-        //    if (ShowMz && !showMzInLabel)
-        //    {
-        //        sb.AppendLine().Append(GetDisplayMz(rmi.PredictedMz));
-        //    }
-        //    // If showing observed m/z, and it is different from the predicted m/z, then display it last.
-        //    if (ShowObservedMz)
-        //    {
-        //        sb.AppendLine().Append(GetDisplayMz(rmi.ObservedMz));
-        //    }
-        //    return sb.ToString();
-        //}
-
-        //private string GetLabel(IonType type, int ordinal, TransitionLosses losses, int charge, double mz, int rank, bool showMz)
-        //{
-        //    var label = new StringBuilder(type.GetLocalizedString());
-        //    if (!Transition.IsPrecursor(type))
-        //        label.Append(ordinal.ToString(LocalizationHelper.CurrentCulture));
-        //    if (losses != null)
-        //    {
-        //        label.Append(" -"); // Not L10N
-        //        label.Append(Math.Round(losses.Mass, 1));
-        //    }
-        //    string chargeIndicator = (charge == 1 ? string.Empty : Transition.GetChargeIndicator(charge));
-        //    label.Append(chargeIndicator);
-        //    if (showMz)
-        //        label.Append(string.Format(" = {0:F01}", mz)); // Not L10N
-        //    if (rank > 0 && ShowRanks)
-        //        label.Append(TextUtil.SEPARATOR_SPACE).Append(string.Format("({0})",string.Format(Resources.AbstractSpectrumGraphItem_GetLabel_rank__0__, rank))); // Not L10N
-        //    return label.ToString();
-        //}
-
         private double GetDisplayMz(double mz)
         {
             // Try to show enough decimal places to distinguish by tolerance
@@ -292,21 +198,6 @@ namespace pwiz.Skyline.Controls.Graphs
                 places++;
             return Math.Round(mz, places);
         }
-
-        //private bool IsVisibleIon(LibraryRankedSpectrumInfo.RankedMI rmi)
-        //{
-        //    bool singleIon = (rmi.Ordinal2 == 0);
-        //    if (ShowDuplicates && singleIon)
-        //        return false;
-        //    return IsVisibleIon(rmi.IonType, rmi.Ordinal, rmi.Charge) ||
-        //           IsVisibleIon(rmi.IonType2, rmi.Ordinal2, rmi.Charge2);
-        //}
-
-        //private bool IsVisibleIon(IonType type, int ordinal, int charge)
-        //{
-        //    // Show precursor ions when they are supposed to be shown, regardless of charge
-        //    return ordinal > 0 && ShowTypes.Contains(type) && (type == IonType.precursor || ShowCharges.Contains(charge));
-        //}
     }
 
     public sealed class UnavailableMSGraphItem : NoDataMSGraphItem
@@ -385,15 +276,11 @@ namespace pwiz.Skyline.Controls.Graphs
 
         public void CustomizeYAxis(Axis axis)
         {
-            //CustomizeAxis(axis, Resources.AbstractMSGraphItem_CustomizeYAxis_Intensity);
-
             CustomizeAxis(axis, "Intensity");
         }
 
         public void CustomizeXAxis(Axis axis)
         {
-            //CustomizeAxis(axis, Resources.AbstractMSGraphItem_CustomizeXAxis_MZ);
-
             CustomizeAxis(axis, "m/z");
         }
 
