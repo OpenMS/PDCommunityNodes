@@ -57,6 +57,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // Set the value editor that displays a button (see ShowSpectrumButtonValueEditor.xaml)
             accessor.GridDisplayOptions.GridCellControlGuid = "7875B499-672B-40D7-838E-91B65C7471E2";
+            accessor.GridDisplayOptions.VisiblePosition = 9;
             EntityDataService.RegisterProperties(ProcessingNodeNumber, new[] { accessor });
 
             var rnpxl_items = EntityDataService.CreateEntityItemReader().ReadAll<RNPxlItem>().ToList();
