@@ -110,7 +110,7 @@ namespace pwiz.MSGraph
         void CustomizeYAxis( Axis axis );
 
         /// <summary>
-        /// return a string to use as a label when graphing the data point;
+        /// return a string to use as a annotation when graphing the data point;
         /// if the returned value is null or empty, there is no annotation
         /// </summary>
         PointAnnotation AnnotatePoint( PointPair point );

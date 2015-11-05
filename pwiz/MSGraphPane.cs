@@ -206,7 +206,7 @@ namespace pwiz.MSGraph
         protected readonly Dictionary<TextObj, RectangleF> _manualLabels;
 
         /// <summary>
-        /// Get all annotation label text, for testing purposes
+        /// Get all annotation annotation text, for testing purposes
         /// </summary>
         public IEnumerable<string> GetAnnotationLabelStrings()
         {
@@ -465,7 +465,7 @@ namespace pwiz.MSGraph
 
         /// <summary>
         /// We know which labels are overlapping the data points, but we need to make sure the labels that will be
-        /// displayed can fit in the scale using the Min/MaxGrace properties and adjusting the label fractions if appropriate:
+        /// displayed can fit in the scale using the Min/MaxGrace properties and adjusting the annotation fractions if appropriate:
         /// TextObjs with CoordType.AxisXYScale coordinates will move proportionally with Min/MaxGrace, but ChartFraction
         /// coordinates will not.
         /// </summary>
@@ -508,11 +508,11 @@ namespace pwiz.MSGraph
                             Math.Abs(yAxis.Scale.ReverseTransform(pts[0].Y - pixelShift) - yAxis.Scale.ReverseTransform(pts[2].Y));
                         if (labelHeight < axisHeight / 2)
                         {
-                            // Ensure that the YAxis will have enough space to show the label.
+                            // Ensure that the YAxis will have enough space to show the annotation.
                             // Only do this if the labelHeight is going to take up less than half the space on the graph, because
                             // otherwise the graph will be shrunk too much to have any useful information.
 
-                            // When calculating the scaling required, take into account that the height of the label
+                            // When calculating the scaling required, take into account that the height of the annotation
                             // itself will not shrink when we shrink the YAxis.
                             var labelYMaxRequired = (text.Location.Y - labelHeight*YAxis.Scale.Min/axisHeight)/
                                                     (1 - labelHeight/axisHeight) + pixelShift;

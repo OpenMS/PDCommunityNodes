@@ -55,9 +55,10 @@ namespace pwiz.Skyline.Controls.Graphs
         private static readonly Color COLOR_Y = Color.Blue;
         private static readonly Color COLOR_C = Color.Orange;
         private static readonly Color COLOR_Z = Color.OrangeRed;
-        private static readonly Color COLOR_PRECURSOR = Color.DarkCyan;
         private static readonly Color COLOR_NONE = Color.Gray;
-        public static readonly Color COLOR_SELECTED = Color.Red;
+        private static readonly Color COLOR_OTHER = Color.Brown;
+        //private static readonly Color COLOR_PRECURSOR = Color.DarkCyan;
+        //public static readonly Color COLOR_SELECTED = Color.Red;
 
         public ICollection<int> ShowCharges { get; set; }
         public bool ShowRanks { get; set; }
@@ -78,13 +79,15 @@ namespace pwiz.Skyline.Controls.Graphs
         private FontSpec _fontSpecC;
         private FontSpec FONT_SPEC_C { get { return GetFontSpec(COLOR_C, ref _fontSpecC); } }
         private FontSpec _fontSpecZ;
-        private FontSpec FONT_SPEC_PRECURSOR { get { return GetFontSpec(COLOR_PRECURSOR, ref _fontSpecPrecursor); } }
-        private FontSpec _fontSpecPrecursor;
         private FontSpec FONT_SPEC_Z { get { return GetFontSpec(COLOR_Z, ref _fontSpecZ); } }
         private FontSpec _fontSpecNone;
         private FontSpec FONT_SPEC_NONE { get { return GetFontSpec(COLOR_NONE, ref _fontSpecNone); } }
-        private FontSpec _fontSpecSelected;
-        private FontSpec FONT_SPEC_SELECTED { get { return GetFontSpec(COLOR_SELECTED, ref _fontSpecSelected); } }
+        private FontSpec _fontSpecNucl;
+        private FontSpec FONT_SPEC_OTHER { get { return GetFontSpec(COLOR_OTHER, ref _fontSpecNucl); } }
+        //private FontSpec FONT_SPEC_PRECURSOR { get { return GetFontSpec(COLOR_PRECURSOR, ref _fontSpecPrecursor); } }
+        //private FontSpec _fontSpecPrecursor;
+        //private FontSpec _fontSpecSelected;
+        //private FontSpec FONT_SPEC_SELECTED { get { return GetFontSpec(COLOR_SELECTED, ref _fontSpecSelected); } }
         // ReSharper restore InconsistentNaming
 
         public RNPxlSpectrumGraphItem(string title, List<double> mzs, List<double> intensities, List<string> annotations)
@@ -140,7 +143,8 @@ namespace pwiz.Skyline.Controls.Graphs
                 string first_two_chars = annotation.Length >= 2 ? annotation.Substring(0, 2) : "--";
                 switch (first_two_chars)
                 {
-                    default: color = COLOR_NONE; break;
+                    default: color = COLOR_OTHER; break;
+                    case "--": color = COLOR_NONE; break;
                     case "[a": color = COLOR_A; break;
                     case "[x": color = COLOR_X; break;
                     case "[b": color = COLOR_B; break;
@@ -161,24 +165,25 @@ namespace pwiz.Skyline.Controls.Graphs
         public override PointAnnotation AnnotatePoint(PointPair point)
         {
             // inefficient hack for now (TODO)
-            string label = "";
+            string annotation = "";
             for (int i = 0; i < RNPxl_MZs.Count; ++i)
             {
                 var mz = RNPxl_MZs[i];
                 var it = RNPxl_Intensities[i];
                 if (point.X == mz && point.Y == it)
                 {
-                    label = RNPxl_Annotations[i];
+                    annotation = RNPxl_Annotations[i];
                     break;
                 }
             }
 
-            string first_two_chars = label.Length >= 2 ? label.Substring(0, 2) : "--";
+            string first_two_chars = annotation.Length >= 2 ? annotation.Substring(0, 2) : "--";
 
             FontSpec fontSpec;
             switch (first_two_chars)
             {
-                default: fontSpec = FONT_SPEC_NONE; break;
+                default: fontSpec = FONT_SPEC_OTHER; break;
+                case "--": fontSpec = FONT_SPEC_NONE; break;
                 case "[a": fontSpec = FONT_SPEC_A; break;
                 case "[x": fontSpec = FONT_SPEC_X; break;
                 case "[b": fontSpec = FONT_SPEC_B; break;
@@ -187,6 +192,7 @@ namespace pwiz.Skyline.Controls.Graphs
                 case "[z": fontSpec = FONT_SPEC_Z; break;
                 //case IonType.precursor: fontSpec = FONT_SPEC_PRECURSOR; break;
             }
+            string label = annotation + "\n" + GetDisplayMz(point.X);
             return new PointAnnotation(label, fontSpec);
         }
 
