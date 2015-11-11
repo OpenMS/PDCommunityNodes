@@ -198,10 +198,14 @@ namespace pwiz.Skyline.Controls.Graphs
 
         private double GetDisplayMz(double mz)
         {
-            // Try to show enough decimal places to distinguish by tolerance
-            int places = 1;
-            while (places < 4 && ((int) (RNPxl_Tolerance * Math.Pow(10, places))) == 0) //TODO
-                places++;
+            //TODO: get search tolerance (from search node? from MSSpectrumInfo?) and re-enable this code
+
+            //// Try to show enough decimal places to distinguish by tolerance
+            //int places = 1;
+            //while (places < 4 && ((int) (RNPxl_Tolerance * Math.Pow(10, places))) == 0) //TODO
+            //    places++;
+
+            int places = 3;
             return Math.Round(mz, places);
         }
     }
