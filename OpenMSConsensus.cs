@@ -226,12 +226,6 @@ namespace PD.OpenMS.AdapterNodes
             // Normalize intensities
             var cn_output_file = RunConsensusMapNormalizer(m_consensusxml_orig_rt);
 
-            // Set up consensus feature table ("Quantified features")
-            var feature_table_column_names = SetupConsensusFeaturesTable(raw_files);
-
-            // Fill it
-            PopulateConsensusFeaturesTable(consensus_dict, cn_output_file, feature_table_column_names);
-
             // Export filtered PSMs to idXML
             var filtered_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms.idXML");
             ExportPSMsToIdXML(filtered_idxml, true);
@@ -243,6 +237,10 @@ namespace PD.OpenMS.AdapterNodes
             // Map IDs to intensity-normalized consensusXML file
             var idmapped_consensusxml = Path.Combine(NodeScratchDirectory, "idmapped.consensusXML");
             RunIDMapper(cn_output_file, filtered_idxml, idmapped_consensusxml);
+
+            // Set up consensus feature table ("Quantified features") and fill it
+            var feature_table_column_names = SetupConsensusFeaturesTable(raw_files);
+            PopulateConsensusFeaturesTable(consensus_dict, idmapped_consensusxml, feature_table_column_names);
 
             // Export all PSMs (unfiltered!) for Fido
             var idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms.idXML");
