@@ -20,6 +20,8 @@ using Thermo.Magellan.Semantics;
 
 namespace PD.OpenMS.AdapterNodes
 {
+    # region NodeSetup
+
     [ProcessingNode("9A840689-B679-4D0B-8595-9448B1D3EB38",
         DisplayName = "RNPxl Consensus",
         Description = "Post-processes the results of the RNPxl search and connects them with the spectrum view",
@@ -41,6 +43,8 @@ namespace PD.OpenMS.AdapterNodes
         ProteomicsDataTypes.Psms)] //TODO
 
     [ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
+
+    # endregion
 
     public class RNPxlConsensus : ReportProcessingNode
     {

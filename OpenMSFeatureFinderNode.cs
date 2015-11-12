@@ -319,7 +319,6 @@ namespace PD.OpenMS.AdapterNodes
         /// <summary>
         /// Executes the pipeline.
         /// </summary>
-        /// <param name="pipelineParameterFileName">The name of the file which  settings path.</param>		
         /// <exception cref="Thermo.Magellan.Exceptions.MagellanProcessingException"></exception>
         //private IDictionary<UnknownFeatureIonInstanceItem, List<ChromatogramPeakItem>> RunOpenMsPipeline(List<string> spectrumExportFileNames)
         private void RunOpenMsPipeline(List<string> spectrumExportFileNames)

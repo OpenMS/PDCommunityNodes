@@ -26,6 +26,8 @@ using System.Text;
 
 namespace PD.OpenMS.AdapterNodes
 {
+    # region NodeSetup
+
     [ProcessingNode("5FBAC8EA-D69A-4401-AAAD-DD86092754A0",
         Category = ProcessingNodeCategories.SequenceDatabaseSearch,
 		DisplayName = "RNPxl",
@@ -46,6 +48,8 @@ namespace PD.OpenMS.AdapterNodes
         MassSpecDataTypes.MSnSpectra)]
 
 	[ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
+
+    # endregion
 
     public class OpenMSRNPxlNode : PeptideAndProteinIdentificationNode, IResultsSink<MassSpectrumCollection>
 	{

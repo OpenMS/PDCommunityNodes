@@ -28,6 +28,8 @@ using OpenMS.OpenMSFile;
 
 namespace PD.OpenMS.AdapterNodes
 {
+    # region NodeSetup
+
     [ProcessingNode("1DB9D65C-EFDD-4136-8038-A555A39459FD",
         DisplayName = "LFQProfiler",
         Description = "Quantifies peptides and proteins based on results from the LFQProfiler FF processing node.",
@@ -63,9 +65,13 @@ namespace PD.OpenMS.AdapterNodes
     
     [ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
 
+    # endregion
+
     public class OpenMSConsensus
         : ReportProcessingNode
     {
+        # region Parameters
+
         [BooleanParameter(Category = "1. Feature linking",
             DisplayName = "Perform map alignment",
             Description = "This parameter specifies whether map alignment (RT transformation) should be performed before linking.",
@@ -191,6 +197,8 @@ namespace PD.OpenMS.AdapterNodes
         MinimumValue = "1",
         Position = 15)]
         public IntegerParameter param_num_threads;
+
+        # endregion
 
         private int m_current_step;
         private int m_num_steps;
