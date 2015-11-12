@@ -46,7 +46,7 @@ namespace PD.OpenMS.AdapterNodes
 
     # endregion
 
-    public class RNPxlConsensus : ReportProcessingNode
+    public class RNPxlConsensusNode : ReportProcessingNode
     {
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {

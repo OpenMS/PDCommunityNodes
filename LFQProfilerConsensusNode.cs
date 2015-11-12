@@ -64,7 +64,7 @@ namespace PD.OpenMS.AdapterNodes
 
     # endregion
 
-    public class OpenMSConsensus
+    public class LFQProfilerConsensusNode
         : ReportProcessingNode
     {
         # region Parameters

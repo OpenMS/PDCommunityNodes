@@ -60,7 +60,7 @@ namespace PD.OpenMS.AdapterNodes
 
 	#endregion
 
-    public class OpenMSFeatureFinderNode : ProcessingNode,
+    public class LFQProfilerProcessingNode : ProcessingNode,
         IResultsSink<MassSpectrumCollection>
 	{
         #region Parameters

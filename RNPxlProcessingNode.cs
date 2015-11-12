@@ -50,7 +50,7 @@ namespace PD.OpenMS.AdapterNodes
 
     # endregion
 
-    public class OpenMSRNPxlNode : PeptideAndProteinIdentificationNode, IResultsSink<MassSpectrumCollection>
+    public class RNPxlProcessingNode : PeptideAndProteinIdentificationNode, IResultsSink<MassSpectrumCollection>
 	{
         #region Parameters
 
