@@ -20,7 +20,6 @@ using Thermo.Magellan.StudyManagement.DataObjects;
 
 using System.Web.UI;
 
-using OpenMS.OpenMSFile;
 using System.Xml.Linq;
 using System.Text;
 

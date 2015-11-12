@@ -18,7 +18,6 @@ using Thermo.Magellan.Utilities;
 
 using System.Web.UI;
 
-using OpenMS.OpenMSFile;
 using System.Xml.Linq;
 using System.Text;
 
@@ -61,7 +60,7 @@ namespace PD.OpenMS.AdapterNodes
 
 	#endregion
 
-    public class OpenMSFeatureFinderNode : ProcessingNode< ConsensusXMLFile>,
+    public class OpenMSFeatureFinderNode : ProcessingNode,
         IResultsSink<MassSpectrumCollection>
 	{
         #region Parameters
@@ -341,7 +340,7 @@ namespace PD.OpenMS.AdapterNodes
             string ini_path = ""; //path to configuration files with parameters for the OpenMS Tool
 
             //create Lists of possible OpenMS files
-            List<FeatureXMLFile> featurexml_out_files = new List<FeatureXMLFile>(m_num_files);
+            List<string> featurexml_out_files = new List<string>(m_num_files);
 
             //Add path of Open MS installation here
             var openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
@@ -354,7 +353,7 @@ namespace PD.OpenMS.AdapterNodes
                 out_files[i] = Path.Combine(Path.GetDirectoryName(EntityDataService.ReportFile.FileName),
                                             Path.GetFileNameWithoutExtension(in_files[i])) + ".featureXML";
                 
-                featurexml_out_files.Add(new FeatureXMLFile(out_files[i]));
+                featurexml_out_files.Add(out_files[i]);
 
                 ini_path = Path.Combine(NodeScratchDirectory, @"FeatureFinderMultiplex.ini");
                 OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));

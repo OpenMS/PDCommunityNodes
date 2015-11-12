@@ -23,9 +23,6 @@ using Thermo.Magellan;
 using Thermo.PD.EntityDataFramework;
 using Thermo.Magellan.Semantics;
 
-using OpenMS.OpenMSFile;
-
-
 namespace PD.OpenMS.AdapterNodes
 {
     # region NodeSetup
@@ -215,7 +212,7 @@ namespace PD.OpenMS.AdapterNodes
             m_openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
 
             // Original featureXML files will be used for reading original RTs later
-            List<FeatureXMLFile> featurexml_files_orig;
+            List<string> featurexml_files_orig;
 
             // RAW file names will be used for display in their respective sample columns
             List<string> raw_files;
@@ -446,7 +443,7 @@ namespace PD.OpenMS.AdapterNodes
             EntityDataService.ConnectItems(psms_with_quantification);
         }
 
-        private Dictionary<string, XmlElement> BuildConsensusXMLWithOrigRTs(List<FeatureXMLFile> featurexml_files_orig)
+        private Dictionary<string, XmlElement> BuildConsensusXMLWithOrigRTs(List<string> featurexml_files_orig)
         {
             // Read consensusXML
             XmlDocument consensus_doc = new XmlDocument();
@@ -465,7 +462,7 @@ namespace PD.OpenMS.AdapterNodes
             for (int file_id = 0; file_id < m_num_files; file_id++)
             {
                 XmlDocument orig_feat_xml = new XmlDocument();
-                orig_feat_xml.Load(featurexml_files_orig[file_id].get_name());
+                orig_feat_xml.Load(featurexml_files_orig[file_id]);
                 XmlNodeList orig_featurelist = orig_feat_xml.GetElementsByTagName("feature");
                 foreach (XmlElement feature in orig_featurelist)
                 {
@@ -578,11 +575,11 @@ namespace PD.OpenMS.AdapterNodes
             return column_names;
         }
 
-        private void AlignAndLink(out List<FeatureXMLFile> featurexml_files_orig, out List<string> raw_files)
+        private void AlignAndLink(out List<string> featurexml_files_orig, out List<string> raw_files)
         {
-            List<FeatureXMLFile> aligned_features;
+            List<string> aligned_featurexmls;
 
-            ReadInputFiles(out featurexml_files_orig, out aligned_features, out raw_files);
+            ReadInputFiles(out featurexml_files_orig, out aligned_featurexmls, out raw_files);
 
             //list of input and output files of specific OpenMS tools
             string[] in_files = new string[m_num_files];
@@ -592,7 +589,7 @@ namespace PD.OpenMS.AdapterNodes
             //if only one file, convert featureXML (unaligned) to consensus, no alignment or linking will occur
             if (m_num_files == 1)
             {
-                in_files[0] = featurexml_files_orig[0].get_name();
+                in_files[0] = featurexml_files_orig[0];
                 out_files[0] = Path.Combine(NodeScratchDirectory,
                     Path.GetFileNameWithoutExtension(in_files[0])) +
                     ".consensusXML";
@@ -619,10 +616,10 @@ namespace PD.OpenMS.AdapterNodes
                     exec_path = Path.Combine(m_openms_dir, @"bin/MapAlignerPoseClustering.exe");
                     for (int i = 0; i < m_num_files; i++)
                     {
-                        in_files[i] = featurexml_files_orig[i].get_name(); // current in_files will be featureXML
+                        in_files[i] = featurexml_files_orig[i]; // current in_files will be featureXML
                         out_files[i] = Path.Combine(NodeScratchDirectory,
                                                     Path.GetFileNameWithoutExtension(in_files[i])) + ".aligned.featureXML";
-                        aligned_features.Add(new FeatureXMLFile(out_files[i]));
+                        aligned_featurexmls.Add(out_files[i]);
                     }
 
                     Dictionary<string, string> map_parameters = new Dictionary<string, string> {
@@ -650,11 +647,11 @@ namespace PD.OpenMS.AdapterNodes
                 {
                     if (param_perform_map_alignment.Value)
                     {
-                        in_files[i] = aligned_features[i].get_name();
+                        in_files[i] = aligned_featurexmls[i];
                     }
                     else
                     {
-                        in_files[i] = featurexml_files_orig[i].get_name();
+                        in_files[i] = featurexml_files_orig[i];
                     }
                 }
                 //save as consensus.consensusXML, filenames are stored inside, file should normally be accessed from inside CD
@@ -680,7 +677,7 @@ namespace PD.OpenMS.AdapterNodes
             }
         }
 
-        private void ReadInputFiles(out List<FeatureXMLFile> orig_features, out List<FeatureXMLFile> aligned_features, out List<string> raw_files_list)
+        private void ReadInputFiles(out List<string> orig_features, out List<string> aligned_features, out List<string> raw_files_list)
         {
             //Read in featureXmls contained in the study result folder, read only those associated with the project msf
             var all_custom_data_raw_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "RawFiles").ToDictionary(c => c.WorkflowID, c => c);
@@ -694,8 +691,8 @@ namespace PD.OpenMS.AdapterNodes
                 m_num_files += ((string)item.Value.CustomValue).Split(',').Count();
             }
 
-            orig_features = new List<FeatureXMLFile>(m_num_files);
-            aligned_features = new List<FeatureXMLFile>(m_num_files);
+            orig_features = new List<string>(m_num_files);
+            aligned_features = new List<string>(m_num_files);
 
 
 
@@ -722,7 +719,7 @@ namespace PD.OpenMS.AdapterNodes
                 //TODO: understand implications of different worfklow IDs...
                 foreach (var file_name in featurexml_files_list)
                 {
-                    orig_features.Add(new FeatureXMLFile(file_name));
+                    orig_features.Add(file_name);
                 }
             }
         }

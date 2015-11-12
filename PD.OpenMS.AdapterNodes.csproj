@@ -150,7 +150,6 @@
     <Compile Include="OpenMSEntities.cs" />
     <Compile Include="OpenMSConsensus.cs" />
     <Compile Include="OpenMSFeatureFinderNode.cs" />
-    <Compile Include="OpenMSFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="pwiz\LabelBoundsCache.cs" />
     <Compile Include="pwiz\MSGraphControl.cs">
