@@ -540,7 +540,7 @@ namespace PD.OpenMS.AdapterNodes
             var new_consensus_items = new List<ConsensusFeatureEntity>();
             Int32 idCounter = 1;
 
-            var target_psms = EntityDataService.CreateEntityItemReader().ReadAll<TargetPeptideSpectrumMatch>().ToArray();
+            var eds_reader = EntityDataService.CreateEntityItemReader();
 
             var scoreProperties = EntityDataService
                     .GetProperties<TargetPeptideSpectrumMatch>(ScoreSemanticTerms.Score)
@@ -590,7 +590,8 @@ namespace PD.OpenMS.AdapterNodes
                 foreach (XmlNode peptide_id in peptide_ids)
                 {
                     var peptide_hit = peptide_id.SelectSingleNode("PeptideHit");
-                    Int64 pd_peptide_id = 0;
+                    Int32 pd_peptide_id = 0;
+                    Int32 workflow_id = 0;
                     var user_params = peptide_hit.SelectNodes("userParam");
 
                     bool decoy = false;
@@ -605,10 +606,14 @@ namespace PD.OpenMS.AdapterNodes
                             if (val.Length >= 6 && val.Substring(0, 6) == "decoy_")
                             {
                                 decoy = true;
+                                val = val.Substring(6);
                             }
                             else
                             {
-                                pd_peptide_id = Convert.ToInt64(val);
+                                var parts = val.Split(new[] { ';' });
+                                //TODO: exception handling (index out of bounds!)
+                                workflow_id = Convert.ToInt32(parts[0]);
+                                pd_peptide_id = Convert.ToInt32(parts[1]);
                             }
                             break;
                         }
@@ -618,7 +623,8 @@ namespace PD.OpenMS.AdapterNodes
                         continue;
                     }
 
-                    var psm = target_psms.Single(item => item.PeptideID == pd_peptide_id);
+                    var psm = eds_reader.Read<TargetPeptideSpectrumMatch>(new object[] {workflow_id, pd_peptide_id});
+
                     psms_with_quantification.Add(Tuple.Create(psm, new_consensus_item));
 
                     var current_pep_score = Convert.ToDouble(pep_score.GetValue(psm));
@@ -745,7 +751,6 @@ namespace PD.OpenMS.AdapterNodes
 
             idxml_node.AppendChild(id_run_node);
 
-            var target_psms = EntityDataService.CreateEntityItemReader().ReadAllFlat<TargetPeptideSpectrumMatch, MSnSpectrumInfo>();
             idXMLExportHelper<TargetPeptideSpectrumMatch>(doc, id_run_node, filter);
 
             if (!filter)
@@ -867,7 +872,7 @@ namespace PD.OpenMS.AdapterNodes
 
                 value_attr = doc.CreateAttribute("value");
                 value_attr.Value = decoy ? "decoy_" : "";
-                value_attr.Value += psm.Item1.PeptideID.ToString();
+                value_attr.Value += string.Join(";", from x in psm.Item1.GetIDs() select x.ToString());
                 user_param.Attributes.Append(value_attr);
             }
         }
