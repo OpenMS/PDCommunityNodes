@@ -45,11 +45,11 @@ namespace PD.OpenMS.AdapterNodes
         ConnectionMode = ConnectionMode.AutomaticToAllPossibleParents,
         ConnectionRequirement = ConnectionRequirement.Optional,
         ConnectedParentNodeConstraint = ConnectedParentConstraint.OnlyToGeneratorsOfRequestedData)]
-    
+
     [ConnectionPointDataContract(
         "IncomingOpenMSFeatures",
         ProteomicsDataTypes.Psms)]
-    
+
     [ConnectionPoint(
         "Outgoing",
         ConnectionDirection = ConnectionDirection.Outgoing,
@@ -57,12 +57,12 @@ namespace PD.OpenMS.AdapterNodes
         ConnectionMode = ConnectionMode.Manual,
         ConnectionRequirement = ConnectionRequirement.Optional,
         ConnectionDisplayName = ReportingNodeCategories.PeptideValidation)]
-    
+
     [ConnectionPointDataContract(
         "Outgoing",
         ProteomicsDataTypes.Psms,
         DataTypeAttributes = new[] { "Quantified" })]
-    
+
     [ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
 
     # endregion
@@ -206,8 +206,8 @@ namespace PD.OpenMS.AdapterNodes
         private int m_num_files;
         private readonly SpectrumDescriptorCollection m_spectrum_descriptors = new SpectrumDescriptorCollection();
         private List<WorkflowInputFile> m_workflow_input_files;
-        private ConsensusXMLFile m_consensusxml;
-        private ConsensusXMLFile m_consensusxml_orig_rt;
+        private string m_consensusxml;
+        private string m_consensusxml_orig_rt;
 
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
@@ -223,44 +223,103 @@ namespace PD.OpenMS.AdapterNodes
             // Run alignment and linking
             AlignAndLink(out featurexml_files_orig, out raw_files);
 
-            // Read consensusXML
-            XmlDocument consensus_doc = new XmlDocument();
-            consensus_doc.Load(m_consensusxml.get_name());
-            XmlNodeList consensus_list = consensus_doc.GetElementsByTagName("element");
-
-            // Create dictionary of elements, in which we overwrite the original RT. 
-            // Note: this mutates XmlDocument consensus_doc which we then save into new file
-            Dictionary<string, XmlElement> consensus_dict = new Dictionary<string, XmlElement>(consensus_list.Count);
-            foreach (XmlElement element in consensus_list)
-            {
-                consensus_dict[element.Attributes["id"].Value] = element;
-            }
-
-            // The consensus contains feature IDs from all featureXMLs, thus we have to look into all featureXML files
-            for (int file_id = 0; file_id < m_num_files; file_id++)
-            {
-                XmlDocument orig_feat_xml = new XmlDocument();
-                orig_feat_xml.Load(featurexml_files_orig[file_id].get_name());
-                XmlNodeList orig_featurelist = orig_feat_xml.GetElementsByTagName("feature");
-                foreach (XmlElement feature in orig_featurelist)
-                {
-                    var id = feature.Attributes["id"].Value.Substring(2);
-                    var rt = feature.SelectNodes("position")[0].InnerText;
-                    consensus_dict[id].SetAttribute("rt", rt);
-                }
-            }
-
-            // Save consensusXML file with original RTs
-            var consensusxml_orig_rt = Path.Combine(NodeScratchDirectory, "Consensus_orig_RT.consensusXML");
-            consensus_doc.Save(consensusxml_orig_rt);
-            m_consensusxml_orig_rt = new ConsensusXMLFile(consensusxml_orig_rt);
+            // Create dictionary {feature ID -> consensusXML element} with original RTs
+            Dictionary<string, XmlElement> consensus_dict = BuildConsensusXMLWithOrigRTs(featurexml_files_orig);
 
             // Normalize intensities
-            var cn_output_file = RunConsensusMapNormalizer(consensusxml_orig_rt);
+            var cn_output_file = RunConsensusMapNormalizer(m_consensusxml_orig_rt);
 
             // Set up consensus feature table ("Quantified features")
             var feature_table_column_names = SetupConsensusFeaturesTable(raw_files);
 
+            // Fill it
+            PopulateConsensusFeaturesTable(consensus_dict, cn_output_file, feature_table_column_names);
+
+            // Export filtered PSMs to idXML
+            var filtered_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms.idXML");
+            exportPSMsToIdXML(filtered_idxml, true);
+
+            // Run PeptideIndexer in order to get peptide <-> protein associations
+            var filtered_indexed_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms_peptides_indexed.idXML");
+            runPeptideIndexer(filtered_idxml, filtered_indexed_idxml);
+
+            // Map IDs to intensity-normalized consensusXML file
+            var idmapped_consensusxml = Path.Combine(NodeScratchDirectory, "idmapped.consensusXML");
+            runIDMapper(cn_output_file, filtered_idxml, idmapped_consensusxml);
+
+            // Export all PSMs (unfiltered!) for Fido
+            var idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms.idXML");
+            exportPSMsToIdXML(idxml_filename_for_fido, false);
+
+            // Run PeptideIndexer in order to get peptide <-> protein associations
+            var indexed_idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms_peptides_indexed.idXML");
+            runPeptideIndexer(idxml_filename_for_fido, indexed_idxml_filename_for_fido);
+
+            // Run FidoAdapter
+            var fido_output_file = RunFidoAdapter(indexed_idxml_filename_for_fido);
+
+            // Run ProteinQuantifier
+            RunProteinQuantifier(idmapped_consensusxml, fido_output_file);
+
+            // Finished!
+            FireProcessingFinishedEvent(new SingleResultsArguments(new[] { ProteomicsDataTypes.Psms }, this));
+        }
+
+        private void RunProteinQuantifier(string consensusxml_file, string fido_idxml_file)
+        {
+            var exec_path = Path.Combine(m_openms_dir, @"bin/ProteinQuantifier.exe");
+            var ini_path = Path.Combine(NodeScratchDirectory, @"ProteinQuantifier.ini");
+            var pep_output_file = Path.Combine(NodeScratchDirectory, "pq_peptides.csv");
+            var prot_output_file = Path.Combine(NodeScratchDirectory, "pq_proteins.csv");
+
+            Dictionary<string, string> ini_params = new Dictionary<string, string> {
+                            {"in", consensusxml_file},
+                            {"out", prot_output_file},
+                            {"peptide_out", pep_output_file},
+                            {"top", param_top.ToString()},
+                            {"average", param_averaging.Value},
+                            {"include_all", param_include_all.ToString().ToLower()},
+                            {"filter_charge", param_filter_charge.ToString().ToLower()},
+                            {"fix_peptides", param_fix_peptides.ToString().ToLower()},
+                            {"protein_groups", param_protein_quant_mode.Value != "unique" ? fido_idxml_file : ""},
+                            {"threads", param_num_threads.ToString()}};
+            OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.writeItem(ini_path, ini_params);
+
+            SendAndLogMessage("Starting ProteinQuantifier");
+            OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+
+            m_current_step += m_num_files;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
+
+            parsePQPeptides(pep_output_file);
+            parsePQProteins(prot_output_file);
+        }
+
+        private string RunFidoAdapter(string idxml_file)
+        {
+            var exec_path = Path.Combine(m_openms_dir, @"bin/FidoAdapter.exe");
+            var ini_path = Path.Combine(NodeScratchDirectory, @"FidoAdapter.ini");
+            var output_file = Path.Combine(NodeScratchDirectory, "fido_results.idXML");
+
+            if (param_protein_quant_mode.Value != "unique")
+            {
+                Dictionary<string, string> ini_params = new Dictionary<string, string> {
+                            {"in", idxml_file},
+                            {"out", output_file},
+                            {"greedy_group_resolution", param_protein_quant_mode.Value == "greedy" ? "true" : "false"},
+                            {"threads", param_num_threads.ToString()}};
+                OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.writeItem(ini_path, ini_params);
+
+                SendAndLogMessage("Starting FidoAdapter");
+                OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            }
+            return output_file;
+        }
+
+        private void PopulateConsensusFeaturesTable(Dictionary<string, XmlElement> consensus_dict, string cn_output_file, List<string> feature_table_column_names)
+        {
             // Connect PSM table with consensus features table (TODO: improve comments)
             EntityDataService.RegisterEntityConnection<TargetPeptideSpectrumMatch, ConsensusFeatureEntity>(ProcessingNodeNumber);
             var psms_with_quantification = new List<Tuple<TargetPeptideSpectrumMatch, ConsensusFeatureEntity>>();
@@ -283,6 +342,7 @@ namespace PD.OpenMS.AdapterNodes
             foreach (var sp in scoreProperties)
             {
                 var score_name = sp.Name;
+
 
                 if (score_name.Contains("PEP"))
                 {
@@ -327,7 +387,7 @@ namespace PD.OpenMS.AdapterNodes
                     var user_params = peptide_hit.SelectNodes("userParam");
 
                     bool decoy = false;
-                    
+
                     foreach (XmlNode up in user_params)
                     {
                         if (up.Attributes["name"].Value == "pd_peptide_id")
@@ -355,7 +415,7 @@ namespace PD.OpenMS.AdapterNodes
                         continue;
                     }
 
-                    var psm = eds_reader.Read<TargetPeptideSpectrumMatch>(new object[] {workflow_id, pd_peptide_id});
+                    var psm = eds_reader.Read<TargetPeptideSpectrumMatch>(new object[] { workflow_id, pd_peptide_id });
 
                     psms_with_quantification.Add(Tuple.Create(psm, new_consensus_item));
 
@@ -377,102 +437,67 @@ namespace PD.OpenMS.AdapterNodes
                     var feat_transf_rt = Convert.ToDouble(element.Attributes["rt"].Value) / 60.0;
                     var feat_orig_rt = Convert.ToDouble(consensus_dict[feat_id].Attributes["rt"].Value) / 60.0;
                     var feat_map = Convert.ToInt32(element.Attributes["map"].Value);
-                    new_consensus_item.SetValue(feature_table_column_names[feat_map], feat_intensity);        
+                    new_consensus_item.SetValue(feature_table_column_names[feat_map], feat_intensity);
                 }
                 new_consensus_items.Add(new_consensus_item);
-                
+
             }
             EntityDataService.InsertItems(new_consensus_items);
             EntityDataService.ConnectItems(psms_with_quantification);
-
-            // Filtered for IDMapper
-            var filtered_idxml_filename = Path.Combine(NodeScratchDirectory, "filtered_psms.idXML");
-            var filtered_indexed_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms_peptides_indexed.idXML");
-            var idmapped_consensus_xml = Path.Combine(NodeScratchDirectory, "idmapped.consensusXML");
-
-            exportPSMsToIdXML(filtered_idxml_filename, true);
-            runPeptideIndexer(filtered_idxml_filename, filtered_indexed_idxml);
-            runIDMapper(cn_output_file, filtered_idxml_filename, idmapped_consensus_xml);
-
-            // Unfiltered for Fido
-            var idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms.idXML");
-            var indexed_idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms_peptides_indexed.idXML");
-
-            exportPSMsToIdXML(idxml_filename_for_fido, false);
-            runPeptideIndexer(idxml_filename_for_fido, indexed_idxml_filename_for_fido);
-
-            // ================================================ Run FidoAdapter ============================================================
-
-            var fido_exec_path = Path.Combine(m_openms_dir, @"bin/FidoAdapter.exe");
-            var fido_ini_path = Path.Combine(NodeScratchDirectory, @"FidoAdapter.ini");
-            var fido_output_file = Path.Combine(NodeScratchDirectory, "fido_results.idXML");
-
-            if (param_protein_quant_mode.Value != "unique")
-            {
-                Dictionary<string, string> fido_params = new Dictionary<string, string> {
-                            {"in", indexed_idxml_filename_for_fido},
-                            {"out", fido_output_file},
-                            {"greedy_group_resolution", param_protein_quant_mode.Value == "greedy" ? "true" : "false"},
-                            {"threads", param_num_threads.ToString()}};
-                OpenMSCommons.createDefaultINI(fido_exec_path, fido_ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
-                OpenMSCommons.writeItem(fido_ini_path, fido_params);
-
-                SendAndLogMessage("Starting FidoAdapter");
-                OpenMSCommons.RunTool(fido_exec_path, fido_ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
-            }
-                        
-            // ================================================ Run ProteinQuantifier ============================================================
-
-            var pq_exec_path = Path.Combine(m_openms_dir, @"bin/ProteinQuantifier.exe");
-            var pq_ini_path = Path.Combine(NodeScratchDirectory, @"ProteinQuantifier.ini");
-            var pq_pep_output_file = Path.Combine(NodeScratchDirectory, "pq_peptides.csv");
-            var pq_prot_output_file = Path.Combine(NodeScratchDirectory, "pq_proteins.csv");
-
-            Dictionary<string, string> pq_params = new Dictionary<string, string> {
-                            {"in", idmapped_consensus_xml},
-                            {"out", pq_prot_output_file},
-                            {"peptide_out", pq_pep_output_file},
-                            {"top", param_top.ToString()},
-                            {"average", param_averaging.Value},
-                            {"include_all", param_include_all.ToString().ToLower()},
-                            {"filter_charge", param_filter_charge.ToString().ToLower()},
-                            {"fix_peptides", param_fix_peptides.ToString().ToLower()},
-                            {"protein_groups", param_protein_quant_mode.Value != "unique" ? fido_output_file : ""},
-                            {"threads", param_num_threads.ToString()}};
-            OpenMSCommons.createDefaultINI(pq_exec_path, pq_ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
-            OpenMSCommons.writeItem(pq_ini_path, pq_params);
-
-            SendAndLogMessage("Starting ProteinQuantifier");
-            OpenMSCommons.RunTool(pq_exec_path, pq_ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
-
-            m_current_step += m_num_files;
-            ReportTotalProgress((double)m_current_step / m_num_steps);
-
-            parsePQPeptides(pq_pep_output_file);
-            parsePQProteins(pq_prot_output_file);
-
-            FireProcessingFinishedEvent(new SingleResultsArguments(new[] { ProteomicsDataTypes.Psms }, this));
         }
 
-        private string RunConsensusMapNormalizer(string idmapped_consensus_xml)
+        private Dictionary<string, XmlElement> BuildConsensusXMLWithOrigRTs(List<FeatureXMLFile> featurexml_files_orig)
         {
-            // ================================================ Run ConsensusMapNormalizer ============================================================
+            // Read consensusXML
+            XmlDocument consensus_doc = new XmlDocument();
+            consensus_doc.Load(m_consensusxml);
+            XmlNodeList consensus_list = consensus_doc.GetElementsByTagName("element");
 
-            var cn_exec_path = Path.Combine(m_openms_dir, @"bin/ConsensusMapNormalizer.exe");
-            var cn_ini_path = Path.Combine(NodeScratchDirectory, @"ConsensusMapNormalizer.ini");
-            var cn_output_file = Path.Combine(NodeScratchDirectory, "normalized.consensusXML");
+            // Create dictionary of elements, in which we overwrite the original RT. 
+            // Note: this mutates XmlDocument consensus_doc which we then save into new file
+            Dictionary<string, XmlElement> consensus_dict = new Dictionary<string, XmlElement>(consensus_list.Count);
+            foreach (XmlElement element in consensus_list)
+            {
+                consensus_dict[element.Attributes["id"].Value] = element;
+            }
+
+            // The consensus contains feature IDs from all featureXMLs, thus we have to look into all featureXML files
+            for (int file_id = 0; file_id < m_num_files; file_id++)
+            {
+                XmlDocument orig_feat_xml = new XmlDocument();
+                orig_feat_xml.Load(featurexml_files_orig[file_id].get_name());
+                XmlNodeList orig_featurelist = orig_feat_xml.GetElementsByTagName("feature");
+                foreach (XmlElement feature in orig_featurelist)
+                {
+                    var id = feature.Attributes["id"].Value.Substring(2);
+                    var rt = feature.SelectNodes("position")[0].InnerText;
+                    consensus_dict[id].SetAttribute("rt", rt);
+                }
+            }
+
+            // Save consensusXML file with original RTs
+            m_consensusxml_orig_rt = Path.Combine(NodeScratchDirectory, "Consensus_orig_RT.consensusXML");
+            consensus_doc.Save(m_consensusxml_orig_rt);
+            return consensus_dict;
+        }
+
+        private string RunConsensusMapNormalizer(string consensusxml_file)
+        {
+            var exec_path = Path.Combine(m_openms_dir, @"bin/ConsensusMapNormalizer.exe");
+            var ini_path = Path.Combine(NodeScratchDirectory, @"ConsensusMapNormalizer.ini");
+            var output_file = Path.Combine(NodeScratchDirectory, "normalized.consensusXML");
 
             Dictionary<string, string> cn_params = new Dictionary<string, string> {
-                            {"in", idmapped_consensus_xml},
-                            {"out", cn_output_file},
+                            {"in", consensusxml_file},
+                            {"out", output_file},
                             {"algorithm_type", "median"},
                             {"threads", param_num_threads.ToString()}};
-            OpenMSCommons.createDefaultINI(cn_exec_path, cn_ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
-            OpenMSCommons.writeItem(cn_ini_path, cn_params);
+            OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.writeItem(ini_path, cn_params);
 
             SendAndLogMessage("Starting ConsensusMapNormalizer");
-            OpenMSCommons.RunTool(cn_exec_path, cn_ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
-            return cn_output_file;
+            OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            return output_file;
         }
 
         private List<string> SetupConsensusFeaturesTable(List<string> raw_files)
@@ -555,7 +580,6 @@ namespace PD.OpenMS.AdapterNodes
 
         private void AlignAndLink(out List<FeatureXMLFile> featurexml_files_orig, out List<string> raw_files)
         {
-
             List<FeatureXMLFile> aligned_features;
 
             ReadInputFiles(out featurexml_files_orig, out aligned_features, out raw_files);
@@ -572,7 +596,7 @@ namespace PD.OpenMS.AdapterNodes
                 out_files[0] = Path.Combine(NodeScratchDirectory,
                     Path.GetFileNameWithoutExtension(in_files[0])) +
                     ".consensusXML";
-                m_consensusxml = new ConsensusXMLFile(out_files[0]);
+                m_consensusxml = out_files[0];
 
                 var exec_path = Path.Combine(m_openms_dir, @"bin/FileConverter.exe");
                 Dictionary<string, string> convert_parameters = new Dictionary<string, string> {
@@ -635,7 +659,7 @@ namespace PD.OpenMS.AdapterNodes
                 }
                 //save as consensus.consensusXML, filenames are stored inside, file should normally be accessed from inside CD
                 out_files[0] = Path.Combine(NodeScratchDirectory, "featureXML_consensus.consensusXML");
-                m_consensusxml = new ConsensusXMLFile(out_files[0]);
+                m_consensusxml = out_files[0];
 
                 exec_path = Path.Combine(m_openms_dir, @"bin/FeatureLinkerUnlabeledQT.exe");
                 Dictionary<string, string> fl_unlabeled_parameters = new Dictionary<string, string> {
@@ -673,7 +697,7 @@ namespace PD.OpenMS.AdapterNodes
             orig_features = new List<FeatureXMLFile>(m_num_files);
             aligned_features = new List<FeatureXMLFile>(m_num_files);
 
-            
+
 
             raw_files_list = new List<string>();
             foreach (var item in all_custom_data_raw_files)
@@ -703,10 +727,7 @@ namespace PD.OpenMS.AdapterNodes
             }
         }
 
-        // =============================================================================================================================
-        // =============================================================================================================================
-
-        public void exportPSMsToIdXML(string idxml_filename, bool filter=false)
+        public void exportPSMsToIdXML(string idxml_filename, bool filter = false)
         {
             XmlDocument doc = new XmlDocument();
             XmlNode docNode = doc.CreateXmlDeclaration("1.0", "UTF-8", null);
@@ -715,15 +736,15 @@ namespace PD.OpenMS.AdapterNodes
             // ------------------------------------------------------
 
             var idxml_node = doc.CreateElement("IdXML");
-            
+
             var version_attr = doc.CreateAttribute("version");
             version_attr.Value = "1.2";
             idxml_node.Attributes.Append(version_attr);
-            
+
             var schema_attr = doc.CreateAttribute("xsi:noNamespaceSchemaLocation");
             schema_attr.Value = "http://open-ms.sourceforge.net/schemas/IdXML_1_2.xsd";
             idxml_node.Attributes.Append(schema_attr);
-            
+
             var xmlns_attr = doc.CreateAttribute("xmlns:xsi");
             xmlns_attr.Value = "http://www.w3.org/2001/XMLSchema-instance";
             idxml_node.Attributes.Append(xmlns_attr);
@@ -745,7 +766,7 @@ namespace PD.OpenMS.AdapterNodes
             var dbv_attr = doc.CreateAttribute("db_version");
             dbv_attr.Value = "";
             search_params_node.Attributes.Append(dbv_attr);
-            
+
             var tax_attr = doc.CreateAttribute("taxonomy");
             tax_attr.Value = "0";
             search_params_node.Attributes.Append(tax_attr);
@@ -779,15 +800,15 @@ namespace PD.OpenMS.AdapterNodes
             // ------------------------------------------------------
 
             var id_run_node = doc.CreateElement("IdentificationRun");
-            
+
             var search_engine_attr = doc.CreateAttribute("search_engine");
             search_engine_attr.Value = "PD";
             id_run_node.Attributes.Append(search_engine_attr);
-            
+
             var sev_attr = doc.CreateAttribute("search_engine_version");
             sev_attr.Value = "2.0";
             id_run_node.Attributes.Append(sev_attr);
-            
+
             var date_attr = doc.CreateAttribute("date");
             date_attr.Value = "2011-11-11T11:11:11";
             id_run_node.Attributes.Append(date_attr);
@@ -805,26 +826,23 @@ namespace PD.OpenMS.AdapterNodes
                 var decoy_psms = EntityDataService.CreateEntityItemReader().ReadAllFlat<DecoyPeptideSpectrumMatch, MSnSpectrumInfo>();
                 idXMLExportHelper<DecoyPeptideSpectrumMatch>(doc, id_run_node, false);
             }
-            
+
             doc.Save(idxml_filename);
         }
 
-        // =============================================================================================================================
-        // =============================================================================================================================
-
-        void idXMLExportHelper<PSMType>(XmlDocument doc, XmlElement id_run_node, bool filter=false)
+        void idXMLExportHelper<PSMType>(XmlDocument doc, XmlElement id_run_node, bool filter = false)
             where PSMType : PeptideSpectrumMatch
         {
             bool decoy = typeof(PSMType) == typeof(DecoyPeptideSpectrumMatch);
 
             var psms = EntityDataService.CreateEntityItemReader().ReadAllFlat<PSMType, MSnSpectrumInfo>();
-            
+
             var scoreProperties = EntityDataService
                     .GetProperties<PSMType>(ScoreSemanticTerms.Score)
                     .Where(item => item.ValueType == typeof(double)
                             || item.ValueType == typeof(double?))
                     .ToArray();
-            
+
             PropertyAccessor<PSMType> pep_score = null;
             PropertyAccessor<PSMType> qvalue_score = null;
             foreach (var sp in scoreProperties)
@@ -840,7 +858,7 @@ namespace PD.OpenMS.AdapterNodes
                     qvalue_score = sp;
                 }
             }
-            
+
             foreach (var psm in psms)
             {
                 //retrieve scores for PSM
@@ -924,9 +942,6 @@ namespace PD.OpenMS.AdapterNodes
             }
         }
 
-        // =============================================================================================================================
-        // =============================================================================================================================
-
         void runIDMapper(string consensusxml_file, string idxml_file, string result_consensusxml_file)
         {
             var exec_path = Path.Combine(m_openms_dir, @"bin/IDMapper.exe");
@@ -946,9 +961,6 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("IDMapper");
             OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
         }
-
-        // =============================================================================================================================
-        // =============================================================================================================================
 
         void runPeptideIndexer(string input_file, string output_file)
         {
@@ -1014,9 +1026,6 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
         }
 
-        // =============================================================================================================================
-        // =============================================================================================================================
-
         void parsePQPeptides(string pq_pep_file)
         {
             EntityDataService.RegisterEntity<DechargedPeptideEntity>(ProcessingNodeNumber);
@@ -1025,7 +1034,7 @@ namespace PD.OpenMS.AdapterNodes
             string line;
 
             // ignore #comment lines
-            while ((line = reader.ReadLine()) != null && line.Substring(0, 1) == "#");
+            while ((line = reader.ReadLine()) != null && line.Substring(0, 1) == "#") ;
 
             // store header (should be ||| "peptide"       "protein"       "n_proteins"    "charge"        "abundance_1", ..., "abundance_n" |||)
             string header = line;
@@ -1046,7 +1055,7 @@ namespace PD.OpenMS.AdapterNodes
                 EntityDataService.RegisterProperties(ProcessingNodeNumber, new_abundance_column);
                 column_names.Add(new_abundance_column.Name);
             }
-           
+
             // parse peptides
             var new_peptide_items = new List<DechargedPeptideEntity>();
             int idCounter = 1;
@@ -1084,9 +1093,6 @@ namespace PD.OpenMS.AdapterNodes
             }
             EntityDataService.InsertItems(new_peptide_items);
         }
-
-        // =============================================================================================================================
-        // =============================================================================================================================
 
         void parsePQProteins(string pq_prot_file)
         {
