@@ -147,9 +147,9 @@
       <DependentUpon>ShowSpectrumButtonValueEditor.xaml</DependentUpon>
     </Compile>
     <Compile Include="OpenMSCommons.cs" />
-    <Compile Include="OpenMSEntities.cs" />
-    <Compile Include="OpenMSConsensus.cs" />
-    <Compile Include="OpenMSFeatureFinderNode.cs" />
+    <Compile Include="LFQProfilerEntities.cs" />
+    <Compile Include="LFQProfilerConsensusNode.cs" />
+    <Compile Include="LFQProfilerProcessingNode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="pwiz\LabelBoundsCache.cs" />
     <Compile Include="pwiz\MSGraphControl.cs">
@@ -164,7 +164,7 @@
     <Compile Include="pwiz\RNPxlSpectrumGraphItem.cs" />
     <Compile Include="RNPxlConsensusNode.cs" />
     <Compile Include="RNPxlItem.cs" />
-    <Compile Include="RNPxlNode.cs" />
+    <Compile Include="RNPxlProcessingNode.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />

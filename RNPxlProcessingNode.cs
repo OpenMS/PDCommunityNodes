@@ -933,12 +933,16 @@ namespace PD.OpenMS.AdapterNodes
                 throw new MagellanProcessingException(err);
             }
 
-            //estimate time needed
-            m_current_step = 0; // current step in internal pipeline, used for progress bar 
-            //number of steps: 
+            // prepare (super) approximate progress bars
+            int num_export_substeps = m_num_files;
+            int num_idfilter_substeps = 6 * Convert.ToInt32(param_general_run_id_filtering.Value);
+            int num_xicfilter_substeps = 1 * Convert.ToInt32(param_general_run_xic_filtering.Value);
+            int num_mapalignment_substeps = 5 * Convert.ToInt32(param_general_run_xic_filtering.Value && param_general_run_map_alignment.Value);
+            int num_rnpxl_substeps = 1;
+            m_num_steps = num_export_substeps + num_idfilter_substeps + num_xicfilter_substeps + num_mapalignment_substeps + num_rnpxl_substeps + 1;
+            m_current_step = 0; 
 
-            m_num_steps = 1 + m_num_files;
-
+            // input files and mzML-exported files
             var raw_files = new List<string>(m_num_files);
             var exported_files = new List<string>(m_num_files);
 
@@ -951,21 +955,18 @@ namespace PD.OpenMS.AdapterNodes
                 // Flatten the spectrum tree to a collection of spectrum descriptors. 
                 var spectrum_descriptors = spectrumDescriptorsGroupedByFileId.ToList();
 
-                // Export spectra to temporary *.mzML file. Only one file has this file_id
+                // Export spectra to temporary *.mzML file
                 var file_to_export = m_workflow_input_files.Where(w => w.FileID == file_id).ToList().First().PhysicalFileName;
                 var spectrum_export_file_name = Path.Combine(NodeScratchDirectory, Path.GetFileNameWithoutExtension(file_to_export)) + "_" + Guid.NewGuid().ToString().Replace('-', '_') + ".mzML";
 
                 raw_files.Add(file_to_export);
                 exported_files.Add(spectrum_export_file_name);
 
-                //SendAndLogMessage("Assigning fileID_{0} to input file {1}", file_id, file_to_export);
                 ExportSpectraToMzMl(spectrum_descriptors, spectrum_export_file_name);
-                //call this so that wrong progress gets overwritten fast
+
+                m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
-
-            m_current_step += 1;
-            ReportTotalProgress((double)m_current_step / m_num_steps);
 
             // ======================== Run OpenMS pipeline ==============================
 
@@ -1241,6 +1242,8 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("Preprocessing -- ID filtering -- Peptide identification");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
 
             // ==============================================================================================
             // =================================== STEP 2: Peptide Indexer ==================================
@@ -1266,6 +1269,9 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("Preprocessing -- ID filtering -- PeptideIndexer");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
+
             // ==============================================================================================
             // ================================= STEP 3: FalseDiscoveryRate =================================
             // ==============================================================================================
@@ -1285,6 +1291,8 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("Preprocessing -- ID filtering -- FalseDiscoveryRate");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
 
             // ==============================================================================================
             // ===================================== STEP 4: IDFilter =======================================
@@ -1306,6 +1314,8 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("Preprocessing -- ID filtering -- IDFilter");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
 
             // ==============================================================================================
             // ==================================== STEP 5: FileFilter ======================================
@@ -1328,6 +1338,8 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("Preprocessing -- ID filtering -- FileFilter");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
 
             return result_filename;
         }
@@ -1365,6 +1377,8 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("Preprocessing -- XIC filtering -- RNPxlXICFiltering");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
 
             return result_filename;
         }
@@ -1417,6 +1431,8 @@ namespace PD.OpenMS.AdapterNodes
                 SendAndLogMessage("Preprocessing -- Map alignment -- FeatureFinderCentroided");
                 OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+                m_current_step += 1;
+                ReportTotalProgress((double)m_current_step / m_num_steps);
             }
 
             // ==============================================================================================
@@ -1453,6 +1469,8 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("Preprocessing -- Map alignment -- MapAlignerPoseClustering");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
 
             // ==============================================================================================
             // ================================= STEP 3: MapRTTransformer ===================================
@@ -1493,6 +1511,8 @@ namespace PD.OpenMS.AdapterNodes
                 SendAndLogMessage("Preprocessing -- Map alignment -- MapRTTransformer");
                 OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+                m_current_step += 1;
+                ReportTotalProgress((double)m_current_step / m_num_steps);
             }
 
             return result;
@@ -1606,6 +1626,9 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("Starting main RNPxl search for file [{0}]", uv_mzml_filename);
             OpenMSCommons.RunTOPPTool(exec_path, rnpxlsearch_ini_file, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
+
             return result_tsv_filename;
         }
 
@@ -1630,6 +1653,8 @@ namespace PD.OpenMS.AdapterNodes
             //SendAndLogMessage("Preprocessing / DecoyDatabase");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
         }
 
         /// <summary>
