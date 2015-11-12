@@ -357,7 +357,7 @@ namespace PD.OpenMS.AdapterNodes
                 featurexml_out_files.Add(new FeatureXMLFile(out_files[i]));
 
                 ini_path = Path.Combine(NodeScratchDirectory, @"FeatureFinderMultiplex.ini");
-                OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
 
                 Dictionary<string, string> ff_parameters = new Dictionary<string, string> {
                             {"in", in_files[i]},
@@ -371,10 +371,10 @@ namespace PD.OpenMS.AdapterNodes
                             {"rt_min", param_minimum_rt.ToString()}
                 };
 
-                OpenMSCommons.writeItem(ini_path, ff_parameters);
+                OpenMSCommons.WriteParamsToINI(ini_path, ff_parameters);
 
                 SendAndLogMessage("Starting FeatureFinderMultiplex for file [{0}]", in_files[i]);
-                OpenMSCommons.RunTool(exec_path,
+                OpenMSCommons.RunTOPPTool(exec_path,
                                       ini_path,
                                       NodeScratchDirectory,
                                       new SendAndLogMessageDelegate(SendAndLogMessage),

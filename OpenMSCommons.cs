@@ -25,7 +25,7 @@ namespace PD.OpenMS.AdapterNodes
 
     public class OpenMSCommons
     {
-        public static void createDefaultINI(string exec_path, string ini_path, string scratch_dir, NodeLoggerErrorDelegate errorLog, NodeLoggerWarningDelegate warnLog)
+        public static void CreateDefaultINI(string exec_path, string ini_path, string scratch_dir, NodeLoggerErrorDelegate errorLog, NodeLoggerWarningDelegate warnLog)
         {
             var timer = Stopwatch.StartNew();
 
@@ -84,7 +84,7 @@ namespace PD.OpenMS.AdapterNodes
             }
         }
 
-        public static void writeItem(string ini_path, Dictionary<string, string> parameters)
+        public static void WriteParamsToINI(string ini_path, Dictionary<string, string> parameters)
         {
             XmlDocument doc = new XmlDocument();
             doc.Load(ini_path);
@@ -99,11 +99,10 @@ namespace PD.OpenMS.AdapterNodes
                     }
                 }
             }
-            //doc.Save(Path.Combine(NodeScratchDirectory, "ToolParameters.xml"));
             doc.Save(ini_path);
         }
 
-        public static void writeNodeItem(string ini_path, Triplet parameters)
+        public static void WriteNestedParamToINI(string ini_path, Triplet parameters)
         {
             XmlDocument doc = new XmlDocument();
             doc.Load(ini_path);
@@ -119,7 +118,7 @@ namespace PD.OpenMS.AdapterNodes
         }
 
         //Write ITEMLISTs, used for input or output file lists
-        public static void writeItemList(string[] vars, string ini_path, string mode, bool clear_list_first = false)
+        public static void WriteItemListToINI(string[] vars, string ini_path, string mode, bool clear_list_first = false)
         {
             XmlDocument doc = new XmlDocument();
             doc.Load(ini_path);
@@ -148,8 +147,8 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
-        //Write mz and rt parameters. different function than writeItem due to specific structure in considered tools
-        public static void writeThresholds(MassToleranceParameter mz_threshold, DoubleParameter rt_threshold, string ini_path)
+        //Write mz and rt parameters. different function than WriteParamsToINI due to specific structure in considered tools
+        public static void WriteThresholdsToINI(MassToleranceParameter mz_threshold, DoubleParameter rt_threshold, string ini_path)
         {
             XmlDocument doc = new XmlDocument();
             doc.Load(ini_path);
@@ -175,16 +174,15 @@ namespace PD.OpenMS.AdapterNodes
         }
 
         //execute specific OpenMS Tool (exec_path) with specified Ini (param_path)        
-        public static void RunTool(string exec_path,
-                                   string param_path,
-                                   string scratch_dir,
-                                   SendAndLogMessageDelegate logMessage,
-                                   SendAndLogTemporaryMessageDelegate logTmpMessage,
-                                   WriteLogMessageDelegate writeLogMessage,
-                                   NodeLoggerWarningDelegate nodeLogWarning,
-                                   NodeLoggerErrorDelegate nodeLogError)
+        public static void RunTOPPTool(string exec_path,
+                                       string param_path,
+                                       string scratch_dir,
+                                       SendAndLogMessageDelegate logMessage,
+                                       SendAndLogTemporaryMessageDelegate logTmpMessage,
+                                       WriteLogMessageDelegate writeLogMessage,
+                                       NodeLoggerWarningDelegate nodeLogWarning,
+                                       NodeLoggerErrorDelegate nodeLogError)
         {
-
             var timer = Stopwatch.StartNew();
 
             var process = new Process
@@ -323,7 +321,7 @@ namespace PD.OpenMS.AdapterNodes
             logMessage(String.Format("{0} tool processing took {1}.", exec_path, StringHelper.GetDisplayString(timer.Elapsed)));
         }
 
-        public static string modSequence(string unmodified_seq, string mods_str)
+        public static string ModSequence(string unmodified_seq, string mods_str)
         {
             if (mods_str == "") return unmodified_seq;
 

@@ -237,23 +237,23 @@ namespace PD.OpenMS.AdapterNodes
 
             // Export filtered PSMs to idXML
             var filtered_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms.idXML");
-            exportPSMsToIdXML(filtered_idxml, true);
+            ExportPSMsToIdXML(filtered_idxml, true);
 
             // Run PeptideIndexer in order to get peptide <-> protein associations
             var filtered_indexed_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms_peptides_indexed.idXML");
-            runPeptideIndexer(filtered_idxml, filtered_indexed_idxml);
+            RunPeptideIndexer(filtered_idxml, filtered_indexed_idxml);
 
             // Map IDs to intensity-normalized consensusXML file
             var idmapped_consensusxml = Path.Combine(NodeScratchDirectory, "idmapped.consensusXML");
-            runIDMapper(cn_output_file, filtered_idxml, idmapped_consensusxml);
+            RunIDMapper(cn_output_file, filtered_idxml, idmapped_consensusxml);
 
             // Export all PSMs (unfiltered!) for Fido
             var idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms.idXML");
-            exportPSMsToIdXML(idxml_filename_for_fido, false);
+            ExportPSMsToIdXML(idxml_filename_for_fido, false);
 
             // Run PeptideIndexer in order to get peptide <-> protein associations
             var indexed_idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms_peptides_indexed.idXML");
-            runPeptideIndexer(idxml_filename_for_fido, indexed_idxml_filename_for_fido);
+            RunPeptideIndexer(idxml_filename_for_fido, indexed_idxml_filename_for_fido);
 
             // Run FidoAdapter
             var fido_output_file = RunFidoAdapter(indexed_idxml_filename_for_fido);
@@ -283,17 +283,17 @@ namespace PD.OpenMS.AdapterNodes
                             {"fix_peptides", param_fix_peptides.ToString().ToLower()},
                             {"protein_groups", param_protein_quant_mode.Value != "unique" ? fido_idxml_file : ""},
                             {"threads", param_num_threads.ToString()}};
-            OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
-            OpenMSCommons.writeItem(ini_path, ini_params);
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
 
             SendAndLogMessage("Starting ProteinQuantifier");
-            OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
 
             m_current_step += m_num_files;
             ReportTotalProgress((double)m_current_step / m_num_steps);
 
-            parsePQPeptides(pep_output_file);
-            parsePQProteins(prot_output_file);
+            ParsePQPeptides(pep_output_file);
+            ParsePQProteins(prot_output_file);
         }
 
         private string RunFidoAdapter(string idxml_file)
@@ -309,11 +309,11 @@ namespace PD.OpenMS.AdapterNodes
                             {"out", output_file},
                             {"greedy_group_resolution", param_protein_quant_mode.Value == "greedy" ? "true" : "false"},
                             {"threads", param_num_threads.ToString()}};
-                OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
-                OpenMSCommons.writeItem(ini_path, ini_params);
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
 
                 SendAndLogMessage("Starting FidoAdapter");
-                OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
             }
             return output_file;
         }
@@ -492,11 +492,11 @@ namespace PD.OpenMS.AdapterNodes
                             {"out", output_file},
                             {"algorithm_type", "median"},
                             {"threads", param_num_threads.ToString()}};
-            OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
-            OpenMSCommons.writeItem(ini_path, cn_params);
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.WriteParamsToINI(ini_path, cn_params);
 
             SendAndLogMessage("Starting ConsensusMapNormalizer");
-            OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
             return output_file;
         }
 
@@ -606,9 +606,9 @@ namespace PD.OpenMS.AdapterNodes
                             {"out_type", "consensusXML"},
                             {"threads", param_num_threads.ToString()}};
                 ini_path = Path.Combine(NodeScratchDirectory, @"FileConverterDefault.ini");
-                OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
-                OpenMSCommons.writeItem(ini_path, convert_parameters);
-                OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.WriteParamsToINI(ini_path, convert_parameters);
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
                 //not really worth own progress
             }
             else if (m_num_files > 1)
@@ -631,14 +631,14 @@ namespace PD.OpenMS.AdapterNodes
                         {"threads", param_num_threads.ToString()}
                     };
                     ini_path = Path.Combine(NodeScratchDirectory, @"MapAlignerPoseClusteringDefault.ini");
-                    OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
-                    OpenMSCommons.writeItem(ini_path, map_parameters);
-                    OpenMSCommons.writeItemList(in_files, ini_path, "in");
-                    OpenMSCommons.writeItemList(out_files, ini_path, "out");
-                    OpenMSCommons.writeThresholds(param_mz_threshold, param_rt_threshold, ini_path);
+                    OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                    OpenMSCommons.WriteParamsToINI(ini_path, map_parameters);
+                    OpenMSCommons.WriteItemListToINI(in_files, ini_path, "in");
+                    OpenMSCommons.WriteItemListToINI(out_files, ini_path, "out");
+                    OpenMSCommons.WriteThresholdsToINI(param_mz_threshold, param_rt_threshold, ini_path);
 
                     SendAndLogMessage("Starting MapAlignerPoseClustering");
-                    OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                    OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
                     m_current_step += m_num_files;
                     ReportTotalProgress((double)m_current_step / m_num_steps);
                 }
@@ -668,13 +668,13 @@ namespace PD.OpenMS.AdapterNodes
                         {"threads", param_num_threads.ToString()}
                 };
                 ini_path = Path.Combine(NodeScratchDirectory, @"FeatureLinkerUnlabeledQTDefault.ini");
-                OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
-                OpenMSCommons.writeItem(ini_path, fl_unlabeled_parameters);
-                OpenMSCommons.writeItemList(in_files, ini_path, "in");
-                OpenMSCommons.writeThresholds(param_mz_threshold, param_rt_threshold, ini_path);
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.WriteParamsToINI(ini_path, fl_unlabeled_parameters);
+                OpenMSCommons.WriteItemListToINI(in_files, ini_path, "in");
+                OpenMSCommons.WriteThresholdsToINI(param_mz_threshold, param_rt_threshold, ini_path);
 
                 SendAndLogMessage("FeatureLinkerUnlabeledQT");
-                OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
                 m_current_step += m_num_files;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
@@ -727,7 +727,7 @@ namespace PD.OpenMS.AdapterNodes
             }
         }
 
-        public void exportPSMsToIdXML(string idxml_filename, bool filter = false)
+        public void ExportPSMsToIdXML(string idxml_filename, bool filter = false)
         {
             XmlDocument doc = new XmlDocument();
             XmlNode docNode = doc.CreateXmlDeclaration("1.0", "UTF-8", null);
@@ -819,18 +819,18 @@ namespace PD.OpenMS.AdapterNodes
 
             idxml_node.AppendChild(id_run_node);
 
-            idXMLExportHelper<TargetPeptideSpectrumMatch>(doc, id_run_node, filter);
+            IdXMLExportHelper<TargetPeptideSpectrumMatch>(doc, id_run_node, filter);
 
             if (!filter)
             {
                 var decoy_psms = EntityDataService.CreateEntityItemReader().ReadAllFlat<DecoyPeptideSpectrumMatch, MSnSpectrumInfo>();
-                idXMLExportHelper<DecoyPeptideSpectrumMatch>(doc, id_run_node, false);
+                IdXMLExportHelper<DecoyPeptideSpectrumMatch>(doc, id_run_node, false);
             }
 
             doc.Save(idxml_filename);
         }
 
-        void idXMLExportHelper<PSMType>(XmlDocument doc, XmlElement id_run_node, bool filter = false)
+        void IdXMLExportHelper<PSMType>(XmlDocument doc, XmlElement id_run_node, bool filter = false)
             where PSMType : PeptideSpectrumMatch
         {
             bool decoy = typeof(PSMType) == typeof(DecoyPeptideSpectrumMatch);
@@ -900,7 +900,7 @@ namespace PD.OpenMS.AdapterNodes
                 pep_hit_node.Attributes.Append(score_attr);
 
                 var seq_attr = doc.CreateAttribute("sequence");
-                seq_attr.Value = OpenMSCommons.modSequence(psm.Item1.Sequence, psm.Item1.Modifications);
+                seq_attr.Value = OpenMSCommons.ModSequence(psm.Item1.Sequence, psm.Item1.Modifications);
                 pep_hit_node.Attributes.Append(seq_attr);
 
                 var charge_attr = doc.CreateAttribute("charge");
@@ -942,11 +942,11 @@ namespace PD.OpenMS.AdapterNodes
             }
         }
 
-        void runIDMapper(string consensusxml_file, string idxml_file, string result_consensusxml_file)
+        void RunIDMapper(string consensusxml_file, string idxml_file, string result_consensusxml_file)
         {
             var exec_path = Path.Combine(m_openms_dir, @"bin/IDMapper.exe");
             var ini_path = Path.Combine(NodeScratchDirectory, @"IDMapper.ini");
-            OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
             Dictionary<string, string> idmapper_parameters = new Dictionary<string, string> {
                         {"mz_tolerance", param_id_mapping_mz_threshold.Value.Tolerance.ToString()},
                         {"rt_tolerance", (param_id_mapping_rt_threshold.Value * 60.0).ToString()},
@@ -955,14 +955,14 @@ namespace PD.OpenMS.AdapterNodes
                         {"out", result_consensusxml_file},
                         {"threads", param_num_threads.ToString()}
             };
-            OpenMSCommons.writeItem(ini_path, idmapper_parameters);
-            OpenMSCommons.writeNodeItem(ini_path, new Triplet("consensus", "use_subelements", "true"));
+            OpenMSCommons.WriteParamsToINI(ini_path, idmapper_parameters);
+            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("consensus", "use_subelements", "true"));
 
             SendAndLogMessage("IDMapper");
-            OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
         }
 
-        void runPeptideIndexer(string input_file, string output_file)
+        void RunPeptideIndexer(string input_file, string output_file)
         {
             string exec_path = "";
             string ini_path = "";
@@ -987,7 +987,7 @@ namespace PD.OpenMS.AdapterNodes
                 //decoy filename exists => we'll also add decoy sequences to our DB
                 exec_path = Path.Combine(m_openms_dir, @"bin/DecoyDatabase.exe");
                 ini_path = Path.Combine(NodeScratchDirectory, @"DecoyDatabase.ini");
-                OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
                 Dictionary<string, string> dd_parameters = new Dictionary<string, string> {
                         {"out", pi_fasta_fn},
                         {"append", "true"},
@@ -995,19 +995,19 @@ namespace PD.OpenMS.AdapterNodes
                         {"decoy_string", "REV_"},
                         {"threads", param_num_threads.ToString()}
                 };
-                OpenMSCommons.writeItem(ini_path, dd_parameters);
+                OpenMSCommons.WriteParamsToINI(ini_path, dd_parameters);
                 string[] in_list = new string[1];
                 in_list[0] = pi_fasta_fn;
-                OpenMSCommons.writeItemList(in_list, ini_path, "in");
+                OpenMSCommons.WriteItemListToINI(in_list, ini_path, "in");
 
                 SendAndLogMessage("DecoyDatabase");
-                OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
             }
 
             //run PeptideIndexer
             exec_path = Path.Combine(m_openms_dir, @"bin/PeptideIndexer.exe");
             ini_path = Path.Combine(NodeScratchDirectory, @"PeptideIndexer.ini");
-            OpenMSCommons.createDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
             Dictionary<string, string> pi_parameters = new Dictionary<string, string> {
                         {"in", input_file},
                         {"fasta", pi_fasta_fn},
@@ -1018,15 +1018,15 @@ namespace PD.OpenMS.AdapterNodes
                         {"allow_unmatched", "true"},
                         {"threads", param_num_threads.ToString()}
             };
-            OpenMSCommons.writeItem(ini_path, pi_parameters);
-            OpenMSCommons.writeNodeItem(ini_path, new Triplet("enzyme", "name", param_enzyme.Value));
-            OpenMSCommons.writeNodeItem(ini_path, new Triplet("enzyme", "specificity", "none"));
+            OpenMSCommons.WriteParamsToINI(ini_path, pi_parameters);
+            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("enzyme", "name", param_enzyme.Value));
+            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("enzyme", "specificity", "none"));
 
             SendAndLogMessage("PeptideIndexer");
-            OpenMSCommons.RunTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
         }
 
-        void parsePQPeptides(string pq_pep_file)
+        void ParsePQPeptides(string pq_pep_file)
         {
             EntityDataService.RegisterEntity<DechargedPeptideEntity>(ProcessingNodeNumber);
 
@@ -1094,7 +1094,7 @@ namespace PD.OpenMS.AdapterNodes
             EntityDataService.InsertItems(new_peptide_items);
         }
 
-        void parsePQProteins(string pq_prot_file)
+        void ParsePQProteins(string pq_prot_file)
         {
             EntityDataService.RegisterEntity<QuantifiedProteinEntity>(ProcessingNodeNumber);
 
