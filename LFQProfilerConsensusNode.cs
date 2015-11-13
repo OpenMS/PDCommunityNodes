@@ -201,9 +201,6 @@ namespace PD.OpenMS.AdapterNodes
         private int m_current_step;
         private int m_num_steps;
         private int m_num_files;
-        private readonly SpectrumDescriptorCollection m_spectrum_descriptors = new SpectrumDescriptorCollection();
-        private string m_consensusxml;
-        private string m_consensusxml_orig_rt;
 
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
@@ -214,20 +211,23 @@ namespace PD.OpenMS.AdapterNodes
             // OpenMS binary directory
             m_openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
 
-            // Original featureXML files will be used for reading original RTs later
+            // Extract input filenames from MSF file
             List<string> featurexml_files_orig;
-
-            // RAW file names will be used for display in their respective sample columns
             List<string> raw_files;
+            ReadInputFilenames(out featurexml_files_orig, out raw_files);
 
             // Run alignment and linking
-            AlignAndLink(out featurexml_files_orig, out raw_files);
+            string consensus_xml_file = AlignAndLink(featurexml_files_orig);
 
-            // Create dictionary {feature ID -> consensusXML element} with original RTs
-            Dictionary<string, XmlElement> consensus_dict = BuildConsensusXMLWithOrigRTs(featurexml_files_orig);
+            // Dictionary {feature ID -> consensusXML element} with original RTs
+            Dictionary<string, XmlElement> consensus_dict;
+            // ConsensusXML file with original RTs
+            string consensus_xml_file_orig_rt;
+            // Create them
+            BuildConsensusXMLWithOrigRTs(consensus_xml_file, featurexml_files_orig, out consensus_dict, out consensus_xml_file_orig_rt);
 
             // Normalize intensities
-            var cn_output_file = RunConsensusMapNormalizer(m_consensusxml_orig_rt);
+            var normalized_consensus_xml_file_orig_rt = RunConsensusMapNormalizer(consensus_xml_file_orig_rt);
 
             // Export filtered PSMs to idXML
             var filtered_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms.idXML");
@@ -239,7 +239,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // Map IDs to intensity-normalized consensusXML file
             var idmapped_consensusxml = Path.Combine(NodeScratchDirectory, "idmapped.consensusXML");
-            RunIDMapper(cn_output_file, filtered_idxml, idmapped_consensusxml);
+            RunIDMapper(normalized_consensus_xml_file_orig_rt, filtered_idxml, idmapped_consensusxml);
 
             // Set up consensus feature table ("Quantified features") and fill it
             var feature_table_column_names = SetupConsensusFeaturesTable(raw_files);
@@ -445,16 +445,16 @@ namespace PD.OpenMS.AdapterNodes
             EntityDataService.ConnectItems(psms_with_quantification);
         }
 
-        private Dictionary<string, XmlElement> BuildConsensusXMLWithOrigRTs(List<string> featurexml_files_orig)
+        private void BuildConsensusXMLWithOrigRTs(string consensus_xml_file, List<string> featurexml_files_orig, out Dictionary<string, XmlElement> consensus_dict, out string consensus_xml_file_orig_rt)
         {
             // Read consensusXML
             XmlDocument consensus_doc = new XmlDocument();
-            consensus_doc.Load(m_consensusxml);
+            consensus_doc.Load(consensus_xml_file);
             XmlNodeList consensus_list = consensus_doc.GetElementsByTagName("element");
 
             // Create dictionary of elements, in which we overwrite the original RT. 
             // Note: this mutates XmlDocument consensus_doc which we then save into new file
-            Dictionary<string, XmlElement> consensus_dict = new Dictionary<string, XmlElement>(consensus_list.Count);
+            consensus_dict = new Dictionary<string, XmlElement>(consensus_list.Count);
             foreach (XmlElement element in consensus_list)
             {
                 consensus_dict[element.Attributes["id"].Value] = element;
@@ -475,9 +475,8 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             // Save consensusXML file with original RTs
-            m_consensusxml_orig_rt = Path.Combine(NodeScratchDirectory, "Consensus_orig_RT.consensusXML");
-            consensus_doc.Save(m_consensusxml_orig_rt);
-            return consensus_dict;
+            consensus_xml_file_orig_rt = Path.Combine(NodeScratchDirectory, "Consensus_orig_RT.consensusXML");
+            consensus_doc.Save(consensus_xml_file_orig_rt);
         }
 
         private string RunConsensusMapNormalizer(string consensusxml_file)
@@ -579,13 +578,10 @@ namespace PD.OpenMS.AdapterNodes
             return column_names;
         }
 
-        private void AlignAndLink(out List<string> featurexml_files_orig, out List<string> raw_files)
+        private string AlignAndLink(List<string> featurexml_files_orig)
         {
-            List<string> aligned_featurexmls;
-
-            ReadInputFiles(out featurexml_files_orig, out aligned_featurexmls, out raw_files);
-
             //list of input and output files of specific OpenMS tools
+            string output_file = "";
             string[] in_files = new string[m_num_files];
             string[] out_files = new string[m_num_files];
             string ini_path = ""; //path to configuration files with parameters for the OpenMS Tool
@@ -597,7 +593,7 @@ namespace PD.OpenMS.AdapterNodes
                 out_files[0] = Path.Combine(NodeScratchDirectory,
                     Path.GetFileNameWithoutExtension(in_files[0])) +
                     ".consensusXML";
-                m_consensusxml = out_files[0];
+                output_file = out_files[0];
 
                 var exec_path = Path.Combine(m_openms_dir, @"bin/FileConverter.exe");
                 Dictionary<string, string> convert_parameters = new Dictionary<string, string> {
@@ -616,6 +612,7 @@ namespace PD.OpenMS.AdapterNodes
             else if (m_num_files > 1)
             {
                 string exec_path;
+                var aligned_featurexmls = new List<string>();
                 if (param_perform_map_alignment.Value)
                 {
                     exec_path = Path.Combine(m_openms_dir, @"bin/MapAlignerPoseClustering.exe");
@@ -661,7 +658,7 @@ namespace PD.OpenMS.AdapterNodes
                 }
                 //save as consensus.consensusXML, filenames are stored inside, file should normally be accessed from inside CD
                 out_files[0] = Path.Combine(NodeScratchDirectory, "featureXML_consensus.consensusXML");
-                m_consensusxml = out_files[0];
+                output_file = out_files[0];
 
                 exec_path = Path.Combine(m_openms_dir, @"bin/FeatureLinkerUnlabeledQT.exe");
                 Dictionary<string, string> fl_unlabeled_parameters = new Dictionary<string, string> {
@@ -680,9 +677,10 @@ namespace PD.OpenMS.AdapterNodes
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
+            return output_file;
         }
 
-        private void ReadInputFiles(out List<string> orig_features, out List<string> aligned_features, out List<string> raw_files_list)
+        private void ReadInputFilenames(out List<string> orig_features, out List<string> raw_files)
         {
             //Read in featureXmls contained in the study result folder, read only those associated with the project msf
             var all_custom_data_raw_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "RawFiles").ToDictionary(c => c.WorkflowID, c => c);
@@ -695,21 +693,19 @@ namespace PD.OpenMS.AdapterNodes
                 m_num_files += ((string)item.Value.CustomValue).Split(',').Count();
             }
 
-            raw_files_list = new List<string>();
+            raw_files = new List<string>();
             foreach (var item in all_custom_data_raw_files)
             {
-                var raw_files = (string)item.Value.CustomValue;
-                var tmp = new List<string>(raw_files.Split(','));
+                var raw_files_str = (string)item.Value.CustomValue;
+                var tmp = new List<string>(raw_files_str.Split(','));
 
                 foreach (var file_name in tmp)
                 {
-                    raw_files_list.Add(file_name);
+                    raw_files.Add(file_name);
                 }
             }
 
             orig_features = new List<string>(m_num_files);
-            aligned_features = new List<string>(m_num_files);
-
             foreach (var item in all_custom_data_featurexml_files)
             {
                 var featurexml_files = (string)item.Value.CustomValue;
