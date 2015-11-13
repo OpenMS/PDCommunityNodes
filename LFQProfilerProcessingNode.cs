@@ -165,26 +165,9 @@ namespace PD.OpenMS.AdapterNodes
             m_workflow_input_files = EntityDataService.CreateEntityItemReader().ReadAll<WorkflowInputFile>().ToList();
             m_num_files = m_workflow_input_files.Count;
 
-            //estimate time needed
-            m_current_step = 0; // current step in internal pipeline, used for progress bar 
-            //number of steps: 
-
-            m_num_steps = 1 + m_num_files;
-            /*
-            m_num_steps = 1 + //export to MzML: 1
-                m_num_files +          //1 per file for Feature Finder
-                m_num_files +          //1 per file for Import of OpenMS results
-                3 * m_num_files + m_num_files +     //XIC: 3 per file create, 1 persist
-                m_num_files;           //mass trace: 1 per persist
-            if (m_num_files > 1)
-            {
-                m_num_steps += m_num_files; //FeatureLinking
-            }
-            if (m_num_files > 1 && param_perform_map_alignment.Value)
-            {
-                m_num_steps += m_num_files ; //MapAlign
-            }
-            */
+            // set up approximate progress bars
+            m_current_step = 0;
+            m_num_steps = 1 + 2 * m_num_files;
 
             var raw_files = new List<string>(m_num_files);
             var exported_files = new List<string>(m_num_files);
@@ -209,9 +192,9 @@ namespace PD.OpenMS.AdapterNodes
                     raw_files.Add(file_to_export);
                     exported_files.Add(spectrum_export_file_name);
 
-                    //SendAndLogMessage("Assigning fileID_{0} to input file {1}", file_id, file_to_export);
                     ExportSpectraToMzMl(spectrum_descriptors, spectrum_export_file_name);
-                    //call this so that wrong progress gets overwritten fast
+
+                    m_current_step += 1;
                     ReportTotalProgress((double)m_current_step / m_num_steps);
                 }
             }
@@ -223,25 +206,8 @@ namespace PD.OpenMS.AdapterNodes
             var mzml_files_string = string.Join(",", exported_files.ToArray());
             ProcessingServices.CustomDataService.WriteString(custom_mzml_data_field, ProcessingNodeNumber, mzml_files_string);
 
-            m_current_step += 1;
-            ReportTotalProgress((double)m_current_step / m_num_steps);
-
-            //After all files are exported, run pipeline. SendResults in RunPipeline, due to availability of filenames
-            //Pipeline should only be run once for all supplied files
+            // Run pipeline
             RunOpenMsPipeline(exported_files);
-
-            /* old stuff for copying files from scratch to result folder ?!
-            if (...)
-            {
-                foreach (var file in Directory.GetFiles(NodeScratchDirectory))
-                {
-                    if (...)
-                    {
-                        File.Copy(file, Path.Combine(OutputDirectory, Path.GetFileName(file)));
-                    }
-                }
-            }
-            */ 
 
 			// Fire Finish event
 			FireProcessingFinishedEvent(new ResultsArguments());
