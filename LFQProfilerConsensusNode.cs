@@ -202,12 +202,15 @@ namespace PD.OpenMS.AdapterNodes
         private int m_num_steps;
         private int m_num_files;
         private readonly SpectrumDescriptorCollection m_spectrum_descriptors = new SpectrumDescriptorCollection();
-        private List<WorkflowInputFile> m_workflow_input_files;
         private string m_consensusxml;
         private string m_consensusxml_orig_rt;
 
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
+            // Set up approximate progress bar
+            m_num_steps = 10;
+            m_current_step = 0;
+
             // OpenMS binary directory
             m_openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
 
@@ -283,8 +286,7 @@ namespace PD.OpenMS.AdapterNodes
 
             SendAndLogMessage("Starting ProteinQuantifier");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
-
-            m_current_step += m_num_files;
+            m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
 
             ParsePQPeptides(pep_output_file);
@@ -309,6 +311,8 @@ namespace PD.OpenMS.AdapterNodes
 
                 SendAndLogMessage("Starting FidoAdapter");
                 OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                m_current_step += 1;
+                ReportTotalProgress((double)m_current_step / m_num_steps);
             }
             return output_file;
         }
@@ -492,6 +496,8 @@ namespace PD.OpenMS.AdapterNodes
 
             SendAndLogMessage("Starting ConsensusMapNormalizer");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
             return output_file;
         }
 
@@ -604,7 +610,8 @@ namespace PD.OpenMS.AdapterNodes
                 OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
                 OpenMSCommons.WriteParamsToINI(ini_path, convert_parameters);
                 OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
-                //not really worth own progress
+                m_current_step += 1;
+                ReportTotalProgress((double)m_current_step / m_num_steps);
             }
             else if (m_num_files > 1)
             {
@@ -634,7 +641,7 @@ namespace PD.OpenMS.AdapterNodes
 
                     SendAndLogMessage("Starting MapAlignerPoseClustering");
                     OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
-                    m_current_step += m_num_files;
+                    m_current_step += 1;
                     ReportTotalProgress((double)m_current_step / m_num_steps);
                 }
 
@@ -670,7 +677,7 @@ namespace PD.OpenMS.AdapterNodes
 
                 SendAndLogMessage("FeatureLinkerUnlabeledQT");
                 OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
-                m_current_step += m_num_files;
+                m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
         }
@@ -955,6 +962,8 @@ namespace PD.OpenMS.AdapterNodes
 
             SendAndLogMessage("IDMapper");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
         }
 
         void RunPeptideIndexer(string input_file, string output_file)
@@ -997,6 +1006,8 @@ namespace PD.OpenMS.AdapterNodes
 
                 SendAndLogMessage("DecoyDatabase");
                 OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                m_current_step += 1;
+                ReportTotalProgress((double)m_current_step / m_num_steps);
             }
 
             //run PeptideIndexer
@@ -1019,6 +1030,8 @@ namespace PD.OpenMS.AdapterNodes
 
             SendAndLogMessage("PeptideIndexer");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
         }
 
         void ParsePQPeptides(string pq_pep_file)
