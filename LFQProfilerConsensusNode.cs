@@ -686,42 +686,35 @@ namespace PD.OpenMS.AdapterNodes
         {
             //Read in featureXmls contained in the study result folder, read only those associated with the project msf
             var all_custom_data_raw_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "RawFiles").ToDictionary(c => c.WorkflowID, c => c);
-            var all_custom_data_mzml_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "MzMLFiles").ToDictionary(c => c.WorkflowID, c => c);
             var all_custom_data_featurexml_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "FeatureXmlFiles").ToDictionary(c => c.WorkflowID, c => c);
+            //var all_custom_data_mzml_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "MzMLFiles").ToDictionary(c => c.WorkflowID, c => c);
 
             m_num_files = 0;
             foreach (var item in all_custom_data_featurexml_files)
             {
-                //TODO: ugly
                 m_num_files += ((string)item.Value.CustomValue).Split(',').Count();
             }
-
-            orig_features = new List<string>(m_num_files);
-            aligned_features = new List<string>(m_num_files);
-
-
 
             raw_files_list = new List<string>();
             foreach (var item in all_custom_data_raw_files)
             {
                 var raw_files = (string)item.Value.CustomValue;
-                raw_files_list = new List<string>(raw_files.Split(','));
-                //TODO: do we need them? not used ATM.
+                var tmp = new List<string>(raw_files.Split(','));
+
+                foreach (var file_name in tmp)
+                {
+                    raw_files_list.Add(file_name);
+                }
             }
 
-            foreach (var item in all_custom_data_mzml_files)
-            {
-                var mzml_files = (string)item.Value.CustomValue;
-                var mzml_files_list = new List<string>(mzml_files.Split(','));
-                //TODO: do we need them? not used ATM.
-            }
+            orig_features = new List<string>(m_num_files);
+            aligned_features = new List<string>(m_num_files);
 
             foreach (var item in all_custom_data_featurexml_files)
             {
                 var featurexml_files = (string)item.Value.CustomValue;
                 var featurexml_files_list = new List<string>(featurexml_files.Split(','));
 
-                //TODO: understand implications of different worfklow IDs...
                 foreach (var file_name in featurexml_files_list)
                 {
                     orig_features.Add(file_name);
