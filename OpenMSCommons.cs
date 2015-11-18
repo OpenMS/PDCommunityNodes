@@ -321,27 +321,53 @@ namespace PD.OpenMS.AdapterNodes
             logMessage(String.Format("{0} tool processing took {1}.", exec_path, StringHelper.GetDisplayString(timer.Elapsed)));
         }
 
-        public static string ModSequence(string unmodified_seq, string mods_str)
+        public static string ModSequence(string seq, string mods_str)
         {
-            if (mods_str == "") return unmodified_seq;
+            if (mods_str == "") return seq;
+
+            string[] mods = Regex.Split(mods_str, "; ");
+            var actual_mods = new List<string>();
+
+            // WORKAROUND: PD uses "modifications" like "X1(L)" to indicate that AA X at pos. 1 is actually a leucine
+            // Substitute these before doing anything else, since "X" AAs might also be actually modified in addition
+            // to the "modifications" indicating the actual AA.
+            var tmp_seq = new StringBuilder(seq);
+            string aa_letters = "ARNDCEQGHILKMFPSTWYV";
+            foreach (string m in mods)
+            {
+                bool actual_mod = true;
+                // have something like "M11(Oxidation) or N-Term(Carbamyl) or X8(L)"
+                string[] parts = m.Split('(');
+
+                if (!aa_letters.Contains(parts[0].Substring(0,1)))
+                {
+                    // modified AA character is not an actual AA (probably B, J, X, or Z)
+                    // ==> now, also check if "modification" consists of just 1 letter representing an AA
+                    if (parts[1].Length == 2 && aa_letters.Contains(parts[1][0]))
+                    {
+                        // substitute
+                        Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
+                        tmp_seq[aa_pos - 1] = parts[1][0]; //TODO bounds check
+                        // discard this "modification"
+                        actual_mod = false;
+                    }
+                }
+                if (actual_mod)
+                {
+                    actual_mods.Add(m);
+                }
+            }
+            var unmodified_seq = tmp_seq.ToString();
 
             var result = "";
             var n_term_mod = "";
             var c_term_mod = "";
-            string[] mods = Regex.Split(mods_str, "; ");
-            //assumption: modifications in mods_str are in ascending order of AA position
-            Int32 last_pos = 0;
-            foreach (string m in mods)
+            Int32 last_pos = 0;    
+            //assumption: modifications are in ascending order of AA position
+            foreach (string m in actual_mods)
             {
                 // have something like "M11(Oxidation) or N-Term(Carbamyl)"
                 string[] parts = m.Split('(');
-
-                // WORKAROUND: ignore modified X AAs
-                // (TODO: find out what modifications like X1(L) are supposed to mean)
-                if (parts[0].Substring(0,1) == "X")
-                {
-                    continue;
-                }
 
                 // N-term
                 if (parts[0].Length >= 6 && parts[0].Substring(0, 6) == "N-Term")
