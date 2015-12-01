@@ -869,13 +869,28 @@ namespace PD.OpenMS.AdapterNodes
                 var pep_id_node = doc.CreateElement("PeptideIdentification");
                 id_run_node.AppendChild(pep_id_node);
 
-                var st_attr = doc.CreateAttribute("score_type");
-                st_attr.Value = "Percolator q-Value";
-                pep_id_node.Attributes.Append(st_attr);
+                if (filter)
+                {
+                    // use normal q-value scores
+                    var st_attr = doc.CreateAttribute("score_type");
+                    st_attr.Value = "Percolator q-Value";
+                    pep_id_node.Attributes.Append(st_attr);
 
-                var hsb_attr = doc.CreateAttribute("higher_score_better");
-                hsb_attr.Value = "false";
-                pep_id_node.Attributes.Append(hsb_attr);
+                    var hsb_attr = doc.CreateAttribute("higher_score_better");
+                    hsb_attr.Value = "false";
+                    pep_id_node.Attributes.Append(hsb_attr);
+                }
+                else 
+                {
+                    // this file will be a Fido input => use posterior probability
+                    var st_attr = doc.CreateAttribute("score_type");
+                    st_attr.Value = "Posterior Probability_score";
+                    pep_id_node.Attributes.Append(st_attr);
+
+                    var hsb_attr = doc.CreateAttribute("higher_score_better");
+                    hsb_attr.Value = "true";
+                    pep_id_node.Attributes.Append(hsb_attr);
+                }
 
                 var mz_attr = doc.CreateAttribute("MZ");
                 mz_attr.Value = psm.Item2[0].MassOverCharge.ToString();
@@ -891,7 +906,8 @@ namespace PD.OpenMS.AdapterNodes
                 pep_id_node.AppendChild(pep_hit_node);
 
                 var score_attr = doc.CreateAttribute("score");
-                score_attr.Value = qvalue_score_val.ToString();
+                // use q-values when filtering, otherwise (for Fido input) use posterior probability
+                score_attr.Value = filter ? qvalue_score_val.ToString() : (1.0 - pep_score_val).ToString();
                 pep_hit_node.Attributes.Append(score_attr);
 
                 var seq_attr = doc.CreateAttribute("sequence");
@@ -902,21 +918,26 @@ namespace PD.OpenMS.AdapterNodes
                 charge_attr.Value = psm.Item1.Charge.ToString();
                 pep_hit_node.Attributes.Append(charge_attr);
 
-                // posterior probability score as UserParam for Fido
-                var user_param = doc.CreateElement("UserParam");
-                pep_hit_node.AppendChild(user_param);
+                XmlElement user_param = null;
+                XmlAttribute type_attr = null;
+                XmlAttribute name_attr = null;
+                XmlAttribute value_attr = null;
 
-                var type_attr = doc.CreateAttribute("type");
-                type_attr.Value = "float";
-                user_param.Attributes.Append(type_attr);
+                //// posterior probability score as UserParam for Fido
+                //user_param = doc.CreateElement("UserParam");
+                //pep_hit_node.AppendChild(user_param);
 
-                var name_attr = doc.CreateAttribute("name");
-                name_attr.Value = "Posterior Probability_score";
-                user_param.Attributes.Append(name_attr);
+                //type_attr = doc.CreateAttribute("type");
+                //type_attr.Value = "float";
+                //user_param.Attributes.Append(type_attr);
 
-                var value_attr = doc.CreateAttribute("value");
-                value_attr.Value = (1.0 - pep_score_val).ToString();
-                user_param.Attributes.Append(value_attr);
+                //name_attr = doc.CreateAttribute("name");
+                //name_attr.Value = "Posterior Probability_score";
+                //user_param.Attributes.Append(name_attr);
+
+                //value_attr = doc.CreateAttribute("value");
+                //value_attr.Value = (1.0 - pep_score_val).ToString();
+                //user_param.Attributes.Append(value_attr);
 
                 // PD peptide ID for mapping back later
                 user_param = doc.CreateElement("UserParam");
