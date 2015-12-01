@@ -383,7 +383,11 @@ namespace PD.OpenMS.AdapterNodes
                     var peptide_hit = peptide_id.SelectSingleNode("PeptideHit");
                     Int32 pd_peptide_id = 0;
                     Int32 workflow_id = 0;
-                    var user_params = peptide_hit.SelectNodes("userParam");
+                    var up_1 = peptide_hit.SelectNodes("userParam");  // keep for backward compatibility
+                    var up_2 = peptide_hit.SelectNodes("UserParam");
+                    List<XmlNode> user_params = new List<XmlNode>();
+                    user_params.AddRange(up_1.Cast<XmlNode>());
+                    user_params.AddRange(up_2.Cast<XmlNode>());
 
                     bool decoy = false;
 
