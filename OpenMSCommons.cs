@@ -29,17 +29,19 @@ namespace PD.OpenMS.AdapterNodes
         {
             var timer = Stopwatch.StartNew();
 
+            var data_path = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(exec_path), @"../share/OpenMS"));
+            var process_startinfo = new ProcessStartInfo();
+            process_startinfo.EnvironmentVariables["OPENMS_DATA_PATH"] = data_path;
+            process_startinfo.FileName = exec_path;
+            process_startinfo.WorkingDirectory = scratch_dir;
+            process_startinfo.Arguments = " -write_ini " + String.Format("\"{0}\"", ini_path);
+            process_startinfo.UseShellExecute = false;
+            process_startinfo.RedirectStandardOutput = false;
+            process_startinfo.CreateNoWindow = false;
+
             var process = new Process
             {
-                StartInfo =
-                {
-                    FileName = exec_path,
-                    WorkingDirectory = scratch_dir,
-                    Arguments = " -write_ini " + String.Format("\"{0}\"", ini_path),
-                    UseShellExecute = false,
-                    RedirectStandardOutput = false,
-                    CreateNoWindow = false
-                }
+                StartInfo = process_startinfo
             };
 
             try
@@ -48,7 +50,6 @@ namespace PD.OpenMS.AdapterNodes
 
                 try
                 {
-                    //process.PriorityClass = ProcessPriorityClass.BelowNormal;
                     process.WaitForExit();
                 }
                 catch (InvalidOperationException ex)
@@ -185,18 +186,19 @@ namespace PD.OpenMS.AdapterNodes
         {
             var timer = Stopwatch.StartNew();
 
+            var data_path = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(exec_path), @"../share/OpenMS"));
+            var process_startinfo = new ProcessStartInfo();
+            process_startinfo.EnvironmentVariables["OPENMS_DATA_PATH"] = data_path;
+            process_startinfo.FileName = exec_path;
+            process_startinfo.WorkingDirectory = scratch_dir;
+            process_startinfo.Arguments = " -ini " + String.Format("\"{0}\"", param_path);
+            process_startinfo.UseShellExecute = false;
+            process_startinfo.RedirectStandardOutput = true;
+            process_startinfo.CreateNoWindow = false;
+
             var process = new Process
             {
-                StartInfo =
-                {
-                    FileName = exec_path,
-                    WorkingDirectory = scratch_dir,
-                    Arguments = " -ini " + String.Format("\"{0}\"", param_path),
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = false,
-                    //WindowStyle = ProcessWindowStyle.Hidden
-                }
+                StartInfo = process_startinfo
             };
 
             logTmpMessage(String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
