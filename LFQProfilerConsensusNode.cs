@@ -198,6 +198,7 @@ namespace PD.OpenMS.AdapterNodes
         # endregion
 
         private string m_openms_dir;
+        private string m_openms_fasta_file;
         private int m_current_step;
         private int m_num_steps;
         private int m_num_files;
@@ -210,6 +211,9 @@ namespace PD.OpenMS.AdapterNodes
 
             // OpenMS binary directory
             m_openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
+
+            // FASTA file (exported from PD, decoys will be added)
+            m_openms_fasta_file = "";
 
             // Extract input filenames from MSF file
             List<string> featurexml_files_orig;
@@ -994,20 +998,19 @@ namespace PD.OpenMS.AdapterNodes
                 throw new FileNotFoundException(String.Format("The FASTA file {0} cannot be found!", param_fasta_db.Value.VirtualFileName), fasta_filename);
             }
 
-            string pi_fasta_fn = Path.Combine(NodeScratchDirectory, @"peptide_indexer.fasta");
-            ProcessingServices.FastaFileService.CreateOriginalFastaFile(param_fasta_db.Value, pi_fasta_fn, true); //TODO true / false?
+            m_openms_fasta_file = Path.Combine(NodeScratchDirectory, @"peptide_indexer.fasta");
+            ProcessingServices.FastaFileService.CreateOriginalFastaFile(param_fasta_db.Value, m_openms_fasta_file, true); //TODO true / false?
 
-            string decoy_filename = Path.Combine(
-                Path.GetDirectoryName(fasta_filename),
-                Path.GetFileNameWithoutExtension(fasta_filename) + "_reversed" + Path.GetExtension(fasta_filename));
-            if (File.Exists(decoy_filename))
+            //string decoy_filename = Path.Combine(
+            //    Path.GetDirectoryName(fasta_filename),
+            //    Path.GetFileNameWithoutExtension(fasta_filename) + "_reversed" + Path.GetExtension(fasta_filename));
+            //if (File.Exists(decoy_filename))
             {
-                //decoy filename exists => we'll also add decoy sequences to our DB
                 exec_path = Path.Combine(m_openms_dir, @"bin/DecoyDatabase.exe");
                 ini_path = Path.Combine(NodeScratchDirectory, @"DecoyDatabase.ini");
                 OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
                 Dictionary<string, string> dd_parameters = new Dictionary<string, string> {
-                        {"out", pi_fasta_fn},
+                        {"out", m_openms_fasta_file},
                         {"append", "true"},
                         {"decoy_string_position", "prefix"},
                         {"decoy_string", "REV_"},
@@ -1015,7 +1018,7 @@ namespace PD.OpenMS.AdapterNodes
                 };
                 OpenMSCommons.WriteParamsToINI(ini_path, dd_parameters);
                 string[] in_list = new string[1];
-                in_list[0] = pi_fasta_fn;
+                in_list[0] = m_openms_fasta_file;
                 OpenMSCommons.WriteItemListToINI(in_list, ini_path, "in");
 
                 SendAndLogMessage("DecoyDatabase");
@@ -1030,7 +1033,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
             Dictionary<string, string> pi_parameters = new Dictionary<string, string> {
                         {"in", input_file},
-                        {"fasta", pi_fasta_fn},
+                        {"fasta", m_openms_fasta_file},
                         {"out", output_file},
                         {"prefix", "true"},
                         {"decoy_string", "REV_"},
@@ -1081,11 +1084,14 @@ namespace PD.OpenMS.AdapterNodes
             // parse peptides
             var new_peptide_items = new List<DechargedPeptideEntity>();
             int idCounter = 1;
+            Dictionary<string, string> fasta_acc_to_descr = BuildFastaAccToDescDict();
             while ((line = reader.ReadLine()) != null)
             {
                 string[] items = line.Split('\t');
                 string pep_seq = items[0].Substring(1, items[0].Length - 2);
                 string protein_accs = items[1].Substring(1, items[1].Length - 2);
+                var protein_acc_list = protein_accs.Split('/').ToList();
+                string protein_descs = string.Join(" /// ", from p in protein_acc_list where fasta_acc_to_descr.ContainsKey(p) select fasta_acc_to_descr[p]);
                 Int32 n_proteins = Convert.ToInt32(items[2]);
                 List<double?> abundances = new List<double?>();
                 for (int i = 4; i < items.Length; ++i)
@@ -1104,6 +1110,7 @@ namespace PD.OpenMS.AdapterNodes
                     Id = idCounter++,
                     sequence = pep_seq,
                     proteins = protein_accs,
+                    descriptions = protein_descs,
                     num_proteins = n_proteins
                 };
 
@@ -1146,13 +1153,16 @@ namespace PD.OpenMS.AdapterNodes
                 column_names.Add(new_abundance_column.Name);
             }
 
-            // parse peptides
+            // parse proteins
             var new_protein_items = new List<QuantifiedProteinEntity>();
             int idCounter = 1;
+            Dictionary<string, string> fasta_acc_to_descr = BuildFastaAccToDescDict();
             while ((line = reader.ReadLine()) != null)
             {
                 string[] items = line.Split('\t');
                 string protein_accs = items[0].Substring(1, items[0].Length - 2);
+                var protein_acc_list = protein_accs.Split('/').ToList();
+                string protein_descs = string.Join(" /// ", from p in protein_acc_list where fasta_acc_to_descr.ContainsKey(p) select fasta_acc_to_descr[p]);
                 Int32 n_proteins = Convert.ToInt32(items[1]);
                 Int32 n_peptides = Convert.ToInt32(items[3]);
                 List<double?> abundances = new List<double?>();
@@ -1171,6 +1181,7 @@ namespace PD.OpenMS.AdapterNodes
                     WorkflowID = WorkflowID,
                     Id = idCounter++,
                     proteins = protein_accs,
+                    descriptions = protein_descs,
                     num_proteins = n_proteins,
                     num_peptides = n_peptides
                 };
@@ -1182,6 +1193,39 @@ namespace PD.OpenMS.AdapterNodes
                 new_protein_items.Add(new_protein_item);
             }
             EntityDataService.InsertItems(new_protein_items);
+        }
+
+        Dictionary<string, string> BuildFastaAccToDescDict()
+        {
+            var result = new Dictionary<string,string>();
+            try
+            {
+                StreamReader reader = File.OpenText(m_openms_fasta_file);
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    line = line.Trim();
+                    if (line.Length == 0 || line[0] != '>')
+                    {
+                        continue;
+                    }
+                    line = line.Substring(1).Trim();
+                    var items = line.Split(' ').ToList();
+                    if (items.Count < 2)
+                    {
+                        continue;
+                    }
+                    string acc = items[0];
+                    string desc = string.Join(" ", items.Skip(1));
+                    result[acc] = desc;
+                }
+                reader.Close();
+            }
+            catch (Exception)
+            {
+                SendAndLogErrorMessage("Could not parse FASTA file '{0}'", m_openms_fasta_file);
+            }
+            return result;
         }
     }
 }

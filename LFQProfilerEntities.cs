@@ -66,11 +66,15 @@ namespace PD.OpenMS.AdapterNodes
         public string sequence { get; set; }
 
         [EntityProperty(DisplayName = "Proteins")]
-        [GridDisplayOptions(VisiblePosition = 10)]
+        [GridDisplayOptions(VisiblePosition = 20)]
         public string proteins { get; set; }
 
+        [EntityProperty(DisplayName = "Descriptions")]
+        [GridDisplayOptions(VisiblePosition = 30, ColumnWidth = 300)]
+        public string descriptions { get; set; }
+
         [EntityProperty(DisplayName = "#Proteins")]
-        [GridDisplayOptions(VisiblePosition = 10)]
+        [GridDisplayOptions(VisiblePosition = 40)]
         public int num_proteins { get; set; }
 
         //abundance columns are dynamically added (don't know how many)
@@ -106,12 +110,16 @@ namespace PD.OpenMS.AdapterNodes
         [GridDisplayOptions(VisiblePosition = 10)]
         public string proteins { get; set; }
 
+        [EntityProperty(DisplayName = "Descriptions")]
+        [GridDisplayOptions(VisiblePosition = 20, ColumnWidth = 300)]
+        public string descriptions { get; set; }
+
         [EntityProperty(DisplayName = "#Proteins")]
-        [GridDisplayOptions(VisiblePosition = 10)]
+        [GridDisplayOptions(VisiblePosition = 30)]
         public int num_proteins { get; set; }
 
         [EntityProperty(DisplayName = "#Peptides")]
-        [GridDisplayOptions(VisiblePosition = 10)]
+        [GridDisplayOptions(VisiblePosition = 40)]
         public int num_peptides { get; set; }
 
         //abundance columns are dynamically added (don't know how many)
