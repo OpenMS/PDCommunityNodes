@@ -13,8 +13,6 @@ using Thermo.Magellan.EntityDataFramework;
 using Thermo.Magellan.Exceptions;
 using Thermo.Magellan.MassSpec;
 using Thermo.Magellan.Utilities;
-//using Thermo.Magellan.BL.ReportEntityData; //for own table
-//using Thermo.Metabolism.DataObjects.EntityDataObjects;
 
 using System.Web.UI;
 
@@ -169,6 +167,7 @@ namespace PD.OpenMS.AdapterNodes
                 warnLog = new NodeDelegates.NodeLoggerWarningDelegate(NodeLogger.WarnFormat),
                 logTmpMessage = new NodeDelegates.SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage),
                 logMessage = new NodeDelegates.SendAndLogMessageDelegate(SendAndLogMessage),
+                errorLogMessage = new NodeDelegates.SendAndLogErrorMessageDelegate(SendAndLogErrorMessage),
                 writeLogMessage = new NodeDelegates.WriteLogMessageDelegate(WriteLogMessage)
             };
 
@@ -211,7 +210,7 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             // Remove obsolete CV terms written by Thermo's mzML export code
-            FixCVTerms(exported_files);
+            OpenMSCommons.FixCVTerms(exported_files, m_node_delegates);
 
             // Store file names
             var custom_raw_data_field = ProcessingServices.CustomDataService.GetOrCreateCustomDataField(WorkflowID, new Guid("1301FADF-988F-48D6-AC68-AD5BD2A7841A"), "RawFileNames", ProcessingNodeNumber, ProcessingNodeNumber, CustomDataTarget.ProcessingNode, CustomDataType.String, CustomDataAccessMode.Read, DataVisibility.Hidden, dataPurpose: "RawFiles");
@@ -228,52 +227,6 @@ namespace PD.OpenMS.AdapterNodes
 			FireProcessingFinishedEvent(new ResultsArguments());
 
             ReportTotalProgress(1.0);
-        }
-
-        private void FixCVTerms(List<string> mzml_files)
-        {
-            // remove in particular one obsolete CV term (MS:1000498)
-            // which otherwise leads to huge delay and millions of warning
-            // messages when loading the file into OpenMS
-            foreach (var f in mzml_files)
-            {
-                // move to temporary file
-                var tmp_f = f.Replace(".mzML", "_tmp.mzML");
-                try
-                {
-                    File.Move(f, tmp_f);
-                }
-                catch (Exception)
-                {
-                    SendAndLogErrorMessage("Could not move file {0} to {1}", f, tmp_f);
-                }
-
-                // open temporary file, remove obsolete CV terms, store with original filename
-                XDocument doc = XDocument.Load(tmp_f);
-                var q = from node in doc.Descendants("{http://psi.hupo.org/ms/mzml}cvParam")
-                        let acc = node.Attribute("accession")
-                        where acc != null && acc.Value == "MS:1000498"
-                        select node;
-                q.ToList().ForEach(x => x.Remove());
-                try
-                {
-                    doc.Save(f);
-                }
-                catch (Exception)
-                {
-                    SendAndLogErrorMessage("Could not save file {0}", f);
-                }
-
-                // remove temporary file
-                try
-                {
-                    File.Delete(tmp_f);
-                }
-                catch (Exception)
-                {
-                    SendAndLogErrorMessage("Could not delete file {0}", tmp_f);
-                }
-            }
         }
 
         #endregion

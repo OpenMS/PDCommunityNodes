@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Xml;
+using System.Xml.Linq;
 using System.IO;
 using System.Web.UI;
 using System.Text.RegularExpressions;
@@ -23,12 +24,14 @@ namespace PD.OpenMS.AdapterNodes
         public delegate Exception NodeLoggerErrorDelegate(Exception e, string s, params object[] args);
         public delegate void SendAndLogTemporaryMessageDelegate(string s, bool writeToLog = true);
         public delegate void SendAndLogMessageDelegate(string s, bool writeToLog = true);
+        public delegate void SendAndLogErrorMessageDelegate(string s, bool writeToLog = true);
         public delegate void WriteLogMessageDelegate(MessageLevel ml, string s);
 
         public NodeLoggerWarningDelegate warnLog;
         public NodeLoggerErrorDelegate errorLog;
         public SendAndLogTemporaryMessageDelegate logTmpMessage;
         public SendAndLogMessageDelegate logMessage;
+        public SendAndLogErrorMessageDelegate errorLogMessage;
         public WriteLogMessageDelegate writeLogMessage;
     }
 
@@ -396,6 +399,52 @@ namespace PD.OpenMS.AdapterNodes
             result = n_term_mod + result + unmodified_seq.Substring(last_pos) + c_term_mod;
 
             return result;
+        }
+
+        public static void FixCVTerms(List<string> mzml_files, NodeDelegates nd)
+        {
+            // remove in particular one obsolete CV term (MS:1000498)
+            // which otherwise leads to huge delay and millions of warning
+            // messages when loading the file into OpenMS
+            foreach (var f in mzml_files)
+            {
+                // move to temporary file
+                var tmp_f = f.Replace(".mzML", "_tmp.mzML");
+                try
+                {
+                    File.Move(f, tmp_f);
+                }
+                catch (Exception)
+                {
+                    nd.errorLogMessage(string.Format("Could not move file {0} to {1}", f, tmp_f));
+                }
+
+                // open temporary file, remove obsolete CV terms, store with original filename
+                XDocument doc = XDocument.Load(tmp_f);
+                var q = from node in doc.Descendants("{http://psi.hupo.org/ms/mzml}cvParam")
+                        let acc = node.Attribute("accession")
+                        where acc != null && acc.Value == "MS:1000498"
+                        select node;
+                q.ToList().ForEach(x => x.Remove());
+                try
+                {
+                    doc.Save(f);
+                }
+                catch (Exception)
+                {
+                    nd.errorLogMessage(string.Format("Could not save file {0}", f));
+                }
+
+                // remove temporary file
+                try
+                {
+                    File.Delete(tmp_f);
+                }
+                catch (Exception)
+                {
+                    nd.errorLogMessage(string.Format("Could not delete file {0}", tmp_f));
+                }
+            }
         }
     }
 }

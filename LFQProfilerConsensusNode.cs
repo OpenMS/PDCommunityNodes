@@ -223,6 +223,7 @@ namespace PD.OpenMS.AdapterNodes
                 warnLog = new NodeDelegates.NodeLoggerWarningDelegate(NodeLogger.WarnFormat),
                 logTmpMessage = new NodeDelegates.SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage),
                 logMessage = new NodeDelegates.SendAndLogMessageDelegate(SendAndLogMessage),
+                errorLogMessage = new NodeDelegates.SendAndLogErrorMessageDelegate(SendAndLogErrorMessage),
                 writeLogMessage = new NodeDelegates.WriteLogMessageDelegate(WriteLogMessage)
             };
 
