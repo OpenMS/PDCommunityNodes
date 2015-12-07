@@ -387,7 +387,8 @@ namespace PD.OpenMS.AdapterNodes
 
                 XmlNode centroid_node = ce.SelectSingleNode("centroid");
                 double mz = Convert.ToDouble(centroid_node.Attributes["mz"].Value);
-                //TODO: centroid RT is from aligned RTs (if alignment was performed)! recompute value from individual subfeatures? or also replace centroid RTs when writing orig_rt.consensusXML...
+                // TODO: Centroid RT is from aligned RTs (if alignment was performed)
+                // Maybe recompute value from individual subfeatures? Or also replace centroid RTs when writing orig_rt.consensusXML...
                 double rt = Convert.ToDouble(centroid_node.Attributes["rt"].Value) / 60.0; //changed to minute!
 
                 var grouped_elements = ce.SelectSingleNode("groupedElementList");
@@ -436,7 +437,10 @@ namespace PD.OpenMS.AdapterNodes
                             else
                             {
                                 var parts = val.Split(new[] { ';' });
-                                //TODO: exception handling (index out of bounds!)
+                                if (parts.Length < 2)
+                                {
+                                    SendAndLogErrorMessage("UserParam pd_peptide_id has wrong format.");
+                                }
                                 workflow_id = Convert.ToInt32(parts[0]);
                                 pd_peptide_id = Convert.ToInt32(parts[1]);
                             }
@@ -1054,7 +1058,7 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             m_openms_fasta_file = Path.Combine(NodeScratchDirectory, @"peptide_indexer.fasta");
-            ProcessingServices.FastaFileService.CreateOriginalFastaFile(param_fasta_db.Value, m_openms_fasta_file, true); //TODO true / false?
+            ProcessingServices.FastaFileService.CreateOriginalFastaFile(param_fasta_db.Value, m_openms_fasta_file, true);
 
             //string decoy_filename = Path.Combine(
             //    Path.GetDirectoryName(fasta_filename),

@@ -40,7 +40,6 @@ namespace pwiz.Skyline.Controls.Graphs
             return "is this method still needed?" != "probably not!";
         }
 
-        //TODO: public
         public List<double> RNPxl_MZs;
         public List<double> RNPxl_Intensities;
         public List<string> RNPxl_Annotations;
@@ -164,7 +163,7 @@ namespace pwiz.Skyline.Controls.Graphs
 
         public override PointAnnotation AnnotatePoint(PointPair point)
         {
-            // inefficient hack for now (TODO)
+            // inefficient solution for now (TODO)
             string annotation = "";
             for (int i = 0; i < RNPxl_MZs.Count; ++i)
             {
@@ -202,7 +201,7 @@ namespace pwiz.Skyline.Controls.Graphs
 
             //// Try to show enough decimal places to distinguish by tolerance
             //int places = 1;
-            //while (places < 4 && ((int) (RNPxl_Tolerance * Math.Pow(10, places))) == 0) //TODO
+            //while (places < 4 && ((int) (RNPxl_Tolerance * Math.Pow(10, places))) == 0)
             //    places++;
 
             int places = 3;

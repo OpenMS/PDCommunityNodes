@@ -24,7 +24,7 @@ namespace PD.OpenMS.AdapterNodes
     [ProcessingNode("9A840689-B679-4D0B-8595-9448B1D3EB38",
         DisplayName = "RNPxl Consensus",
         Description = "Post-processes the results of the RNPxl search and connects them with the spectrum view",
-        Category = ReportingNodeCategories.Miscellaneous, //TODO
+        Category = ReportingNodeCategories.Miscellaneous,
         MainVersion = 1,
         MinorVersion = 49,
         WorkflowType = WorkflowTypeNames.Consensus)]
@@ -39,7 +39,7 @@ namespace PD.OpenMS.AdapterNodes
 
     [ConnectionPointDataContract(
         "IncomingOpenMSRNPxls",
-        ProteomicsDataTypes.Psms)] //TODO
+        ProteomicsDataTypes.Psms)]
 
     [ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
 
@@ -111,8 +111,8 @@ namespace PD.OpenMS.AdapterNodes
                         // Concatenate the spectrum ids and use them as the value that is stored in the button-cell. This value is not visible to the user but
                         // is used to re-read the spectrum when the button is pressed (see ShowSpectrumButtonValueEditor.xaml.cs).
 
-                        // for simplicity, we also store the entire annotation string in the button value in order to avoid
-                        // storing IDs for RNPxlItems and re-reading them in ShowSpectrumButtonValueEditor.xaml.cs (TODO: improve style)
+                        // For simplicity, we also store the entire annotation string in the button value in order to avoid
+                        // storing IDs for RNPxlItems and re-reading them in ShowSpectrumButtonValueEditor.xaml.cs
                         var idString = string.Concat(m.WorkflowID, ";", m.SpectrumID, ";", r.fragment_annotation);
 
                         // use r.WorkflowID, r.Id to specify which RNPxlItem to update

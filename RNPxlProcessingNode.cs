@@ -956,7 +956,7 @@ namespace PD.OpenMS.AdapterNodes
             var raw_files = new List<string>(m_num_files);
             var exported_files = new List<string>(m_num_files);
 
-            // Group spectra by file id (TODO: verify this does the right thing!)
+            // Group spectra by file id
             foreach (var spectrumDescriptorsGroupedByFileId in m_spectrum_descriptors.GroupBy(g => g.Header.FileID))
             {
                 int file_id = spectrumDescriptorsGroupedByFileId.Key;
@@ -1690,7 +1690,7 @@ namespace PD.OpenMS.AdapterNodes
 
                 var x = new RNPxlItem();
 
-                x.WorkflowID = -1; //TODO: does that get us into trouble?
+                x.WorkflowID = -1;
                 x.Id = EntityDataService.NextId<RNPxlItem>();
 
                 double dbl_val;

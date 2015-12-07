@@ -365,7 +365,7 @@ namespace PD.OpenMS.AdapterNodes
             foreach (string m in mods)
             {
                 bool actual_mod = true;
-                // have something like "M11(Oxidation) or N-Term(Carbamyl) or X8(L)"
+                // m is something like "M11(Oxidation)" or "N-Term(Carbamyl)" or "X8(L)"
                 string[] parts = m.Split('(');
 
                 if (!aa_letters.Contains(parts[0].Substring(0, 1)))
@@ -376,7 +376,7 @@ namespace PD.OpenMS.AdapterNodes
                     {
                         // substitute
                         Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
-                        tmp_seq[aa_pos - 1] = parts[1][0]; //TODO bounds check
+                        tmp_seq[aa_pos - 1] = parts[1][0];
                         // discard this "modification"
                         actual_mod = false;
                     }
