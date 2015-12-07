@@ -204,6 +204,11 @@ namespace PD.OpenMS.AdapterNodes
         private int m_num_steps;
         private int m_num_files;
 
+        /// <summary>
+        /// Called when the parent node finished the data processing.
+        /// </summary>
+        /// <param name="sender">The parent node.</param>
+        /// <param name="eventArgs">The result event arguments.</param>
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
             // Set up approximate progress bar
@@ -279,6 +284,9 @@ namespace PD.OpenMS.AdapterNodes
             FireProcessingFinishedEvent(new SingleResultsArguments(new[] { ProteomicsDataTypes.Psms }, this));
         }
 
+        /// <summary>
+        /// Run ProteinQuantifier on a given consensusXML file, using Fido results as protein inference input. Parse results into PD tables.
+        /// </summary>
         private void RunProteinQuantifier(string consensusxml_file, string fido_idxml_file)
         {
             var exec_path = Path.Combine(m_openms_dir, @"bin/ProteinQuantifier.exe");
@@ -309,6 +317,9 @@ namespace PD.OpenMS.AdapterNodes
             ParsePQProteins(prot_output_file);
         }
 
+        /// <summary>
+        /// Run protein inference using FidoAdapter on given idXML file
+        /// </summary>
         private string RunFidoAdapter(string idxml_file)
         {
             var exec_path = Path.Combine(m_openms_dir, @"bin/FidoAdapter.exe");
@@ -333,6 +344,9 @@ namespace PD.OpenMS.AdapterNodes
             return output_file;
         }
 
+        /// <summary>
+        /// Fill "Quantified features" table using final consensusXML file and a dictionary to get the original RTs
+        /// </summary>
         private void PopulateConsensusFeaturesTable(Dictionary<string, XmlElement> consensus_dict, string cn_output_file, List<string> feature_table_column_names)
         {
             // Connect PSM table with consensus features table (TODO: improve comments)
@@ -465,6 +479,9 @@ namespace PD.OpenMS.AdapterNodes
             EntityDataService.ConnectItems(psms_with_quantification);
         }
 
+        /// <summary>
+        /// Store an additional consensusXML file containing original RTs.
+        /// </summary>
         private void BuildConsensusXMLWithOrigRTs(string consensus_xml_file, List<string> featurexml_files_orig, out Dictionary<string, XmlElement> consensus_dict, out string consensus_xml_file_orig_rt)
         {
             // Read consensusXML
@@ -499,6 +516,9 @@ namespace PD.OpenMS.AdapterNodes
             consensus_doc.Save(consensus_xml_file_orig_rt);
         }
 
+        /// <summary>
+        /// Normalize intensities using ConsensusMapNormalizer
+        /// </summary>
         private string RunConsensusMapNormalizer(string consensusxml_file)
         {
             var exec_path = Path.Combine(m_openms_dir, @"bin/ConsensusMapNormalizer.exe");
@@ -520,6 +540,9 @@ namespace PD.OpenMS.AdapterNodes
             return output_file;
         }
 
+        /// <summary>
+        /// Set up the "Quantified Features" table (with dynamic number of abundance columns)
+        /// </summary>
         private List<string> SetupConsensusFeaturesTable(List<string> raw_files)
         {
             EntityDataService.RegisterEntity<ConsensusFeatureEntity>(ProcessingNodeNumber);
@@ -598,6 +621,9 @@ namespace PD.OpenMS.AdapterNodes
             return column_names;
         }
 
+        /// <summary>
+        /// Run map alignment and feature linking on a set of featureXML files. Return file name of the resulting consensusXML file.
+        /// </summary>
         private string AlignAndLink(List<string> featurexml_files_orig)
         {
             //list of input and output files of specific OpenMS tools
@@ -700,6 +726,9 @@ namespace PD.OpenMS.AdapterNodes
             return output_file;
         }
 
+        /// <summary>
+        /// Read file names of featureXML files and RAW files from MSF file / entity data service (were stored by the ProcessingNode)
+        /// </summary>
         private void ReadInputFilenames(out List<string> orig_features, out List<string> raw_files)
         {
             //Read in featureXmls contained in the study result folder, read only those associated with the project msf
@@ -738,6 +767,9 @@ namespace PD.OpenMS.AdapterNodes
             }
         }
 
+        /// <summary>
+        /// Export PSMs from PD search results to idXML
+        /// </summary>
         public void ExportPSMsToIdXML(string idxml_filename, bool filter = false)
         {
             XmlDocument doc = new XmlDocument();
@@ -841,6 +873,9 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(idxml_filename);
         }
 
+        /// <summary>
+        /// Helper method for ExportPSMsToIdXML(...). Does the actual export of search engine results.
+        /// </summary>
         void IdXMLExportHelper<PSMType>(XmlDocument doc, XmlElement id_run_node, bool filter = false)
             where PSMType : PeptideSpectrumMatch
         {
@@ -896,7 +931,7 @@ namespace PD.OpenMS.AdapterNodes
                     hsb_attr.Value = "false";
                     pep_id_node.Attributes.Append(hsb_attr);
                 }
-                else 
+                else
                 {
                     // this file will be a Fido input => use posterior probability
                     var st_attr = doc.CreateAttribute("score_type");
@@ -974,6 +1009,10 @@ namespace PD.OpenMS.AdapterNodes
             }
         }
 
+
+        /// <summary>
+        /// Run IDMapper on a given consensusXML and idXML file.
+        /// </summary>
         void RunIDMapper(string consensusxml_file, string idxml_file, string result_consensusxml_file)
         {
             var exec_path = Path.Combine(m_openms_dir, @"bin/IDMapper.exe");
@@ -996,6 +1035,10 @@ namespace PD.OpenMS.AdapterNodes
             ReportTotalProgress((double)m_current_step / m_num_steps);
         }
 
+
+        /// <summary>
+        /// Run PeptideIndexer in order to get target/decoy information. Export original FASTA from PD and (re-)generate decoys first.
+        /// </summary>
         void RunPeptideIndexer(string input_file, string output_file)
         {
             string exec_path = "";
@@ -1063,6 +1106,10 @@ namespace PD.OpenMS.AdapterNodes
             ReportTotalProgress((double)m_current_step / m_num_steps);
         }
 
+
+        /// <summary>
+        /// Parse peptide quantification results of ProteinQuantifier, fill "Quantified peptides" table
+        /// </summary>
         void ParsePQPeptides(string pq_pep_file)
         {
             EntityDataService.RegisterEntity<DechargedPeptideEntity>(ProcessingNodeNumber);
@@ -1135,6 +1182,9 @@ namespace PD.OpenMS.AdapterNodes
             EntityDataService.InsertItems(new_peptide_items);
         }
 
+        /// <summary>
+        /// Parse protein quantification results of ProteinQuantifier, fill "Quantified proteins" table
+        /// </summary>
         void ParsePQProteins(string pq_prot_file)
         {
             EntityDataService.RegisterEntity<QuantifiedProteinEntity>(ProcessingNodeNumber);
@@ -1207,9 +1257,12 @@ namespace PD.OpenMS.AdapterNodes
             EntityDataService.InsertItems(new_protein_items);
         }
 
+        /// <summary>
+        /// Return a dictionary {protein accession -> protein description} for a given FASTA file
+        /// </summary>
         Dictionary<string, string> BuildFastaAccToDescDict()
         {
-            var result = new Dictionary<string,string>();
+            var result = new Dictionary<string, string>();
             try
             {
                 StreamReader reader = File.OpenText(m_openms_fasta_file);

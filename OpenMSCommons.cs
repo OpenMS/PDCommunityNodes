@@ -18,6 +18,9 @@ using Thermo.Magellan.Utilities;
 
 namespace PD.OpenMS.AdapterNodes
 {
+    /// <summary>
+    /// Set of delegates needed by methods in OpenMSCommons in order to be able to use the logging / messaging functionality of the nodes they're called from (HACK).
+    /// </summary>
     public struct NodeDelegates
     {
         public delegate void NodeLoggerWarningDelegate(string s, params object[] args);
@@ -35,6 +38,9 @@ namespace PD.OpenMS.AdapterNodes
         public WriteLogMessageDelegate writeLogMessage;
     }
 
+    /// <summary>
+    /// Methods that are shared between several nodes. Cannot be done by inheritance (or so I think), as multiple inheritance isn't allowed.
+    /// </summary>
     public class OpenMSCommons
     {
         /// <summary>
@@ -418,6 +424,9 @@ namespace PD.OpenMS.AdapterNodes
             return result;
         }
 
+        /// <summary>
+        /// Remove obsolete CV terms from a set of mzML files that would otherwise lead to delay and millions of warning messages on loading in OpenMS.
+        /// </summary>
         public static void FixCVTerms(List<string> mzml_files, NodeDelegates nd)
         {
             // remove in particular one obsolete CV term (MS:1000498)

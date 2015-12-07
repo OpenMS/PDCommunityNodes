@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using Thermo.Magellan.BL.Data;
 using Thermo.Magellan.BL.Data.Constants;
 using Thermo.Magellan.BL.Processing;
@@ -48,6 +47,11 @@ namespace PD.OpenMS.AdapterNodes
 
     public class RNPxlConsensusNode : ReportProcessingNode
     {
+        /// <summary>
+        /// Called when the parent node finished the data processing.
+        /// </summary>
+        /// <param name="sender">The parent node.</param>
+        /// <param name="eventArgs">The result event arguments.</param>
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
             // Add "Show spectrum" buttons to table
@@ -73,7 +77,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // Prepare a list that contains the button values
             var updates = new List<Tuple<object[], object[]>>();
-            
+
             foreach (var r in rnpxl_items)
             {
                 string rt_str = String.Format("{0:0.0}", r.rt);
@@ -106,7 +110,7 @@ namespace PD.OpenMS.AdapterNodes
 
                         // Concatenate the spectrum ids and use them as the value that is stored in the button-cell. This value is not visible to the user but
                         // is used to re-read the spectrum when the button is pressed (see ShowSpectrumButtonValueEditor.xaml.cs).
-                        
+
                         // for simplicity, we also store the entire annotation string in the button value in order to avoid
                         // storing IDs for RNPxlItems and re-reading them in ShowSpectrumButtonValueEditor.xaml.cs (TODO: improve style)
                         var idString = string.Concat(m.WorkflowID, ";", m.SpectrumID, ";", r.fragment_annotation);
@@ -114,7 +118,7 @@ namespace PD.OpenMS.AdapterNodes
                         // use r.WorkflowID, r.Id to specify which RNPxlItem to update
                         updates.Add(Tuple.Create(new[] { (object)r.WorkflowID, (object)r.Id }, new object[] { idString }));
                     }
-                } 
+                }
             }
 
             // Write back the data

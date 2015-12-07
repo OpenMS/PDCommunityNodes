@@ -5,6 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
+using System.Xml.Linq;
+using System.Text;
+using System.Web.UI;
 using Thermo.Magellan.BL.Data;
 using Thermo.Magellan.BL.Data.ProcessingNodeScores;
 using Thermo.Magellan.BL.Processing;
@@ -18,40 +21,35 @@ using Thermo.Magellan.Proteomics;
 using Thermo.Magellan.StudyManagement;
 using Thermo.Magellan.StudyManagement.DataObjects;
 
-using System.Web.UI;
-
-using System.Xml.Linq;
-using System.Text;
-
 namespace PD.OpenMS.AdapterNodes
 {
     # region NodeSetup
 
     [ProcessingNode("5FBAC8EA-D69A-4401-AAAD-DD86092754A0",
         Category = ProcessingNodeCategories.SequenceDatabaseSearch,
-		DisplayName = "RNPxl",
-		MainVersion = 1,
-		MinorVersion = 44,
+        DisplayName = "RNPxl",
+        MainVersion = 1,
+        MinorVersion = 44,
         Description = "Analyze Protein-RNA cross-linking data")]
 
-	[ConnectionPoint("IncomingSpectra",
-		ConnectionDirection = ConnectionDirection.Incoming,
-		ConnectionMultiplicity = ConnectionMultiplicity.Single,
-		ConnectionMode = ConnectionMode.Manual,
-		ConnectionRequirement = ConnectionRequirement.RequiredAtDesignTime,
-		ConnectionDisplayName = ProcessingNodeCategories.SpectrumAndFeatureRetrieval,
-		ConnectionDataHandlingType = ConnectionDataHandlingType.InMemory)]
+    [ConnectionPoint("IncomingSpectra",
+        ConnectionDirection = ConnectionDirection.Incoming,
+        ConnectionMultiplicity = ConnectionMultiplicity.Single,
+        ConnectionMode = ConnectionMode.Manual,
+        ConnectionRequirement = ConnectionRequirement.RequiredAtDesignTime,
+        ConnectionDisplayName = ProcessingNodeCategories.SpectrumAndFeatureRetrieval,
+        ConnectionDataHandlingType = ConnectionDataHandlingType.InMemory)]
 
     [ConnectionPointDataContract(
         "IncomingSpectra",
         MassSpecDataTypes.MSnSpectra)]
 
-	[ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
+    [ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
 
     # endregion
 
     public class RNPxlProcessingNode : PeptideAndProteinIdentificationNode, IResultsSink<MassSpectrumCollection>
-	{
+    {
         #region Parameters
 
         [BooleanParameter(
@@ -494,10 +492,10 @@ namespace PD.OpenMS.AdapterNodes
             Category = "4. ID filtering",
             DisplayName = "Precursor mass tolerance",
             Description = "This parameter specifies the precursor mass tolerance for peptide identification",
-                    //Subset = "Da", // required by current design
+            //Subset = "Da", // required by current design
             DefaultValue = "10 ppm",
-                    //MinimumValue = "0 Da",
-                    //MaximumValue = "1 Da",
+            //MinimumValue = "0 Da",
+            //MaximumValue = "1 Da",
             Position = 54,
             IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
@@ -871,27 +869,27 @@ namespace PD.OpenMS.AdapterNodes
         private int m_current_step;
         private int m_num_steps;
         private int m_num_files;
-		private readonly SpectrumDescriptorCollection m_spectrum_descriptors = new SpectrumDescriptorCollection();
-	    private List<WorkflowInputFile> m_workflow_input_files;
+        private readonly SpectrumDescriptorCollection m_spectrum_descriptors = new SpectrumDescriptorCollection();
+        private List<WorkflowInputFile> m_workflow_input_files;
         private NodeDelegates m_node_delegates;
 
         #region Top-level program flow
 
         /// <summary>
-		/// Initializes the progress.
-		/// </summary>
-		/// <returns></returns>
+        /// Initializes the progress.
+        /// </summary>
+        /// <returns></returns>
         public override ProgressInitializationHint InitializeProgress()
         {
             return new ProgressInitializationHint(4 * ProcessingServices.CurrentWorkflow.GetWorkflow().GetWorkflowInputFiles().ToList().Count, ProgressDependenceType.Independent);
         }
-        
-		/// <summary>
-		/// Portion of mass spectra received.
+
+        /// <summary>
+        /// Portion of mass spectra received.
         /// 
-		/// </summary>
+        /// </summary>
         public void OnResultsSent(IProcessingNode sender, MassSpectrumCollection spectra)
-        {         
+        {
             //persist spectra to make them available in the consensus step
             var spectra_to_store = new MassSpectrumCollection();
             foreach (var s in spectra)
@@ -915,12 +913,12 @@ namespace PD.OpenMS.AdapterNodes
             ArgumentHelper.AssertNotNull(spectra, "spectra");
             m_spectrum_descriptors.AddRange(ProcessingServices.SpectrumProcessingService.StoreSpectraInCache(this, spectra));
         }
-        
-		/// <summary>
-		/// Called when the parent node finished the data processing.
-		/// </summary>
-		/// <param name="sender">The parent node.</param>
-		/// <param name="eventArgs">The result event arguments.</param>
+
+        /// <summary>
+        /// Called when the parent node finished the data processing.
+        /// </summary>
+        /// <param name="sender">The parent node.</param>
+        /// <param name="eventArgs">The result event arguments.</param>
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
             // Node delegates
@@ -952,15 +950,14 @@ namespace PD.OpenMS.AdapterNodes
             int num_mapalignment_substeps = 5 * Convert.ToInt32(param_general_run_xic_filtering.Value && param_general_run_map_alignment.Value);
             int num_rnpxl_substeps = 1;
             m_num_steps = num_export_substeps + num_idfilter_substeps + num_xicfilter_substeps + num_mapalignment_substeps + num_rnpxl_substeps + 1;
-            m_current_step = 0; 
+            m_current_step = 0;
 
             // input files and mzML-exported files
             var raw_files = new List<string>(m_num_files);
             var exported_files = new List<string>(m_num_files);
 
             // Group spectra by file id (TODO: verify this does the right thing!)
-            foreach (var spectrumDescriptorsGroupedByFileId in m_spectrum_descriptors
-                .GroupBy(g => g.Header.FileID))
+            foreach (var spectrumDescriptorsGroupedByFileId in m_spectrum_descriptors.GroupBy(g => g.Header.FileID))
             {
                 int file_id = spectrumDescriptorsGroupedByFileId.Key;
 
@@ -1032,7 +1029,7 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             SendAndLogMessage("OpenMS pipeline processing took {0}.", StringHelper.GetDisplayString(timer.Elapsed));
-			FireProcessingFinishedEvent(new ResultsArguments());
+            FireProcessingFinishedEvent(new ResultsArguments());
             ReportTotalProgress(1.0);
         }
 
@@ -1085,7 +1082,6 @@ namespace PD.OpenMS.AdapterNodes
                 }
             }
 
-
             exporter.ExportMassSpectra(spectra);
 
             exporter.Close();
@@ -1097,7 +1093,7 @@ namespace PD.OpenMS.AdapterNodes
 
 
         /// <summary>
-        /// TODO
+        /// Run the workflow on a single (cross-linked) mzML file
         /// </summary>
         private void RunWorkflowOnSingleFile(string input_file)
         {
@@ -1113,7 +1109,7 @@ namespace PD.OpenMS.AdapterNodes
 
 
         /// <summary>
-        /// TODO
+        /// Run the workflow on two mzML files (one cross-linked, one control)
         /// </summary>
         private void RunWorkflowOnTwoFiles(string uv_input_file, string control_input_file)
         {
@@ -1221,7 +1217,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("precursor", "mass_tolerance_unit", param_id_filtering_precursor_mass_tolerance.UnitToString()));
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("fragment", "mass_tolerance", param_id_filtering_fragment_mass_tolerance.ValueToString()));
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("fragment", "mass_tolerance_unit", param_id_filtering_fragment_mass_tolerance.UnitToString()));
-            
+
             // disable searching for oligonucleotides => normal peptide identification
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("RNPxl", "length", "0"));
 
@@ -1420,7 +1416,7 @@ namespace PD.OpenMS.AdapterNodes
             exec_path = Path.Combine(openms_dir, @"bin/FeatureFinderCentroided.exe");
             ini_path = Path.Combine(NodeScratchDirectory, @"FeatureFinderCentroided.ini");
 
-            foreach (var f in new List<string>() {uv_mzml_filename, control_mzml_filename})
+            foreach (var f in new List<string>() { uv_mzml_filename, control_mzml_filename })
             {
                 OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 Dictionary<string, string> ffc_parameters = new Dictionary<string, string> {
@@ -1644,6 +1640,9 @@ namespace PD.OpenMS.AdapterNodes
             return result_tsv_filename;
         }
 
+        /// <summary>
+        /// Add decoys to a given FASTA file
+        /// </summary>
         private void addDecoys(string fasta_file)
         {
             string openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
@@ -1687,7 +1686,7 @@ namespace PD.OpenMS.AdapterNodes
 
             while ((line = reader.ReadLine()) != null)
             {
-                string[] items = line.Split(new char[] {'\t'}, StringSplitOptions.None);
+                string[] items = line.Split(new char[] { '\t' }, StringSplitOptions.None);
 
                 var x = new RNPxlItem();
 
@@ -1737,6 +1736,9 @@ namespace PD.OpenMS.AdapterNodes
             EntityDataService.InsertItems(rnpxl_items);
         }
 
+        /// <summary>
+        /// For a ModificationParameter object (from the UI parameter settings), return a string representing the modification in OpenMS-format.
+        /// </summary>
         private List<string> convertParamToModStringArray(ModificationParameter mod_param, string type)
         {
             var result = new List<string>();

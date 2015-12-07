@@ -5,6 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
+using System.Xml.Linq;
+using System.Text;
+using System.Web.UI;
 using Thermo.Magellan.BL.Data;
 using Thermo.Magellan.BL.Processing;
 using Thermo.Magellan.BL.Processing.Interfaces;
@@ -13,11 +16,6 @@ using Thermo.Magellan.EntityDataFramework;
 using Thermo.Magellan.Exceptions;
 using Thermo.Magellan.MassSpec;
 using Thermo.Magellan.Utilities;
-
-using System.Web.UI;
-
-using System.Xml.Linq;
-using System.Text;
 
 namespace PD.OpenMS.AdapterNodes
 {
@@ -118,8 +116,8 @@ namespace PD.OpenMS.AdapterNodes
         private int m_current_step;
         private int m_num_steps;
         private int m_num_files;
-		private readonly SpectrumDescriptorCollection m_spectrum_descriptors = new SpectrumDescriptorCollection();
-	    private List<WorkflowInputFile> m_workflow_input_files;
+        private readonly SpectrumDescriptorCollection m_spectrum_descriptors = new SpectrumDescriptorCollection();
+        private List<WorkflowInputFile> m_workflow_input_files;
         private NodeDelegates m_node_delegates;
 
         #region Top-level program flow
