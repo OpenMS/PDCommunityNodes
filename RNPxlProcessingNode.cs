@@ -873,6 +873,7 @@ namespace PD.OpenMS.AdapterNodes
         private int m_num_files;
 		private readonly SpectrumDescriptorCollection m_spectrum_descriptors = new SpectrumDescriptorCollection();
 	    private List<WorkflowInputFile> m_workflow_input_files;
+        private NodeDelegates m_node_delegates;
 
         #region Top-level program flow
 
@@ -922,6 +923,16 @@ namespace PD.OpenMS.AdapterNodes
 		/// <param name="eventArgs">The result event arguments.</param>
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
+            // Node delegates
+            m_node_delegates = new NodeDelegates()
+            {
+                errorLog = new NodeDelegates.NodeLoggerErrorDelegate(NodeLogger.ErrorFormat),
+                warnLog = new NodeDelegates.NodeLoggerWarningDelegate(NodeLogger.WarnFormat),
+                logTmpMessage = new NodeDelegates.SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage),
+                logMessage = new NodeDelegates.SendAndLogMessageDelegate(SendAndLogMessage),
+                writeLogMessage = new NodeDelegates.WriteLogMessageDelegate(WriteLogMessage)
+            };
+
             // determine number of inputfiles which have to be converted
             m_workflow_input_files = EntityDataService.CreateEntityItemReader().ReadAll<WorkflowInputFile>().ToList();
             m_num_files = m_workflow_input_files.Count;
@@ -1190,7 +1201,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // INI file
             ini_path = Path.Combine(NodeScratchDirectory, "RNPxlSearch_IDFiltering.ini");
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> rnpxlsearch_parameters = new Dictionary<string, string> {
                             {"in", uv_mzml_filename},
                             {"database", fasta_path},
@@ -1240,7 +1251,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteItemListToINI(static_mods.ToArray(), ini_path, "fixed");
 
             SendAndLogMessage("Preprocessing -- ID filtering -- Peptide identification");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1253,7 +1264,7 @@ namespace PD.OpenMS.AdapterNodes
             ini_path = Path.Combine(NodeScratchDirectory, @"PeptideIndexer.ini");
             string peptide_indexer_output_file = Path.Combine(NodeScratchDirectory, "peptide_indexer_output.idXML");
 
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> pi_parameters = new Dictionary<string, string> {
                         {"in", rnpxlsearch_result_idxml_filename},
                         {"fasta", fasta_path},
@@ -1267,7 +1278,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteParamsToINI(ini_path, pi_parameters);
 
             SendAndLogMessage("Preprocessing -- ID filtering -- PeptideIndexer");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1280,7 +1291,7 @@ namespace PD.OpenMS.AdapterNodes
             ini_path = Path.Combine(NodeScratchDirectory, @"FalseDiscoveryRate.ini");
             string fdr_output_file = Path.Combine(NodeScratchDirectory, "fdr_output.idXML");
 
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> fdr_parameters = new Dictionary<string, string> {
                         {"in", peptide_indexer_output_file},
                         {"out", fdr_output_file},
@@ -1289,7 +1300,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteParamsToINI(ini_path, fdr_parameters);
 
             SendAndLogMessage("Preprocessing -- ID filtering -- FalseDiscoveryRate");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1302,7 +1313,7 @@ namespace PD.OpenMS.AdapterNodes
             ini_path = Path.Combine(NodeScratchDirectory, @"IDFilter.ini");
             string idfilter_output_file = Path.Combine(NodeScratchDirectory, "idfilter_output.idXML");
 
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> idfilter_parameters = new Dictionary<string, string> {
                         {"in", fdr_output_file},
                         {"out", idfilter_output_file},
@@ -1312,7 +1323,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("score", "pep", param_id_filtering_q_value_threshold));
 
             SendAndLogMessage("Preprocessing -- ID filtering -- IDFilter");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1325,7 +1336,7 @@ namespace PD.OpenMS.AdapterNodes
             ini_path = Path.Combine(NodeScratchDirectory, @"FileFilter.ini");
             string filefilter_output_file = Path.Combine(NodeScratchDirectory, "filefilter_output.idXML");
 
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> filefilter_parameters = new Dictionary<string, string> {
                         {"in", uv_mzml_filename},
                         {"out", result_filename},
@@ -1336,7 +1347,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("id", "mz", 0.01));
 
             SendAndLogMessage("Preprocessing -- ID filtering -- FileFilter");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1361,7 +1372,7 @@ namespace PD.OpenMS.AdapterNodes
             var exec_path = Path.Combine(openms_dir, @"bin/RNPxlXICFilter.exe");
             var ini_path = Path.Combine(NodeScratchDirectory, @"RNPxlXICFilter.ini");
 
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> fdr_parameters = new Dictionary<string, string>
             {
                 {"treatment", uv_mzml_filename},
@@ -1375,7 +1386,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteParamsToINI(ini_path, fdr_parameters);
 
             SendAndLogMessage("Preprocessing -- XIC filtering -- RNPxlXICFiltering");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1410,7 +1421,7 @@ namespace PD.OpenMS.AdapterNodes
 
             foreach (var f in new List<string>() {uv_mzml_filename, control_mzml_filename})
             {
-                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 Dictionary<string, string> ffc_parameters = new Dictionary<string, string> {
                             {"in", f},
                             {"out", f.Replace(".mzML", ".featureXML")},
@@ -1429,7 +1440,7 @@ namespace PD.OpenMS.AdapterNodes
                 OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("isotopic_pattern", "mz_tolerance", "0.01"));
 
                 SendAndLogMessage("Preprocessing -- Map alignment -- FeatureFinderCentroided");
-                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1459,7 +1470,7 @@ namespace PD.OpenMS.AdapterNodes
                 {"threads", param_general_num_threads.ToString()}
             };
             ini_path = Path.Combine(NodeScratchDirectory, @"MapAlignerPoseClustering.ini");
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             OpenMSCommons.WriteParamsToINI(ini_path, map_parameters);
             OpenMSCommons.WriteItemListToINI(in_files, ini_path, "in");
             OpenMSCommons.WriteItemListToINI(out_files, ini_path, "trafo_out");
@@ -1467,7 +1478,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteThresholdsToINI(param_alignment_mz_threshold, param_alignment_rt_threshold, ini_path);
 
             SendAndLogMessage("Preprocessing -- Map alignment -- MapAlignerPoseClustering");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1495,7 +1506,7 @@ namespace PD.OpenMS.AdapterNodes
             };
 
             ini_path = Path.Combine(NodeScratchDirectory, @"MapRTTransformer.ini");
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
             for (int i = 0; i < 2; ++i)
             {
@@ -1509,7 +1520,7 @@ namespace PD.OpenMS.AdapterNodes
                 OpenMSCommons.WriteParamsToINI(ini_path, transformer_parameters);
 
                 SendAndLogMessage("Preprocessing -- Map alignment -- MapRTTransformer");
-                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1538,7 +1549,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // INI file
             string rnpxlsearch_ini_file = Path.Combine(NodeScratchDirectory, "RNPxlSearch.ini");
-            OpenMSCommons.CreateDefaultINI(exec_path, rnpxlsearch_ini_file, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, rnpxlsearch_ini_file, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> rnpxlsearch_parameters = new Dictionary<string, string> {
                             {"in", uv_mzml_filename},
                             {"database", fasta_path},
@@ -1624,7 +1635,7 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             SendAndLogMessage("Starting main RNPxl search for file [{0}]", uv_mzml_filename);
-            OpenMSCommons.RunTOPPTool(exec_path, rnpxlsearch_ini_file, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, rnpxlsearch_ini_file, NodeScratchDirectory, m_node_delegates);
 
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1637,7 +1648,7 @@ namespace PD.OpenMS.AdapterNodes
             string openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
             string exec_path = Path.Combine(openms_dir, @"bin/DecoyDatabase.exe");
             string ini_path = Path.Combine(NodeScratchDirectory, @"DecoyDatabase.ini");
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> dd_parameters = new Dictionary<string, string> {
                         {"out", fasta_file},
                         {"append", "true"},
@@ -1651,7 +1662,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteItemListToINI(in_list, ini_path, "in");
 
             //SendAndLogMessage("Preprocessing / DecoyDatabase");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);

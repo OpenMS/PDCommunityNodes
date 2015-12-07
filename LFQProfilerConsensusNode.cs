@@ -199,6 +199,7 @@ namespace PD.OpenMS.AdapterNodes
 
         private string m_openms_dir;
         private string m_openms_fasta_file;
+        private NodeDelegates m_node_delegates;
         private int m_current_step;
         private int m_num_steps;
         private int m_num_files;
@@ -214,6 +215,16 @@ namespace PD.OpenMS.AdapterNodes
 
             // FASTA file (exported from PD, decoys will be added)
             m_openms_fasta_file = "";
+
+            // Node delegates
+            m_node_delegates = new NodeDelegates()
+            {
+                errorLog = new NodeDelegates.NodeLoggerErrorDelegate(NodeLogger.ErrorFormat),
+                warnLog = new NodeDelegates.NodeLoggerWarningDelegate(NodeLogger.WarnFormat),
+                logTmpMessage = new NodeDelegates.SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage),
+                logMessage = new NodeDelegates.SendAndLogMessageDelegate(SendAndLogMessage),
+                writeLogMessage = new NodeDelegates.WriteLogMessageDelegate(WriteLogMessage)
+            };
 
             // Extract input filenames from MSF file
             List<string> featurexml_files_orig;
@@ -285,11 +296,11 @@ namespace PD.OpenMS.AdapterNodes
                             {"fix_peptides", param_fix_peptides.ToString().ToLower()},
                             {"protein_groups", param_protein_quant_mode.Value != "unique" ? fido_idxml_file : ""},
                             {"threads", param_num_threads.ToString()}};
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
 
             SendAndLogMessage("Starting ProteinQuantifier");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
 
@@ -310,11 +321,11 @@ namespace PD.OpenMS.AdapterNodes
                             {"out", output_file},
                             {"greedy_group_resolution", param_protein_quant_mode.Value == "greedy" ? "true" : "false"},
                             {"threads", param_num_threads.ToString()}};
-                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
 
                 SendAndLogMessage("Starting FidoAdapter");
-                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
@@ -498,11 +509,11 @@ namespace PD.OpenMS.AdapterNodes
                             {"out", output_file},
                             {"algorithm_type", "median"},
                             {"threads", param_num_threads.ToString()}};
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             OpenMSCommons.WriteParamsToINI(ini_path, cn_params);
 
             SendAndLogMessage("Starting ConsensusMapNormalizer");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
             return output_file;
@@ -611,9 +622,9 @@ namespace PD.OpenMS.AdapterNodes
                             {"out_type", "consensusXML"},
                             {"threads", param_num_threads.ToString()}};
                 ini_path = Path.Combine(NodeScratchDirectory, @"FileConverterDefault.ini");
-                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 OpenMSCommons.WriteParamsToINI(ini_path, convert_parameters);
-                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
@@ -638,14 +649,14 @@ namespace PD.OpenMS.AdapterNodes
                         {"threads", param_num_threads.ToString()}
                     };
                     ini_path = Path.Combine(NodeScratchDirectory, @"MapAlignerPoseClusteringDefault.ini");
-                    OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                    OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                     OpenMSCommons.WriteParamsToINI(ini_path, map_parameters);
                     OpenMSCommons.WriteItemListToINI(in_files, ini_path, "in");
                     OpenMSCommons.WriteItemListToINI(out_files, ini_path, "out");
                     OpenMSCommons.WriteThresholdsToINI(param_mz_threshold, param_rt_threshold, ini_path);
 
                     SendAndLogMessage("Starting MapAlignerPoseClustering");
-                    OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                    OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                     m_current_step += 1;
                     ReportTotalProgress((double)m_current_step / m_num_steps);
                 }
@@ -675,13 +686,13 @@ namespace PD.OpenMS.AdapterNodes
                         {"threads", param_num_threads.ToString()}
                 };
                 ini_path = Path.Combine(NodeScratchDirectory, @"FeatureLinkerUnlabeledQTDefault.ini");
-                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 OpenMSCommons.WriteParamsToINI(ini_path, fl_unlabeled_parameters);
                 OpenMSCommons.WriteItemListToINI(in_files, ini_path, "in");
                 OpenMSCommons.WriteThresholdsToINI(param_mz_threshold, param_rt_threshold, ini_path);
 
                 SendAndLogMessage("FeatureLinkerUnlabeledQT");
-                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
@@ -966,7 +977,7 @@ namespace PD.OpenMS.AdapterNodes
         {
             var exec_path = Path.Combine(m_openms_dir, @"bin/IDMapper.exe");
             var ini_path = Path.Combine(NodeScratchDirectory, @"IDMapper.ini");
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> idmapper_parameters = new Dictionary<string, string> {
                         {"mz_tolerance", param_id_mapping_mz_threshold.Value.Tolerance.ToString()},
                         {"rt_tolerance", (param_id_mapping_rt_threshold.Value * 60.0).ToString()},
@@ -979,7 +990,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("consensus", "use_subelements", "true"));
 
             SendAndLogMessage("IDMapper");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
         }
@@ -1008,7 +1019,7 @@ namespace PD.OpenMS.AdapterNodes
             {
                 exec_path = Path.Combine(m_openms_dir, @"bin/DecoyDatabase.exe");
                 ini_path = Path.Combine(NodeScratchDirectory, @"DecoyDatabase.ini");
-                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 Dictionary<string, string> dd_parameters = new Dictionary<string, string> {
                         {"out", m_openms_fasta_file},
                         {"append", "true"},
@@ -1022,7 +1033,7 @@ namespace PD.OpenMS.AdapterNodes
                 OpenMSCommons.WriteItemListToINI(in_list, ini_path, "in");
 
                 SendAndLogMessage("DecoyDatabase");
-                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
@@ -1030,7 +1041,7 @@ namespace PD.OpenMS.AdapterNodes
             //run PeptideIndexer
             exec_path = Path.Combine(m_openms_dir, @"bin/PeptideIndexer.exe");
             ini_path = Path.Combine(NodeScratchDirectory, @"PeptideIndexer.ini");
-            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> pi_parameters = new Dictionary<string, string> {
                         {"in", input_file},
                         {"fasta", m_openms_fasta_file},
@@ -1046,7 +1057,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("enzyme", "specificity", "none"));
 
             SendAndLogMessage("PeptideIndexer");
-            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, new SendAndLogMessageDelegate(SendAndLogMessage), new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage), new WriteLogMessageDelegate(WriteLogMessage), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat), new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
         }

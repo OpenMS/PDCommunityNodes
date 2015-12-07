@@ -17,15 +17,24 @@ using Thermo.Magellan.Utilities;
 
 namespace PD.OpenMS.AdapterNodes
 {
-    public delegate void NodeLoggerWarningDelegate(string s, params object[] args);
-    public delegate Exception NodeLoggerErrorDelegate(Exception e, string s, params object[] args);
-    public delegate void SendAndLogTemporaryMessageDelegate(string s, bool writeToLog = true);
-    public delegate void SendAndLogMessageDelegate(string s, bool writeToLog = true);
-    public delegate void WriteLogMessageDelegate(MessageLevel ml, string s);
+    public struct NodeDelegates
+    {
+        public delegate void NodeLoggerWarningDelegate(string s, params object[] args);
+        public delegate Exception NodeLoggerErrorDelegate(Exception e, string s, params object[] args);
+        public delegate void SendAndLogTemporaryMessageDelegate(string s, bool writeToLog = true);
+        public delegate void SendAndLogMessageDelegate(string s, bool writeToLog = true);
+        public delegate void WriteLogMessageDelegate(MessageLevel ml, string s);
+
+        public NodeLoggerWarningDelegate warnLog;
+        public NodeLoggerErrorDelegate errorLog;
+        public SendAndLogTemporaryMessageDelegate logTmpMessage;
+        public SendAndLogMessageDelegate logMessage;
+        public WriteLogMessageDelegate writeLogMessage;
+    }
 
     public class OpenMSCommons
     {
-        public static void CreateDefaultINI(string exec_path, string ini_path, string scratch_dir, NodeLoggerErrorDelegate errorLog, NodeLoggerWarningDelegate warnLog)
+        public static void CreateDefaultINI(string exec_path, string ini_path, string scratch_dir, NodeDelegates nd)
         {
             var timer = Stopwatch.StartNew();
 
@@ -54,7 +63,7 @@ namespace PD.OpenMS.AdapterNodes
                 }
                 catch (InvalidOperationException ex)
                 {
-                    errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
+                    nd.errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
                     throw;
                 }
 
@@ -72,14 +81,14 @@ namespace PD.OpenMS.AdapterNodes
             }
             catch (Exception ex)
             {
-                errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
+                nd.errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
                 throw;
             }
             finally
             {
                 if (!process.HasExited)
                 {
-                    warnLog("The process [{0}] isn't finished correctly -> force the process to exit now", process.StartInfo.FileName);
+                    nd.warnLog("The process [{0}] isn't finished correctly -> force the process to exit now", process.StartInfo.FileName);
                     process.Kill();
                 }
             }
@@ -175,14 +184,7 @@ namespace PD.OpenMS.AdapterNodes
         }
 
         //execute specific OpenMS Tool (exec_path) with specified Ini (param_path)        
-        public static void RunTOPPTool(string exec_path,
-                                       string param_path,
-                                       string scratch_dir,
-                                       SendAndLogMessageDelegate logMessage,
-                                       SendAndLogTemporaryMessageDelegate logTmpMessage,
-                                       WriteLogMessageDelegate writeLogMessage,
-                                       NodeLoggerWarningDelegate nodeLogWarning,
-                                       NodeLoggerErrorDelegate nodeLogError)
+        public static void RunTOPPTool(string exec_path, string param_path, string scratch_dir, NodeDelegates nd)
         {
             var timer = Stopwatch.StartNew();
 
@@ -201,12 +203,12 @@ namespace PD.OpenMS.AdapterNodes
                 StartInfo = process_startinfo
             };
 
-            logTmpMessage(String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
+            nd.logTmpMessage(String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
                                         process.StartInfo.FileName,
                                         process.StartInfo.WorkingDirectory,
                                         process.StartInfo.Arguments));
 
-            writeLogMessage(MessageLevel.Debug,
+            nd.writeLogMessage(MessageLevel.Debug,
                             String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
                                           process.StartInfo.FileName,
                                           process.StartInfo.WorkingDirectory,
@@ -232,7 +234,7 @@ namespace PD.OpenMS.AdapterNodes
                         }
 
                         //store all results (for now?) of OpenMS Tool output
-                        writeLogMessage(MessageLevel.Debug, output);
+                        nd.writeLogMessage(MessageLevel.Debug, output);
 
                         // Parse the output and report progress using the method SendAndLogTemporaryMessage
                         if (output.Contains(@"Progress of 'loading mzML file':"))
@@ -265,7 +267,7 @@ namespace PD.OpenMS.AdapterNodes
                         }
                         else if (output.Contains("%"))
                         {
-                            logTmpMessage(String.Format("{0} {1}", current_work, output));
+                            nd.logTmpMessage(String.Format("{0} {1}", current_work, output));
                         }
                     }
 
@@ -276,11 +278,11 @@ namespace PD.OpenMS.AdapterNodes
 
                         while ((output = reader.ReadLine()) != null)
                         {
-                            writeLogMessage(MessageLevel.Debug, output);
+                            nd.writeLogMessage(MessageLevel.Debug, output);
 
                             if (String.IsNullOrEmpty(output) == false)
                             {
-                                logMessage(output, false);
+                                nd.logMessage(output, false);
                             }
                         }
                     }
@@ -289,7 +291,7 @@ namespace PD.OpenMS.AdapterNodes
                 }
                 catch (InvalidOperationException ex)
                 {
-                    nodeLogError(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
+                    nd.errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
                     throw;
                 }
 
@@ -308,19 +310,19 @@ namespace PD.OpenMS.AdapterNodes
             }
             catch (Exception ex)
             {
-                nodeLogError(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
+                nd.errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
                 throw;
             }
             finally
             {
                 if (!process.HasExited)
                 {
-                    nodeLogWarning("The process [{0}] isn't finished correctly -> force the process to exit now", process.StartInfo.FileName);
+                    nd.warnLog("The process [{0}] isn't finished correctly -> force the process to exit now", process.StartInfo.FileName);
                     process.Kill();
                 }
             }
 
-            logMessage(String.Format("{0} tool processing took {1}.", exec_path, StringHelper.GetDisplayString(timer.Elapsed)));
+            nd.logMessage(String.Format("{0} tool processing took {1}.", exec_path, StringHelper.GetDisplayString(timer.Elapsed)));
         }
 
         public static string ModSequence(string seq, string mods_str)

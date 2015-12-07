@@ -133,6 +133,7 @@ namespace PD.OpenMS.AdapterNodes
         private int m_num_files;
 		private readonly SpectrumDescriptorCollection m_spectrum_descriptors = new SpectrumDescriptorCollection();
 	    private List<WorkflowInputFile> m_workflow_input_files;
+        private NodeDelegates m_node_delegates;
 
         #region Top-level program flow
 
@@ -161,6 +162,16 @@ namespace PD.OpenMS.AdapterNodes
 		/// <param name="eventArgs">The result event arguments.</param>
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
+            // Node delegates
+            m_node_delegates = new NodeDelegates()
+            {
+                errorLog = new NodeDelegates.NodeLoggerErrorDelegate(NodeLogger.ErrorFormat),
+                warnLog = new NodeDelegates.NodeLoggerWarningDelegate(NodeLogger.WarnFormat),
+                logTmpMessage = new NodeDelegates.SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage),
+                logMessage = new NodeDelegates.SendAndLogMessageDelegate(SendAndLogMessage),
+                writeLogMessage = new NodeDelegates.WriteLogMessageDelegate(WriteLogMessage)
+            };
+
             // determine number of inputfiles which have to be converted
             m_workflow_input_files = EntityDataService.CreateEntityItemReader().ReadAll<WorkflowInputFile>().ToList();
             m_num_files = m_workflow_input_files.Count;
@@ -372,7 +383,7 @@ namespace PD.OpenMS.AdapterNodes
                 featurexml_out_files.Add(out_files[i]);
 
                 ini_path = Path.Combine(NodeScratchDirectory, @"FeatureFinderMultiplex.ini");
-                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat), new NodeLoggerWarningDelegate(NodeLogger.WarnFormat));
+                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
 
                 Dictionary<string, string> ff_parameters = new Dictionary<string, string> {
                             {"in", in_files[i]},
@@ -389,14 +400,7 @@ namespace PD.OpenMS.AdapterNodes
                 OpenMSCommons.WriteParamsToINI(ini_path, ff_parameters);
 
                 SendAndLogMessage("Starting FeatureFinderMultiplex for file [{0}]", in_files[i]);
-                OpenMSCommons.RunTOPPTool(exec_path,
-                                      ini_path,
-                                      NodeScratchDirectory,
-                                      new SendAndLogMessageDelegate(SendAndLogMessage),
-                                      new SendAndLogTemporaryMessageDelegate(SendAndLogTemporaryMessage),
-                                      new WriteLogMessageDelegate(WriteLogMessage),
-                                      new NodeLoggerWarningDelegate(NodeLogger.WarnFormat),
-                                      new NodeLoggerErrorDelegate(NodeLogger.ErrorFormat));
+                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
