@@ -21,26 +21,26 @@ using System.Text;
 
 namespace PD.OpenMS.AdapterNodes
 {
-	#region Node Setup
+    #region Node Setup
 
     [ProcessingNode("60F7FFAC-F6BF-446E-8504-498D0919B130",
         Category = ProcessingNodeCategories.Quantification,
-		DisplayName = "LFQProfiler FF",
-		MainVersion = 1,
-		MinorVersion = 50,
+        DisplayName = "LFQProfiler FF",
+        MainVersion = 1,
+        MinorVersion = 50,
         Description = "Detects and quantifies peptide features in the data using the OpenMS framework.")]
 
-	[ConnectionPoint("IncomingSpectra",
-		ConnectionDirection = ConnectionDirection.Incoming,
-		ConnectionMultiplicity = ConnectionMultiplicity.Single,
-		ConnectionMode = ConnectionMode.Manual,
-		ConnectionRequirement = ConnectionRequirement.RequiredAtDesignTime,
-		ConnectionDisplayName = ProcessingNodeCategories.SpectrumAndFeatureRetrieval,
-		ConnectionDataHandlingType = ConnectionDataHandlingType.InMemory)]
+    [ConnectionPoint("IncomingSpectra",
+        ConnectionDirection = ConnectionDirection.Incoming,
+        ConnectionMultiplicity = ConnectionMultiplicity.Single,
+        ConnectionMode = ConnectionMode.Manual,
+        ConnectionRequirement = ConnectionRequirement.RequiredAtDesignTime,
+        ConnectionDisplayName = ProcessingNodeCategories.SpectrumAndFeatureRetrieval,
+        ConnectionDataHandlingType = ConnectionDataHandlingType.InMemory)]
 
-	[ConnectionPointDataContract(
-		"IncomingSpectra",
-		MassSpecDataTypes.MSnSpectra)]
+    [ConnectionPointDataContract(
+        "IncomingSpectra",
+        MassSpecDataTypes.MSnSpectra)]
 
     [ConnectionPoint("featureXML",
         ConnectionDirection = ConnectionDirection.Outgoing,
@@ -54,23 +54,20 @@ namespace PD.OpenMS.AdapterNodes
         "featureXML",
         "featureXML")]
 
-	[ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
+    [ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
 
-	#endregion
+    #endregion
 
     public class LFQProfilerProcessingNode : ProcessingNode,
         IResultsSink<MassSpectrumCollection>
-	{
+    {
         #region Parameters
 
         [MassToleranceParameter(
             Category = "1. Feature Finding",
             DisplayName = "Mass tolerance",
             Description = "This parameter specifies the mass tolerance for feature detection",
-            //Subset = "Da", // required by current design
             DefaultValue = "10 ppm",
-            //MinimumValue = "0 Da",
-            //MaximumValue = "1 Da",
             Position = 1,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_mass_tolerance;
@@ -116,14 +113,6 @@ namespace PD.OpenMS.AdapterNodes
             Position = 6)]
         public DoubleParameter param_averagine_similarity;
 
-        //[IntegerParameter(Category = "1. Feature Finding",
-        //    DisplayName = "CPU Cores",
-        //    Description = "How many CPU cores should be used by the algorithm.",
-        //    DefaultValue = "1",
-        //    MinimumValue = "1",
-        //    Position = 7)]
-        //public IntegerParameter param_num_threads;
-
         #endregion
 
         private int m_current_step;
@@ -136,28 +125,28 @@ namespace PD.OpenMS.AdapterNodes
         #region Top-level program flow
 
         /// <summary>
-		/// Initializes the progress.
-		/// </summary>
-		/// <returns></returns>
+        /// Initializes the progress.
+        /// </summary>
+        /// <returns></returns>
         public override ProgressInitializationHint InitializeProgress()
         {
             return new ProgressInitializationHint(4 * ProcessingServices.CurrentWorkflow.GetWorkflow().GetWorkflowInputFiles().ToList().Count, ProgressDependenceType.Independent);
         }
-        
-		/// <summary>
-		/// Portion of mass spectra received.
-		/// </summary>
-		public void OnResultsSent(IProcessingNode sender, MassSpectrumCollection result)
-		{
-			ArgumentHelper.AssertNotNull(result, "result");
-			m_spectrum_descriptors.AddRange(ProcessingServices.SpectrumProcessingService.StoreSpectraInCache(this, result));
-		}
-        
-		/// <summary>
-		/// Called when the parent node finished the data processing.
-		/// </summary>
-		/// <param name="sender">The parent node.</param>
-		/// <param name="eventArgs">The result event arguments.</param>
+
+        /// <summary>
+        /// Portion of mass spectra received.
+        /// </summary>
+        public void OnResultsSent(IProcessingNode sender, MassSpectrumCollection result)
+        {
+            ArgumentHelper.AssertNotNull(result, "result");
+            m_spectrum_descriptors.AddRange(ProcessingServices.SpectrumProcessingService.StoreSpectraInCache(this, result));
+        }
+
+        /// <summary>
+        /// Called when the parent node finished the data processing.
+        /// </summary>
+        /// <param name="sender">The parent node.</param>
+        /// <param name="eventArgs">The result event arguments.</param>
         public override void OnParentNodeFinished(IProcessingNode sender, ResultsArguments eventArgs)
         {
             // Node delegates
@@ -197,8 +186,8 @@ namespace PD.OpenMS.AdapterNodes
 
                     // Export spectra to temporary *.mzML file. Only one file has this file_id
                     var file_to_export = m_workflow_input_files.Where(w => w.FileID == file_id).ToList().First().PhysicalFileName;
-                    var spectrum_export_file_name = Path.Combine(NodeScratchDirectory, Path.GetFileNameWithoutExtension(file_to_export)) + "_" +  Guid.NewGuid().ToString().Replace('-', '_') + ".mzML";
-                    
+                    var spectrum_export_file_name = Path.Combine(NodeScratchDirectory, Path.GetFileNameWithoutExtension(file_to_export)) + "_" + Guid.NewGuid().ToString().Replace('-', '_') + ".mzML";
+
                     raw_files.Add(file_to_export);
                     exported_files.Add(spectrum_export_file_name);
 
@@ -223,8 +212,8 @@ namespace PD.OpenMS.AdapterNodes
             // Run pipeline
             RunOpenMsPipeline(exported_files);
 
-			// Fire Finish event
-			FireProcessingFinishedEvent(new ResultsArguments());
+            // Fire Finish event
+            FireProcessingFinishedEvent(new ResultsArguments());
 
             ReportTotalProgress(1.0);
         }
@@ -288,18 +277,17 @@ namespace PD.OpenMS.AdapterNodes
         #endregion
 
         /// <summary>
-		/// Creates database indices.
-		/// </summary>
-		private void AddDatabaseIndices()
-		{
-			EntityDataService.CreateIndex<MassSpectrumItem>();
-		}
+        /// Creates database indices.
+        /// </summary>
+        private void AddDatabaseIndices()
+        {
+            EntityDataService.CreateIndex<MassSpectrumItem>();
+        }
 
         /// <summary>
         /// Executes the pipeline.
         /// </summary>
         /// <exception cref="Thermo.Magellan.Exceptions.MagellanProcessingException"></exception>
-        //private IDictionary<UnknownFeatureIonInstanceItem, List<ChromatogramPeakItem>> RunOpenMsPipeline(List<string> spectrumExportFileNames)
         private void RunOpenMsPipeline(List<string> spectrumExportFileNames)
         {
             //check that entries in list of filenames  is ok
@@ -325,14 +313,14 @@ namespace PD.OpenMS.AdapterNodes
             //Add path of Open MS installation here
             var openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
 
-            //MetaboliteFinder, do once for each exported file
+            //Feature detection, do once for each exported file
             var exec_path = Path.Combine(openms_dir, @"bin/FeatureFinderMultiplex.exe");
             for (int i = 0; i < m_num_files; i++)
             {
                 in_files[i] = spectrumExportFileNames[i];
                 out_files[i] = Path.Combine(Path.GetDirectoryName(EntityDataService.ReportFile.FileName),
                                             Path.GetFileNameWithoutExtension(in_files[i])) + ".featureXML";
-                
+
                 featurexml_out_files.Add(out_files[i]);
 
                 ini_path = Path.Combine(NodeScratchDirectory, @"FeatureFinderMultiplex.ini");
@@ -354,7 +342,7 @@ namespace PD.OpenMS.AdapterNodes
 
                 SendAndLogMessage("Starting FeatureFinderMultiplex for file [{0}]", in_files[i]);
                 OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
-                
+
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
@@ -366,14 +354,14 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("OpenMS pipeline processing took {0}.", StringHelper.GetDisplayString(timer.Elapsed));
         }
 
-		/// <summary>
-		/// Stores information about the used entity object types and connections.
-		/// </summary>
-		private void RegisterEntityObjectTypes()
-		{
-			// register items
-			EntityDataService.RegisterEntity<MassSpectrumItem>(ProcessingNodeNumber);
-		}
+        /// <summary>
+        /// Stores information about the used entity object types and connections.
+        /// </summary>
+        private void RegisterEntityObjectTypes()
+        {
+            // register items
+            EntityDataService.RegisterEntity<MassSpectrumItem>(ProcessingNodeNumber);
+        }
     }
 }
 

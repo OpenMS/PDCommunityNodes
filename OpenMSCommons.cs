@@ -37,6 +37,9 @@ namespace PD.OpenMS.AdapterNodes
 
     public class OpenMSCommons
     {
+        /// <summary>
+        /// Create a default INI file for the given TOPP tool
+        /// </summary>
         public static void CreateDefaultINI(string exec_path, string ini_path, string scratch_dir, NodeDelegates nd)
         {
             var timer = Stopwatch.StartNew();
@@ -66,7 +69,7 @@ namespace PD.OpenMS.AdapterNodes
                 }
                 catch (InvalidOperationException ex)
                 {
-                    nd.errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
+                    nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
                     throw;
                 }
 
@@ -84,19 +87,22 @@ namespace PD.OpenMS.AdapterNodes
             }
             catch (Exception ex)
             {
-                nd.errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
+                nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
                 throw;
             }
             finally
             {
                 if (!process.HasExited)
                 {
-                    nd.warnLog("The process [{0}] isn't finished correctly -> force the process to exit now", process.StartInfo.FileName);
+                    nd.warnLog("The process [{0}] hasn't finished correctly -> force to exit now", process.StartInfo.FileName);
                     process.Kill();
                 }
             }
         }
 
+        /// <summary>
+        /// Write a set of parameters to the specified OpenMS INI file
+        /// </summary>
         public static void WriteParamsToINI(string ini_path, Dictionary<string, string> parameters)
         {
             XmlDocument doc = new XmlDocument();
@@ -115,6 +121,9 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
+        /// <summary>
+        /// Write a nested parameter to the specified OpenMS INI file
+        /// </summary>
         public static void WriteNestedParamToINI(string ini_path, Triplet parameters)
         {
             XmlDocument doc = new XmlDocument();
@@ -130,7 +139,9 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
-        //Write ITEMLISTs, used for input or output file lists
+        /// <summary>
+        /// Write an item list parameter to an OpenMS INI file
+        /// </summary>
         public static void WriteItemListToINI(string[] vars, string ini_path, string mode, bool clear_list_first = false)
         {
             XmlDocument doc = new XmlDocument();
@@ -160,7 +171,9 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
-        //Write mz and rt parameters. different function than WriteParamsToINI due to specific structure in considered tools
+        /// <summary>
+        /// Write mz and rt parameters for MapAligner or FeatureLinker. Different function than WriteParamsToINI due to specific structure in considered tools
+        /// </summary>
         public static void WriteThresholdsToINI(MassToleranceParameter mz_threshold, DoubleParameter rt_threshold, string ini_path)
         {
             XmlDocument doc = new XmlDocument();
@@ -186,7 +199,9 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
-        //execute specific OpenMS Tool (exec_path) with specified Ini (param_path)        
+        /// <summary>
+        /// Run TOPP tool. Parameters are passed via the OpenMS INI file at param_path
+        /// </summary>        
         public static void RunTOPPTool(string exec_path, string param_path, string scratch_dir, NodeDelegates nd)
         {
             var timer = Stopwatch.StartNew();
@@ -223,8 +238,6 @@ namespace PD.OpenMS.AdapterNodes
 
                 try
                 {
-                    //process.PriorityClass = ProcessPriorityClass.BelowNormal;
-
                     string current_work = "";
                     while (process.HasExited == false)
                     {
@@ -328,6 +341,9 @@ namespace PD.OpenMS.AdapterNodes
             nd.logMessage(String.Format("{0} tool processing took {1}.", exec_path, StringHelper.GetDisplayString(timer.Elapsed)));
         }
 
+        /// <summary>
+        /// Return a modified sequence string (OpenMS format) from unmodified sequence + Thermo-formatted modification string
+        /// </summary>
         public static string ModSequence(string seq, string mods_str)
         {
             if (mods_str == "") return seq;
@@ -346,7 +362,7 @@ namespace PD.OpenMS.AdapterNodes
                 // have something like "M11(Oxidation) or N-Term(Carbamyl) or X8(L)"
                 string[] parts = m.Split('(');
 
-                if (!aa_letters.Contains(parts[0].Substring(0,1)))
+                if (!aa_letters.Contains(parts[0].Substring(0, 1)))
                 {
                     // modified AA character is not an actual AA (probably B, J, X, or Z)
                     // ==> now, also check if "modification" consists of just 1 letter representing an AA
@@ -369,7 +385,8 @@ namespace PD.OpenMS.AdapterNodes
             var result = "";
             var n_term_mod = "";
             var c_term_mod = "";
-            Int32 last_pos = 0;    
+            Int32 last_pos = 0;
+
             //assumption: modifications are in ascending order of AA position
             foreach (string m in actual_mods)
             {
