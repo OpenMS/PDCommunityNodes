@@ -141,7 +141,7 @@ namespace PD.OpenMS.AdapterNodes
         }
 
         /// <summary>
-        /// Called when the parent node finished the data processing.
+        /// Called when the parent node finished data processing.
         /// </summary>
         /// <param name="sender">The parent node.</param>
         /// <param name="eventArgs">The result event arguments.</param>
@@ -171,7 +171,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // Group spectra by file id and process 
             foreach (var spectrumDescriptorsGroupedByFileId in m_spectrum_descriptors
-                .Where(w => (w.ScanEvent.MSOrder == MSOrderType.MS1))//.Where(w=>w.ScanEvent.MSOrder == MSOrderType.MS1) //if we remove, we get 1 spec per file
+                .Where(w => (w.ScanEvent.MSOrder == MSOrderType.MS1))
                 .GroupBy(g => g.Header.FileID))
             {
                 // Group by the scan event of the MS1 spectrum to avoid mixing up different polarities or scan ranges
@@ -210,9 +210,8 @@ namespace PD.OpenMS.AdapterNodes
             // Run pipeline
             RunOpenMsPipeline(exported_files);
 
-            // Fire Finish event
+            // ... finished!
             FireProcessingFinishedEvent(new ResultsArguments());
-
             ReportTotalProgress(1.0);
         }
 
@@ -251,7 +250,7 @@ namespace PD.OpenMS.AdapterNodes
                 throw new MagellanProcessingException(String.Format("Cannot create or open mzML file: {0}", spectrum_export_file_name));
             }
 
-            // Retrieve spectra in bunches from the spectrum cache and export themto the new created mzML file.			
+            // Retrieve spectra in bunches from the spectrum cache and export them to the mzML file.			
             var spectra = new MassSpectrumCollection(1000);
 
             foreach (var spectrum in ProcessingServices.SpectrumProcessingService.ReadSpectraFromCache(spectrum_ids))
@@ -297,18 +296,16 @@ namespace PD.OpenMS.AdapterNodes
             SendAndLogMessage("Starting OpenMS pipeline to process spectra ...");
 
             //initialise variables
-            string mass_error = param_mass_tolerance.ToString(); //MassError obtained from workflow option
+            string mass_error = param_mass_tolerance.ToString();
             mass_error = mass_error.Substring(0, mass_error.Length - 4); //remove ' ppm' part (ppm is enforced)            
 
-            //list of input and output files of specific OpenMS tools
+            //input and output files
             string[] in_files = new string[m_num_files];
             string[] out_files = new string[m_num_files];
             string ini_path = ""; //path to configuration files with parameters for the OpenMS Tool
-
-            //create Lists of possible OpenMS files
             List<string> featurexml_out_files = new List<string>(m_num_files);
 
-            //Add path of Open MS installation here
+            //Path to OpenMS installation
             var openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
 
             //Feature detection, do once for each exported file
@@ -345,7 +342,7 @@ namespace PD.OpenMS.AdapterNodes
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
 
-            // save featureXML file names to msf file
+            // save featureXML file names to MSF file
             var featurexml_field = ProcessingServices.CustomDataService.GetOrCreateCustomDataField(WorkflowID, new Guid("BEC3E6A6-51CB-4FBB-A579-34312EA78C05"), "FileNames", ProcessingNodeNumber, ProcessingNodeNumber, CustomDataTarget.ProcessingNode, CustomDataType.String, CustomDataAccessMode.Read, DataVisibility.Hidden, dataPurpose: "FeatureXmlFiles");
             ProcessingServices.CustomDataService.WriteString(featurexml_field, ProcessingNodeNumber, string.Join(",", out_files.ToArray()));
 

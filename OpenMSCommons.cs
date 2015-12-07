@@ -39,7 +39,7 @@ namespace PD.OpenMS.AdapterNodes
     }
 
     /// <summary>
-    /// Methods that are shared between several nodes. Cannot be done by inheritance (or so I think), as multiple inheritance isn't allowed.
+    /// Methods that are shared between several nodes. Cannot be done by inheritance (I think), as multiple inheritance isn't allowed.
     /// </summary>
     public class OpenMSCommons
     {
@@ -267,18 +267,6 @@ namespace PD.OpenMS.AdapterNodes
                         {
                             current_work = "Progress of 'loading chromatograms':";
                         }
-                        else if (output.Contains("Progress of 'mass trace detection':"))
-                        {
-                            current_work = "Progress of 'mass trace detection':";
-                        }
-                        else if (output.Contains("Progress of 'elution peak detection':"))
-                        {
-                            current_work = "Progress of 'elution peak detection':";
-                        }
-                        else if (output.Contains("Progress of 'assembling mass traces to features':"))
-                        {
-                            current_work = "Progress of 'assembling mass traces to features':";
-                        }
                         else if (output.Contains("Progress of 'Aligning input maps':"))
                         {
                             current_work = "Progress of 'Aligning input maps':";
@@ -313,7 +301,7 @@ namespace PD.OpenMS.AdapterNodes
                 }
                 catch (InvalidOperationException ex)
                 {
-                    nd.errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
+                    nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
                     throw;
                 }
 
@@ -332,14 +320,14 @@ namespace PD.OpenMS.AdapterNodes
             }
             catch (Exception ex)
             {
-                nd.errorLog(ex, "The following exception is raised during the execution of \"{0}\":", exec_path);
+                nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
                 throw;
             }
             finally
             {
                 if (!process.HasExited)
                 {
-                    nd.warnLog("The process [{0}] isn't finished correctly -> force the process to exit now", process.StartInfo.FileName);
+                    nd.warnLog("The process [{0}] hasn't finished correctly -> force to exit now", process.StartInfo.FileName);
                     process.Kill();
                 }
             }
@@ -393,7 +381,7 @@ namespace PD.OpenMS.AdapterNodes
             var c_term_mod = "";
             Int32 last_pos = 0;
 
-            //assumption: modifications are in ascending order of AA position
+            // assumption: modifications are in ascending order of AA position
             foreach (string m in actual_mods)
             {
                 // have something like "M11(Oxidation) or N-Term(Carbamyl)"

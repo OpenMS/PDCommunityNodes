@@ -48,7 +48,7 @@ namespace PD.OpenMS.AdapterNodes
     public class RNPxlConsensusNode : ReportProcessingNode
     {
         /// <summary>
-        /// Called when the parent node finished the data processing.
+        /// Called when the parent node finished data processing.
         /// </summary>
         /// <param name="sender">The parent node.</param>
         /// <param name="eventArgs">The result event arguments.</param>

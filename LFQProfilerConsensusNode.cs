@@ -76,9 +76,6 @@ namespace PD.OpenMS.AdapterNodes
             Position = 1)]
         public BooleanParameter param_perform_map_alignment;
 
-        /// <summary>
-        /// This parameter specifies the maximum allowed retention time difference for features to be linked together.
-        /// </summary>
         [DoubleParameter(
             Category = "1. Feature linking",
             DisplayName = "Max. RT difference [min]",
@@ -87,9 +84,6 @@ namespace PD.OpenMS.AdapterNodes
             Position = 2)]
         public DoubleParameter param_rt_threshold;
 
-        /// <summary>
-        /// This parameter specifies the maximum allowed m/z difference for features to be linked together.
-        /// </summary>
         [MassToleranceParameter(
             Category = "1. Feature linking",
             DisplayName = "Max. m/z difference",
@@ -205,7 +199,7 @@ namespace PD.OpenMS.AdapterNodes
         private int m_num_files;
 
         /// <summary>
-        /// Called when the parent node finished the data processing.
+        /// Called when the parent node finished data processing.
         /// </summary>
         /// <param name="sender">The parent node.</param>
         /// <param name="eventArgs">The result event arguments.</param>
@@ -242,8 +236,10 @@ namespace PD.OpenMS.AdapterNodes
 
             // Dictionary {feature ID -> consensusXML element} with original RTs
             Dictionary<string, XmlElement> consensus_dict;
+
             // ConsensusXML file with original RTs
             string consensus_xml_file_orig_rt;
+
             // Create them
             BuildConsensusXMLWithOrigRTs(consensus_xml_file, featurexml_files_orig, out consensus_dict, out consensus_xml_file_orig_rt);
 
@@ -349,7 +345,6 @@ namespace PD.OpenMS.AdapterNodes
         /// </summary>
         private void PopulateConsensusFeaturesTable(Dictionary<string, XmlElement> consensus_dict, string cn_output_file, List<string> feature_table_column_names)
         {
-            // Connect PSM table with consensus features table (TODO: improve comments)
             EntityDataService.RegisterEntityConnection<TargetPeptideSpectrumMatch, ConsensusFeatureEntity>(ProcessingNodeNumber);
             var psms_with_quantification = new List<Tuple<TargetPeptideSpectrumMatch, ConsensusFeatureEntity>>();
 
@@ -459,7 +454,6 @@ namespace PD.OpenMS.AdapterNodes
                     var current_pep_score = Convert.ToDouble(pep_score.GetValue(psm));
                     if (current_pep_score < best_pep_score)
                     {
-                        //new_consensus_item.SetValue("Sequence", psm.ModifiedSequence);
                         new_consensus_item.SetValue("Sequence", peptide_hit.Attributes["sequence"].Value);
                         new_consensus_item.SetValue("Accessions", psm.ParentProteinAccessions);
                         best_pep_score = current_pep_score;
@@ -630,11 +624,11 @@ namespace PD.OpenMS.AdapterNodes
         /// </summary>
         private string AlignAndLink(List<string> featurexml_files_orig)
         {
-            //list of input and output files of specific OpenMS tools
+            //input and ouput files
             string output_file = "";
             string[] in_files = new string[m_num_files];
             string[] out_files = new string[m_num_files];
-            string ini_path = ""; //path to configuration files with parameters for the OpenMS Tool
+            string ini_path = "";
 
             //if only one file, convert featureXML (unaligned) to consensus, no alignment or linking will occur
             if (m_num_files == 1)
@@ -647,7 +641,7 @@ namespace PD.OpenMS.AdapterNodes
 
                 var exec_path = Path.Combine(m_openms_dir, @"bin/FileConverter.exe");
                 Dictionary<string, string> convert_parameters = new Dictionary<string, string> {
-                            {"in", in_files[0]}, //as only one file, outvar was assigned the result from FFC
+                            {"in", in_files[0]},
                             {"in_type", "featureXML"},
                             {"out", out_files[0]},
                             {"out_type", "consensusXML"},
@@ -668,7 +662,7 @@ namespace PD.OpenMS.AdapterNodes
                     exec_path = Path.Combine(m_openms_dir, @"bin/MapAlignerPoseClustering.exe");
                     for (int i = 0; i < m_num_files; i++)
                     {
-                        in_files[i] = featurexml_files_orig[i]; // current in_files will be featureXML
+                        in_files[i] = featurexml_files_orig[i];
                         out_files[i] = Path.Combine(NodeScratchDirectory,
                                                     Path.GetFileNameWithoutExtension(in_files[i])) + ".aligned.featureXML";
                         aligned_featurexmls.Add(out_files[i]);
@@ -692,7 +686,7 @@ namespace PD.OpenMS.AdapterNodes
                     ReportTotalProgress((double)m_current_step / m_num_steps);
                 }
 
-                //FeatureLinkerUnlabeledQT
+                // Feature linking
 
                 // out_files might be original featureXML, might be aligned.featureXML
                 for (int i = 0; i < m_num_files; i++)
@@ -706,7 +700,6 @@ namespace PD.OpenMS.AdapterNodes
                         in_files[i] = featurexml_files_orig[i];
                     }
                 }
-                //save as consensus.consensusXML, filenames are stored inside, file should normally be accessed from inside CD
                 out_files[0] = Path.Combine(NodeScratchDirectory, "featureXML_consensus.consensusXML");
                 output_file = out_files[0];
 
@@ -735,7 +728,7 @@ namespace PD.OpenMS.AdapterNodes
         /// </summary>
         private void ReadInputFilenames(out List<string> orig_features, out List<string> raw_files)
         {
-            //Read in featureXmls contained in the study result folder, read only those associated with the project msf
+            //Read in featureXmls contained in the study result folder, read only those associated with the project MSF
             var all_custom_data_raw_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "RawFiles").ToDictionary(c => c.WorkflowID, c => c);
             var all_custom_data_featurexml_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "FeatureXmlFiles").ToDictionary(c => c.WorkflowID, c => c);
             //var all_custom_data_mzml_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "MzMLFiles").ToDictionary(c => c.WorkflowID, c => c);
@@ -978,22 +971,6 @@ namespace PD.OpenMS.AdapterNodes
                 XmlAttribute name_attr = null;
                 XmlAttribute value_attr = null;
 
-                //// posterior probability score as UserParam for Fido
-                //user_param = doc.CreateElement("UserParam");
-                //pep_hit_node.AppendChild(user_param);
-
-                //type_attr = doc.CreateAttribute("type");
-                //type_attr.Value = "float";
-                //user_param.Attributes.Append(type_attr);
-
-                //name_attr = doc.CreateAttribute("name");
-                //name_attr.Value = "Posterior Probability_score";
-                //user_param.Attributes.Append(name_attr);
-
-                //value_attr = doc.CreateAttribute("value");
-                //value_attr.Value = (1.0 - pep_score_val).ToString();
-                //user_param.Attributes.Append(value_attr);
-
                 // PD peptide ID for mapping back later
                 user_param = doc.CreateElement("UserParam");
                 pep_hit_node.AppendChild(user_param);
@@ -1012,7 +989,6 @@ namespace PD.OpenMS.AdapterNodes
                 user_param.Attributes.Append(value_attr);
             }
         }
-
 
         /// <summary>
         /// Run IDMapper on a given consensusXML and idXML file.

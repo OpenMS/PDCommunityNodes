@@ -183,10 +183,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "3. Peptide identification",
             DisplayName = "Precursor mass tolerance",
             Description = "This parameter specifies the precursor mass tolerance for peptide identification",
-            //Subset = "Da", // required by current design
             DefaultValue = "10 ppm",
-            //MinimumValue = "0 Da",
-            //MaximumValue = "1 Da",
             Position = 16,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_rnpxlsearch_precursor_mass_tolerance;
@@ -195,10 +192,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "3. Peptide identification",
             DisplayName = "Fragment mass tolerance",
             Description = "This parameter specifies the fragment mass tolerance for peptide identification",
-            //Subset = "Da", // required by current design
             DefaultValue = "10 ppm",
-            //MinimumValue = "0 Da",
-            //MaximumValue = "1 Da",
             Position = 17,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_rnpxlsearch_fragment_mass_tolerance;
@@ -492,10 +486,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "4. ID filtering",
             DisplayName = "Precursor mass tolerance",
             Description = "This parameter specifies the precursor mass tolerance for peptide identification",
-            //Subset = "Da", // required by current design
             DefaultValue = "10 ppm",
-            //MinimumValue = "0 Da",
-            //MaximumValue = "1 Da",
             Position = 54,
             IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
@@ -505,10 +496,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "4. ID filtering",
             DisplayName = "Fragment mass tolerance",
             Description = "This parameter specifies the fragment mass tolerance for peptide identification",
-            //Subset = "Da", // required by current design
             DefaultValue = "10 ppm",
-            //MinimumValue = "0 Da",
-            //MaximumValue = "1 Da",
             Position = 55,
             IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
@@ -915,7 +903,7 @@ namespace PD.OpenMS.AdapterNodes
         }
 
         /// <summary>
-        /// Called when the parent node finished the data processing.
+        /// Called when the parent node finished data processing.
         /// </summary>
         /// <param name="sender">The parent node.</param>
         /// <param name="eventArgs">The result event arguments.</param>
@@ -964,7 +952,7 @@ namespace PD.OpenMS.AdapterNodes
                 // Flatten the spectrum tree to a collection of spectrum descriptors. 
                 var spectrum_descriptors = spectrumDescriptorsGroupedByFileId.ToList();
 
-                // Export spectra to temporary *.mzML file
+                // Export spectra to temporary mzML file
                 var file_to_export = m_workflow_input_files.Where(w => w.FileID == file_id).ToList().First().PhysicalFileName;
                 var spectrum_export_file_name = Path.Combine(NodeScratchDirectory, Path.GetFileNameWithoutExtension(file_to_export)) + "_" + Guid.NewGuid().ToString().Replace('-', '_') + ".mzML";
 
@@ -986,7 +974,7 @@ namespace PD.OpenMS.AdapterNodes
             {
                 RunWorkflowOnSingleFile(exported_files[0]);
             }
-            else // m_num_files == 2 (already checked if m_num_files in {1, 2} above)
+            else // m_num_files == 2
             {
                 // determine UV and control from PD SampleType info (Sample vs. Control)
                 string uv_file = null;
@@ -1737,7 +1725,7 @@ namespace PD.OpenMS.AdapterNodes
         }
 
         /// <summary>
-        /// For a ModificationParameter object (from the UI parameter settings), return a string representing the modification in OpenMS-format.
+        /// For a ModificationParameter object (from the UI parameter settings), return a string list representing the modifications in OpenMS-format.
         /// </summary>
         private List<string> convertParamToModStringArray(ModificationParameter mod_param, string type)
         {
