@@ -876,7 +876,7 @@ namespace PD.OpenMS.AdapterNodes
         /// Portion of mass spectra received.
         /// 
         /// </summary>
-        public void OnResultsSent(IProcessingNode sender, MassSpectrumCollection spectra)
+        public new void OnResultsSent(IProcessingNode sender, MassSpectrumCollection spectra)
         {
             //persist spectra to make them available in the consensus step
             var spectra_to_store = new MassSpectrumCollection();
@@ -1612,7 +1612,7 @@ namespace PD.OpenMS.AdapterNodes
                     OpenMSCommons.WriteItemListToINI(parts, rnpxlsearch_ini_file, oms_p, true);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 string err = "Error while parsing string list parameter. Valid format for string lists: '[a b c ...]'";
                 SendAndLogErrorMessage(err);
