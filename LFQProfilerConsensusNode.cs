@@ -367,7 +367,6 @@ namespace PD.OpenMS.AdapterNodes
             {
                 var score_name = sp.Name;
 
-
                 if (score_name.Contains("PEP"))
                 {
                     pep_score = sp;
@@ -388,7 +387,6 @@ namespace PD.OpenMS.AdapterNodes
 
                 var grouped_elements = ce.SelectSingleNode("groupedElementList");
 
-                //tableIdToFeatureId.Add(idCounter, Convert.ToUInt64(cons_id.Substring(2)));
                 ConsensusFeatureEntity new_consensus_item = new ConsensusFeatureEntity()
                 {
                     WorkflowID = WorkflowID,
@@ -456,6 +454,7 @@ namespace PD.OpenMS.AdapterNodes
                     {
                         new_consensus_item.SetValue("Sequence", peptide_hit.Attributes["sequence"].Value);
                         new_consensus_item.SetValue("Accessions", psm.ParentProteinAccessions);
+                        new_consensus_item.SetValue("Descriptions", psm.ParentProteinDescriptions);
                         best_pep_score = current_pep_score;
                     }
                 }
@@ -566,6 +565,16 @@ namespace PD.OpenMS.AdapterNodes
             );
             acc_column.GridDisplayOptions.ColumnWidth = 150;
             EntityDataService.RegisterProperties(ProcessingNodeNumber, acc_column);
+
+            var desc_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<ConsensusFeatureEntity, string>(
+                new PropertyDescription()
+                {
+                    DisplayName = "Descriptions",
+                    Description = "Protein Descriptions"
+                }
+            );
+            desc_column.GridDisplayOptions.ColumnWidth = 300;
+            EntityDataService.RegisterProperties(ProcessingNodeNumber, desc_column);
 
             var charge_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<ConsensusFeatureEntity, int>(
                new PropertyDescription()
