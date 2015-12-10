@@ -106,10 +106,11 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
         /// <param name="cellContents">The cell contents.</param>
         public void OnButtonPressed(object cellContents)
         {
-            // Note: The cell content is a string that contains the ids of the PSM concatenated using ';'.
-            // This is a simple 'trick' to enable reading the entire PSM (i.e., the entire row) that
-            // this button is associated with. The cell contents is set by the node (see AddShowSpectrumButtonToPSMsNode.cs)
-            // especially for this. 
+            // Note: The cell content is a string that contains the ids of the PSM (workflow ID and peptide ID)
+            // and in addition the string describing all fragment annotations concatenated using ';'.
+            // This is a simple hack to enable reading the entire spectrum by its IDs and also handing over the
+            // fragment annotation information without having to read the entire RNPxl row again.
+            // The cell contents is set by the node (see RNPxlConsensusNode.cs) especially for this. 
             
             if (m_entityDataService == null || !(cellContents is string))
             {
@@ -117,7 +118,7 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
                 return;
             }
 
-            var strings = ((string)cellContents).Split(';');
+            var strings = ((string)cellContents).Split(new [] {';'}, StringSplitOptions.None);
 
             if (strings.Count() != 3)
             {

@@ -53,7 +53,7 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
                     annotations.Add("");
                 }
 
-                var annot_parts = m_annotations.Split('|');
+                var annot_parts = m_annotations.Split(new [] {'|'}, StringSplitOptions.RemoveEmptyEntries);
                 
                 foreach (var annot_str in annot_parts)
                 {
