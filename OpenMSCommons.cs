@@ -382,9 +382,12 @@ namespace PD.OpenMS.AdapterNodes
             Int32 last_pos = 0;
 
             // assumption: modifications are in ascending order of AA position
-            foreach (string m in actual_mods)
+            foreach (string mm in actual_mods)
             {
-                // have something like "M11(Oxidation) or N-Term(Carbamyl)"
+                // remove (Prot) if present (e.g. "N-Term(Prot)(Acetyl)")
+                var m = mm.Replace("(Prot)", "");
+
+                // have something like "M11(Oxidation)" or "N-Term(Carbamyl)"
                 string[] parts = m.Split('(');
 
                 // N-term
