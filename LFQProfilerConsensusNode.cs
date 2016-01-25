@@ -181,12 +181,20 @@ namespace PD.OpenMS.AdapterNodes
             Position = 14)]
         public BooleanParameter param_fix_peptides;
 
-        [IntegerParameter(Category = "4. General",
+        [StringSelectionParameter(Category = "4. Intensity normalization",
+            DisplayName = "Method",
+            Description = "Normalization method for intensity normalization on feature level",
+            DefaultValue = "median",
+            SelectionValues = new string[] { "median", "quantile", "none" },
+            Position = 15)]
+        public SimpleSelectionParameter<string> param_normalization_method;
+
+        [IntegerParameter(Category = "5. General",
         DisplayName = "CPU Cores",
         Description = "How many CPU cores should at most be used by the algorithms.",
         DefaultValue = "1",
         MinimumValue = "1",
-        Position = 15)]
+        Position = 16)]
         public IntegerParameter param_num_threads;
 
         # endregion
@@ -518,6 +526,11 @@ namespace PD.OpenMS.AdapterNodes
         /// </summary>
         private string RunConsensusMapNormalizer(string consensusxml_file)
         {
+            if (param_normalization_method.Value == "none")
+            {
+                return consensusxml_file;
+            }
+
             var exec_path = Path.Combine(m_openms_dir, @"bin/ConsensusMapNormalizer.exe");
             var ini_path = Path.Combine(NodeScratchDirectory, @"ConsensusMapNormalizer.ini");
             var output_file = Path.Combine(NodeScratchDirectory, "normalized.consensusXML");
@@ -525,7 +538,7 @@ namespace PD.OpenMS.AdapterNodes
             Dictionary<string, string> cn_params = new Dictionary<string, string> {
                             {"in", consensusxml_file},
                             {"out", output_file},
-                            {"algorithm_type", "median"},
+                            {"algorithm_type", param_normalization_method.Value},
                             {"threads", param_num_threads.ToString()}};
             OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             OpenMSCommons.WriteParamsToINI(ini_path, cn_params);
