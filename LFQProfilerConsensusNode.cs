@@ -136,12 +136,34 @@ namespace PD.OpenMS.AdapterNodes
             Position = 8)]
         public SimpleSelectionParameter<string> param_enzyme;
 
-        [StringSelectionParameter(Category = "3. Protein quantification",
+        [StringSelectionParameter(Category = "3. Intensity normalization",
+            DisplayName = "Method",
+            Description = "Normalization method for intensity normalization on feature level",
+            DefaultValue = "median",
+            SelectionValues = new string[] { "median", "quantile", "none" },
+            Position = 9)]
+        public SimpleSelectionParameter<string> param_normalization_method;
+
+        [StringParameter(Category = "3. Intensity normalization",
+            DisplayName = "Accession filter",
+            Description = "For median normalization: compute normalization coefficients based only on features with a protein accession matching this regular expression (e.g., your housekeeping proteins). If empty, all features (including unidentified ones) pass this filter. If set to \".\", all identified features are used. No effect if quantile normalization is used.",
+            DefaultValue = "",
+            Position = 10)]
+        public StringParameter param_normalization_acc_filter;
+
+        [StringParameter(Category = "3. Intensity normalization",
+            DisplayName = "Description filter",
+            Description = "For median normalization: compute normalization coefficients based only on features with a protein description matching this regular expression (e.g., your housekeeping proteins). If empty, all features (including unidentified ones) pass this filter. If set to \".\", all identified features are used. No effect if quantile normalization is used.",
+            DefaultValue = "",
+            Position = 11)]
+        public StringParameter param_normalization_desc_filter;
+
+        [StringSelectionParameter(Category = "4. Protein quantification",
             DisplayName = "Use peptides",
             Description = "Specify which peptides should be used for quantification: only unique peptides, unique + indistinguishable proteins, or unique + indistinguishable + other shared peptides (using a greedy resolution which is similar to selecting the razor peptides)",
             DefaultValue = "greedy",
             SelectionValues = new string[] { "unique", "indistinguishable", "greedy" },
-            Position = 9)]
+            Position = 12)]
         public SimpleSelectionParameter<string> param_protein_quant_mode;
 
         [IntegerParameter(Category = "3. Protein quantification",
@@ -149,52 +171,44 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Calculate protein abundance from this number of peptides (most abundant first; '0' for all)",
             DefaultValue = "0",
             MinimumValue = "0",
-            Position = 10)]
+            Position = 13)]
         public IntegerParameter param_top;
 
-        [StringSelectionParameter(Category = "3. Protein quantification",
+        [StringSelectionParameter(Category = "4. Protein quantification",
             DisplayName = "Averaging",
             Description = "Averaging method used to compute protein abundances from peptide abundances",
             DefaultValue = "mean",
             SelectionValues = new string[] { "mean", "weighted_mean", "median", "sum" },
-            Position = 11)]
+            Position = 14)]
         public SimpleSelectionParameter<string> param_averaging;
 
-        [BooleanParameter(Category = "3. Protein quantification",
+        [BooleanParameter(Category = "4. Protein quantification",
             DisplayName = "Include all",
             Description = "Include results for proteins with fewer peptides than indicated by 'top' (no effect if 'top' is 0 or 1)",
             DefaultValue = "false",
-            Position = 12)]
+            Position = 15)]
         public BooleanParameter param_include_all;
 
-        [BooleanParameter(Category = "3. Protein quantification",
+        [BooleanParameter(Category = "4. Protein quantification",
             DisplayName = "Filter charge",
             Description = "Distinguish between charge states of a peptide. For peptides, abundances will be reported separately for each charge; for proteins, abundances will be computed based only on the most prevalent charge of each peptide. Otherwise, abundances are summed over all charge states.",
             DefaultValue = "true",
-            Position = 13)]
+            Position = 16)]
         public BooleanParameter param_filter_charge;
 
-        [BooleanParameter(Category = "3. Protein quantification",
+        [BooleanParameter(Category = "4. Protein quantification",
             DisplayName = "Fix peptides",
             Description = "Use the same peptides for protein quantification across all samples. With 'top 0', all peptides that occur in every sample are considered. Otherwise ('top N'), the N peptides that occur in the most samples (independently of each other) are selected, breaking ties by total abundance (there is no guarantee that the best co-ocurring peptides are chosen!).",
             DefaultValue = "true",
-            Position = 14)]
+            Position = 17)]
         public BooleanParameter param_fix_peptides;
-
-        [StringSelectionParameter(Category = "4. Intensity normalization",
-            DisplayName = "Method",
-            Description = "Normalization method for intensity normalization on feature level",
-            DefaultValue = "median",
-            SelectionValues = new string[] { "median", "quantile", "none" },
-            Position = 15)]
-        public SimpleSelectionParameter<string> param_normalization_method;
 
         [IntegerParameter(Category = "5. General",
         DisplayName = "CPU Cores",
         Description = "How many CPU cores should at most be used by the algorithms.",
         DefaultValue = "1",
         MinimumValue = "1",
-        Position = 16)]
+        Position = 18)]
         public IntegerParameter param_num_threads;
 
         # endregion
@@ -251,9 +265,6 @@ namespace PD.OpenMS.AdapterNodes
             // Create them
             BuildConsensusXMLWithOrigRTs(consensus_xml_file, featurexml_files_orig, out consensus_dict, out consensus_xml_file_orig_rt);
 
-            // Normalize intensities
-            var normalized_consensus_xml_file_orig_rt = RunConsensusMapNormalizer(consensus_xml_file_orig_rt);
-
             // Export filtered PSMs to idXML
             var filtered_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms.idXML");
             ExportPSMsToIdXML(filtered_idxml, true);
@@ -264,7 +275,10 @@ namespace PD.OpenMS.AdapterNodes
 
             // Map IDs to intensity-normalized consensusXML file
             var idmapped_consensusxml = Path.Combine(NodeScratchDirectory, "idmapped.consensusXML");
-            RunIDMapper(normalized_consensus_xml_file_orig_rt, filtered_idxml, idmapped_consensusxml);
+            RunIDMapper(consensus_xml_file_orig_rt, filtered_indexed_idxml, idmapped_consensusxml);
+
+            // Normalize intensities
+            var normalized_consensus_xml_file_orig_rt = RunConsensusMapNormalizer(idmapped_consensusxml);
 
             // Set up consensus feature table ("Quantified features") and fill it
             var feature_table_column_names = SetupConsensusFeaturesTable(raw_files);
@@ -539,6 +553,8 @@ namespace PD.OpenMS.AdapterNodes
                             {"in", consensusxml_file},
                             {"out", output_file},
                             {"algorithm_type", param_normalization_method.Value},
+                            {"accession_filter", param_normalization_acc_filter.Value},
+                            {"description_filter", param_normalization_desc_filter.Value},
                             {"threads", param_num_threads.ToString()}};
             OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             OpenMSCommons.WriteParamsToINI(ini_path, cn_params);
@@ -1096,6 +1112,7 @@ namespace PD.OpenMS.AdapterNodes
                         {"decoy_string", "REV_"},
                         {"missing_decoy_action", "warn"},
                         {"allow_unmatched", "true"},
+                        {"write_protein_description", "true"},
                         {"threads", param_num_threads.ToString()}
             };
             OpenMSCommons.WriteParamsToINI(ini_path, pi_parameters);
