@@ -296,7 +296,7 @@ namespace PD.OpenMS.AdapterNodes
             var fido_output_file = RunFidoAdapter(indexed_idxml_filename_for_fido);
 
             // Run ProteinQuantifier
-            RunProteinQuantifier(idmapped_consensusxml, fido_output_file);
+            RunProteinQuantifier(normalized_consensus_xml_file_orig_rt, fido_output_file);
 
             // Finished!
             FireProcessingFinishedEvent(new SingleResultsArguments(new[] { ProteomicsDataTypes.Psms }, this));
