@@ -97,7 +97,7 @@ namespace PD.OpenMS.AdapterNodes
         [DoubleParameter(
             Category = "2. ID mapping",
             DisplayName = "Max. RT difference [min]",
-            Description = "This parameter specifies the maximum allowed retention time difference for features to be linked together.",
+            Description = "This parameter specifies the maximum allowed retention time difference for IDs to be mapped onto features.",
             DefaultValue = "0.33",
             Position = 4)]
         public DoubleParameter param_id_mapping_rt_threshold;
@@ -106,7 +106,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "2. ID mapping",
             DisplayName = "Max. m/z difference",
             Subset = "ppm",
-            Description = "This parameter specifies the maximum allowed m/z difference for features to be linked together.",
+            Description = "This parameter specifies the maximum allowed m/z difference for IDs to be mapped onto features.",
             DefaultValue = "10 ppm",
             IntendedPurpose = ParameterPurpose.MassTolerance,
             Position = 5)]
@@ -115,8 +115,10 @@ namespace PD.OpenMS.AdapterNodes
         [DoubleParameter(
             Category = "2. ID mapping",
             DisplayName = "q-Value threshold",
-            Description = "PSMs with a q-Value larger than this threshold will not be used for ID mapping and subsequent protein inference.",
-            DefaultValue = "0.05",
+            Description = "PSMs with a q-Value larger than this threshold will not be used for ID mapping.",
+            DefaultValue = "0.01",
+            MinimumValue = "0",
+            MaximumValue = "1",
             Position = 6)]
         public DoubleParameter param_q_value_threshold;
 
@@ -136,26 +138,34 @@ namespace PD.OpenMS.AdapterNodes
             Position = 8)]
         public SimpleSelectionParameter<string> param_enzyme;
 
+        [StringSelectionParameter(Category = "2. ID mapping",
+            DisplayName = "m/z reference",
+            Description = "Source of m/z values for peptide identifications. If 'precursor', the precursor-m/z as determined by the instrument is used. If 'peptide', masses are computed from the sequences of peptide hits.",
+            DefaultValue = "precursor",
+            SelectionValues = new string[] { "precursor", "peptide" },
+            Position = 9)]
+        public SimpleSelectionParameter<string> param_mz_reference;
+
         [StringSelectionParameter(Category = "3. Intensity normalization",
             DisplayName = "Method",
             Description = "Normalization method for intensity normalization on feature level",
             DefaultValue = "median",
             SelectionValues = new string[] { "median", "quantile", "none" },
-            Position = 9)]
+            Position = 10)]
         public SimpleSelectionParameter<string> param_normalization_method;
 
         [StringParameter(Category = "3. Intensity normalization",
             DisplayName = "Accession filter",
             Description = "For median normalization: compute normalization coefficients based only on features with a protein accession matching this regular expression (e.g., your housekeeping proteins). If empty, all features (including unidentified ones) pass this filter. If set to \".\", all identified features are used. No effect if quantile normalization is used.",
             DefaultValue = "",
-            Position = 10)]
+            Position = 11)]
         public StringParameter param_normalization_acc_filter;
 
         [StringParameter(Category = "3. Intensity normalization",
             DisplayName = "Description filter",
             Description = "For median normalization: compute normalization coefficients based only on features with a protein description matching this regular expression (e.g., your housekeeping proteins). If empty, all features (including unidentified ones) pass this filter. If set to \".\", all identified features are used. No effect if quantile normalization is used.",
             DefaultValue = "",
-            Position = 11)]
+            Position = 12)]
         public StringParameter param_normalization_desc_filter;
 
         [StringSelectionParameter(Category = "4. Protein quantification",
@@ -163,44 +173,54 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Specify which peptides should be used for quantification: only unique peptides, unique + indistinguishable proteins, or unique + indistinguishable + other shared peptides (using a greedy resolution which is similar to selecting the razor peptides)",
             DefaultValue = "greedy",
             SelectionValues = new string[] { "unique", "indistinguishable", "greedy" },
-            Position = 12)]
+            Position = 13)]
         public SimpleSelectionParameter<string> param_protein_quant_mode;
 
-        [IntegerParameter(Category = "3. Protein quantification",
-            DisplayName = "top",
+        [DoubleParameter(
+            Category = "4. Protein quantification",
+            DisplayName = "Fido pre-filtering threshold",
+            Description = "Filter out PSMs with posterior error probability (PEP) exceeding this threshold before running protein inference using FidoAdapter. A higher threshold can yield (slightly) better results but results in longer runtime.",
+            DefaultValue = "0.2",
+            MinimumValue = "0",
+            MaximumValue = "1",
+            Position = 14)]
+        public DoubleParameter param_fido_prefiltering_threshold;
+
+        [IntegerParameter(Category = "4. Protein quantification",
+            DisplayName = "Top",
             Description = "Calculate protein abundance from this number of peptides (most abundant first; '0' for all)",
             DefaultValue = "0",
             MinimumValue = "0",
-            Position = 13)]
+            Position = 15)]
         public IntegerParameter param_top;
 
         [StringSelectionParameter(Category = "4. Protein quantification",
             DisplayName = "Averaging",
             Description = "Averaging method used to compute protein abundances from peptide abundances",
-            DefaultValue = "mean",
+            DefaultValue = "sum",
             SelectionValues = new string[] { "mean", "weighted_mean", "median", "sum" },
-            Position = 14)]
+            Position = 16)]
         public SimpleSelectionParameter<string> param_averaging;
 
         [BooleanParameter(Category = "4. Protein quantification",
             DisplayName = "Include all",
             Description = "Include results for proteins with fewer peptides than indicated by 'top' (no effect if 'top' is 0 or 1)",
             DefaultValue = "false",
-            Position = 15)]
+            Position = 17)]
         public BooleanParameter param_include_all;
 
         [BooleanParameter(Category = "4. Protein quantification",
             DisplayName = "Filter charge",
             Description = "Distinguish between charge states of a peptide. For peptides, abundances will be reported separately for each charge; for proteins, abundances will be computed based only on the most prevalent charge of each peptide. Otherwise, abundances are summed over all charge states.",
-            DefaultValue = "true",
-            Position = 16)]
+            DefaultValue = "false",
+            Position = 18)]
         public BooleanParameter param_filter_charge;
 
         [BooleanParameter(Category = "4. Protein quantification",
             DisplayName = "Fix peptides",
             Description = "Use the same peptides for protein quantification across all samples. With 'top 0', all peptides that occur in every sample are considered. Otherwise ('top N'), the N peptides that occur in the most samples (independently of each other) are selected, breaking ties by total abundance (there is no guarantee that the best co-ocurring peptides are chosen!).",
-            DefaultValue = "true",
-            Position = 17)]
+            DefaultValue = "false",
+            Position = 19)]
         public BooleanParameter param_fix_peptides;
 
         [IntegerParameter(Category = "5. General",
@@ -208,7 +228,7 @@ namespace PD.OpenMS.AdapterNodes
         Description = "How many CPU cores should at most be used by the algorithms.",
         DefaultValue = "1",
         MinimumValue = "1",
-        Position = 18)]
+        Position = 20)]
         public IntegerParameter param_num_threads;
 
         # endregion
@@ -267,7 +287,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // Export filtered PSMs to idXML
             var filtered_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms.idXML");
-            ExportPSMsToIdXML(filtered_idxml, true);
+            ExportPSMsToIdXML(filtered_idxml, false);
 
             // Run PeptideIndexer in order to get peptide <-> protein associations
             var filtered_indexed_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms_peptides_indexed.idXML");
@@ -286,7 +306,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // Export all PSMs (unfiltered!) for Fido
             var idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms.idXML");
-            ExportPSMsToIdXML(idxml_filename_for_fido, false);
+            ExportPSMsToIdXML(idxml_filename_for_fido, true);
 
             // Run PeptideIndexer in order to get peptide <-> protein associations
             var indexed_idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms_peptides_indexed.idXML");
@@ -805,7 +825,7 @@ namespace PD.OpenMS.AdapterNodes
         /// <summary>
         /// Export PSMs from PD search results to idXML
         /// </summary>
-        public void ExportPSMsToIdXML(string idxml_filename, bool filter = false)
+        public void ExportPSMsToIdXML(string idxml_filename, bool fido)
         {
             XmlDocument doc = new XmlDocument();
             XmlNode docNode = doc.CreateXmlDeclaration("1.0", "UTF-8", null);
@@ -897,12 +917,12 @@ namespace PD.OpenMS.AdapterNodes
 
             idxml_node.AppendChild(id_run_node);
 
-            IdXMLExportHelper<TargetPeptideSpectrumMatch>(doc, id_run_node, filter);
+            IdXMLExportHelper<TargetPeptideSpectrumMatch>(doc, id_run_node, fido);
 
-            if (!filter)
+            if (fido)
             {
                 var decoy_psms = EntityDataService.CreateEntityItemReader().ReadAllFlat<DecoyPeptideSpectrumMatch, MSnSpectrumInfo>();
-                IdXMLExportHelper<DecoyPeptideSpectrumMatch>(doc, id_run_node, false);
+                IdXMLExportHelper<DecoyPeptideSpectrumMatch>(doc, id_run_node, fido);
             }
 
             doc.Save(idxml_filename);
@@ -911,7 +931,7 @@ namespace PD.OpenMS.AdapterNodes
         /// <summary>
         /// Helper method for ExportPSMsToIdXML(...). Does the actual export of search engine results.
         /// </summary>
-        void IdXMLExportHelper<PSMType>(XmlDocument doc, XmlElement id_run_node, bool filter = false)
+        void IdXMLExportHelper<PSMType>(XmlDocument doc, XmlElement id_run_node, bool fido)
             where PSMType : PeptideSpectrumMatch
         {
             bool decoy = typeof(PSMType) == typeof(DecoyPeptideSpectrumMatch);
@@ -946,7 +966,12 @@ namespace PD.OpenMS.AdapterNodes
                 double pep_score_val = pep_score == null ? 1.0 : Convert.ToDouble(pep_score.GetValue(psm.Item1));
                 double qvalue_score_val = qvalue_score == null ? 1.0 : Convert.ToDouble(qvalue_score.GetValue(psm.Item1));
 
-                if (filter && qvalue_score_val > param_q_value_threshold.Value)
+                if (fido && pep_score_val > param_fido_prefiltering_threshold.Value)
+                {
+                    continue;
+                }
+
+                if (!fido && qvalue_score_val > param_q_value_threshold.Value)
                 {
                     continue;
                 }
@@ -955,7 +980,7 @@ namespace PD.OpenMS.AdapterNodes
                 var pep_id_node = doc.CreateElement("PeptideIdentification");
                 id_run_node.AppendChild(pep_id_node);
 
-                if (filter)
+                if (!fido)
                 {
                     // use normal q-value scores
                     var st_attr = doc.CreateAttribute("score_type");
@@ -992,8 +1017,8 @@ namespace PD.OpenMS.AdapterNodes
                 pep_id_node.AppendChild(pep_hit_node);
 
                 var score_attr = doc.CreateAttribute("score");
-                // use q-values when filtering, otherwise (for Fido input) use posterior probability
-                score_attr.Value = filter ? qvalue_score_val.ToString() : (1.0 - pep_score_val).ToString();
+                // use q-values for IDMapping, otherwise (for Fido input) use posterior probability
+                score_attr.Value = fido ? (1.0 - pep_score_val).ToString() : qvalue_score_val.ToString();
                 pep_hit_node.Attributes.Append(score_attr);
 
                 var seq_attr = doc.CreateAttribute("sequence");
@@ -1044,6 +1069,16 @@ namespace PD.OpenMS.AdapterNodes
                         {"out", result_consensusxml_file},
                         {"threads", param_num_threads.ToString()}
             };
+            if (param_mz_reference.Value == "precursor")
+            {
+                idmapper_parameters["mz_reference"] = "precursor";
+                idmapper_parameters["use_centroid_mz"] = "false";
+            }
+            else // "peptide"
+            {
+                idmapper_parameters["mz_reference"] = "peptide";
+                idmapper_parameters["use_centroid_mz"] = "true";
+            }
             OpenMSCommons.WriteParamsToINI(ini_path, idmapper_parameters);
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("consensus", "use_subelements", "true"));
 
