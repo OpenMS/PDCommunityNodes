@@ -297,14 +297,18 @@ namespace PD.OpenMS.AdapterNodes
             var idmapped_consensusxml = Path.Combine(NodeScratchDirectory, "idmapped.consensusXML");
             RunIDMapper(consensus_xml_file_orig_rt, filtered_indexed_idxml, idmapped_consensusxml);
 
+            // Resolve conflicting IDs within consensus features
+            var conflictresolved_idmapped_consensusxml = Path.Combine(NodeScratchDirectory, "idmapped_idcr.consensusXML");
+            RunIDConflictResolver(idmapped_consensusxml, conflictresolved_idmapped_consensusxml);
+
             // Normalize intensities
-            var normalized_consensus_xml_file_orig_rt = RunConsensusMapNormalizer(idmapped_consensusxml);
+            var normalized_consensus_xml_file_orig_rt = RunConsensusMapNormalizer(conflictresolved_idmapped_consensusxml);
 
             // Set up consensus feature table ("Quantified features") and fill it
             var feature_table_column_names = SetupConsensusFeaturesTable(raw_files);
             PopulateConsensusFeaturesTable(consensus_dict, idmapped_consensusxml, feature_table_column_names);
 
-            // Export all PSMs (unfiltered!) for Fido
+            // Export all PSMs for Fido
             var idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms.idXML");
             ExportPSMsToIdXML(idxml_filename_for_fido, true);
 
@@ -320,6 +324,30 @@ namespace PD.OpenMS.AdapterNodes
 
             // Finished!
             FireProcessingFinishedEvent(new SingleResultsArguments(new[] { ProteomicsDataTypes.Psms }, this));
+        }
+
+        /// <summary>
+        /// Run IDConflictResolver on the input_file (consensusXML) and write results to output_file (consensusXML)
+        /// </summary>
+        private void RunIDConflictResolver(string input_file, string output_file)
+        {
+            var exec_path = Path.Combine(m_openms_dir, @"bin/IDConflictResolver.exe");
+            var ini_path = Path.Combine(NodeScratchDirectory, @"IDConflictResolver.ini");
+
+            Dictionary<string, string> ini_params = new Dictionary<string, string> {
+                            {"in", input_file},
+                            {"out", output_file},
+                            {"method", "upvote_identical"},
+                            {"threads", param_num_threads.ToString()}};
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
+            OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
+
+            SendAndLogMessage("Starting IDConflictResolver");
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
+            
+            // TODO: fix progress bars!
+            //m_current_step += 1;
+            //ReportTotalProgress((double)m_current_step / m_num_steps);
         }
 
         /// <summary>
