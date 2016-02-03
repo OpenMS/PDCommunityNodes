@@ -70,18 +70,27 @@ namespace PD.OpenMS.AdapterNodes
         # region Parameters
 
         [BooleanParameter(Category = "1. Feature linking",
-            DisplayName = "Perform map alignment",
+            DisplayName = "Perform RT alignment",
             Description = "This parameter specifies whether map alignment (RT transformation) should be performed before linking.",
             DefaultValue = "true",
-            Position = 1)]
+            Position = 10)]
         public BooleanParameter param_perform_map_alignment;
+
+        [IntegerParameter(Category = "1. Feature linking",
+            DisplayName = "Peptide min #runs",
+            Description = "If map alignment is perormed: minimum number of runs a peptide must occur in to be used for the alignment. Unless you have very few runs or identifications, increase this value to focus on more informative peptides.",
+            DefaultValue = "2",
+            MinimumValue = "2",
+            Position = 20)]
+        public IntegerParameter param_min_run_occur;
 
         [DoubleParameter(
             Category = "1. Feature linking",
             DisplayName = "Max. RT difference [min]",
             Description = "This parameter specifies the maximum allowed retention time difference for features to be linked together.",
             DefaultValue = "1.0",
-            Position = 2)]
+            MinimumValue = "0",
+            Position = 30)]
         public DoubleParameter param_rt_threshold;
 
         [MassToleranceParameter(
@@ -91,7 +100,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "This parameter specifies the maximum allowed m/z difference for features to be linked together.",
             DefaultValue = "10 ppm",
             IntendedPurpose = ParameterPurpose.MassTolerance,
-            Position = 3)]
+            Position = 40)]
         public MassToleranceParameter param_mz_threshold;
 
         [DoubleParameter(
@@ -99,7 +108,8 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Max. RT difference [min]",
             Description = "This parameter specifies the maximum allowed retention time difference for IDs to be mapped onto features.",
             DefaultValue = "0.33",
-            Position = 4)]
+            MinimumValue = "0",
+            Position = 50)]
         public DoubleParameter param_id_mapping_rt_threshold;
 
         [MassToleranceParameter(
@@ -109,7 +119,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "This parameter specifies the maximum allowed m/z difference for IDs to be mapped onto features.",
             DefaultValue = "10 ppm",
             IntendedPurpose = ParameterPurpose.MassTolerance,
-            Position = 5)]
+            Position = 60)]
         public MassToleranceParameter param_id_mapping_mz_threshold;
 
         [DoubleParameter(
@@ -119,7 +129,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "0.01",
             MinimumValue = "0",
             MaximumValue = "1",
-            Position = 6)]
+            Position = 70)]
         public DoubleParameter param_q_value_threshold;
 
         [FastaFileParameter(Category = "2. ID mapping",
@@ -127,7 +137,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "The sequence database to be used for (re-)indexing protein hits",
             IntendedPurpose = ParameterPurpose.SequenceDatabase,
             ValueRequired = true,
-            Position = 7)]
+            Position = 80)]
         public FastaFileParameter param_fasta_db;
 
         [StringSelectionParameter(Category = "2. ID mapping",
@@ -135,7 +145,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "The enzyme used for cleaving the proteins",
             DefaultValue = "Trypsin",
             SelectionValues = new string[] { "Trypsin", "Asp-N", "CNBr", "Formic_acid", "Chymotrypsin", "Lys-C", "Asp-N_ambic", "Arg-C", "V8-DE", "glutamyl endopeptidase", "leukocyte elastase", "no cleavage", "PepsinA", "Lys-C/P", "2-iodobenzoate", "prolineendopeptidase", "V8-E", "TrypChymo", "unspecific cleavage", "Trypsin/P" },
-            Position = 8)]
+            Position = 90)]
         public SimpleSelectionParameter<string> param_enzyme;
 
         [StringSelectionParameter(Category = "2. ID mapping",
@@ -143,7 +153,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Source of m/z values for peptide identifications. If 'precursor', the precursor-m/z as determined by the instrument is used. If 'peptide', masses are computed from the sequences of peptide hits.",
             DefaultValue = "precursor",
             SelectionValues = new string[] { "precursor", "peptide" },
-            Position = 9)]
+            Position = 100)]
         public SimpleSelectionParameter<string> param_mz_reference;
 
         [StringSelectionParameter(Category = "2. ID mapping",
@@ -151,7 +161,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Resolve conflicts with different peptide identifications matching to the same consensus feature before protein quantification? 'best_score' always chooses the hit with the best score; 'upvote_identical' also takes the number of identical hits into account and multiplies the scores of identical sequences before choosing.",
             DefaultValue = "none",
             SelectionValues = new string[] { "none", "best_score", "upvote_identical" },
-            Position = 10,
+            Position = 110,
             IsAdvanced = true)]
         public SimpleSelectionParameter<string> param_id_conflict_resolution;
 
@@ -160,21 +170,21 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Normalization method for intensity normalization on feature level",
             DefaultValue = "median",
             SelectionValues = new string[] { "median", "quantile", "none" },
-            Position = 11)]
+            Position = 120)]
         public SimpleSelectionParameter<string> param_normalization_method;
 
         [StringParameter(Category = "3. Intensity normalization",
             DisplayName = "Accession filter",
             Description = "For median normalization: compute normalization coefficients based only on features with a protein accession matching this regular expression (e.g., your housekeeping proteins). If empty, all features (including unidentified ones) pass this filter. If set to \".\", all identified features are used. No effect if quantile normalization is used.",
             DefaultValue = "",
-            Position = 12)]
+            Position = 130)]
         public StringParameter param_normalization_acc_filter;
 
         [StringParameter(Category = "3. Intensity normalization",
             DisplayName = "Description filter",
             Description = "For median normalization: compute normalization coefficients based only on features with a protein description matching this regular expression (e.g., your housekeeping proteins). If empty, all features (including unidentified ones) pass this filter. If set to \".\", all identified features are used. No effect if quantile normalization is used.",
             DefaultValue = "",
-            Position = 13)]
+            Position = 140)]
         public StringParameter param_normalization_desc_filter;
 
         [StringSelectionParameter(Category = "4. Protein quantification",
@@ -182,7 +192,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Specify which peptides should be used for quantification: only unique peptides, unique + indistinguishable proteins, or unique + indistinguishable + other shared peptides (using a greedy resolution which is similar to selecting the razor peptides)",
             DefaultValue = "greedy",
             SelectionValues = new string[] { "unique", "indistinguishable", "greedy" },
-            Position = 14)]
+            Position = 150)]
         public SimpleSelectionParameter<string> param_protein_quant_mode;
 
         [DoubleParameter(
@@ -192,7 +202,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "0.2",
             MinimumValue = "0",
             MaximumValue = "1",
-            Position = 15)]
+            Position = 160)]
         public DoubleParameter param_fido_prefiltering_threshold;
 
         [IntegerParameter(Category = "4. Protein quantification",
@@ -200,7 +210,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Calculate protein abundance from this number of peptides (most abundant first; '0' for all)",
             DefaultValue = "0",
             MinimumValue = "0",
-            Position = 16)]
+            Position = 170)]
         public IntegerParameter param_top;
 
         [StringSelectionParameter(Category = "4. Protein quantification",
@@ -208,28 +218,28 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Averaging method used to compute protein abundances from peptide abundances",
             DefaultValue = "sum",
             SelectionValues = new string[] { "mean", "weighted_mean", "median", "sum" },
-            Position = 17)]
+            Position = 180)]
         public SimpleSelectionParameter<string> param_averaging;
 
         [BooleanParameter(Category = "4. Protein quantification",
             DisplayName = "Include all",
             Description = "Include results for proteins with fewer peptides than indicated by 'top' (no effect if 'top' is 0 or 1)",
             DefaultValue = "false",
-            Position = 18)]
+            Position = 190)]
         public BooleanParameter param_include_all;
 
         [BooleanParameter(Category = "4. Protein quantification",
             DisplayName = "Filter charge",
             Description = "Distinguish between charge states of a peptide. For peptides, abundances will be reported separately for each charge; for proteins, abundances will be computed based only on the most prevalent charge of each peptide. Otherwise, abundances are summed over all charge states.",
             DefaultValue = "false",
-            Position = 19)]
+            Position = 200)]
         public BooleanParameter param_filter_charge;
 
         [BooleanParameter(Category = "4. Protein quantification",
             DisplayName = "Fix peptides",
             Description = "Use the same peptides for protein quantification across all samples. With 'top 0', all peptides that occur in every sample are considered. Otherwise ('top N'), the N peptides that occur in the most samples (independently of each other) are selected, breaking ties by total abundance (there is no guarantee that the best co-ocurring peptides are chosen!).",
             DefaultValue = "false",
-            Position = 20)]
+            Position = 210)]
         public BooleanParameter param_fix_peptides;
 
         [IntegerParameter(Category = "5. General",
@@ -237,7 +247,7 @@ namespace PD.OpenMS.AdapterNodes
         Description = "How many CPU cores should at most be used by the algorithms.",
         DefaultValue = "1",
         MinimumValue = "1",
-        Position = 21)]
+        Position = 220)]
         public IntegerParameter param_num_threads;
 
         # endregion
@@ -281,54 +291,62 @@ namespace PD.OpenMS.AdapterNodes
             List<string> featurexml_files_orig;
             List<string> raw_files;
             ReadInputFilenames(out featurexml_files_orig, out raw_files);
+            var idxml_files = new List<string>(from f in raw_files select Path.Combine(NodeScratchDirectory, Path.GetFileNameWithoutExtension(f) + ".idXML"));
+            var featurexml_files_idmapped = new List<string>();
+            
+            for (int i = 0; i < raw_files.Count; ++i)
+            {
+                var raw_file = raw_files[i];
+                var idxml_file = idxml_files[i];
+
+                // Export filtered PSMs to idXML
+                ExportPSMsToIdXML(idxml_file, false, raw_file);
+
+                // Run PeptideIndexer in order to get peptide <-> protein associations
+                var indexed_idxml = Path.Combine(NodeScratchDirectory, Path.GetFileNameWithoutExtension(idxml_file) + "_indexed.idXML");
+                RunPeptideIndexer(idxml_file, indexed_idxml);
+
+                // Map IDs to features
+                var idmapped_featurexml = Path.Combine(NodeScratchDirectory, Path.GetFileNameWithoutExtension(idxml_file) + "_idmapped.featureXML");
+                featurexml_files_idmapped.Add(idmapped_featurexml);
+                RunIDMapper(featurexml_files_orig[i], indexed_idxml, idmapped_featurexml);
+            }
 
             // Run alignment and linking
-            string consensus_xml_file = AlignAndLink(featurexml_files_orig);
+            string consensus_xml_file = AlignAndLink(featurexml_files_idmapped);
+
+            // Resolve conflicting IDs within consensus features before protein quantification (if advanced parameter is not set to 'none')
+            var conflictresolved_idmapped_consensusxml = RunIDConflictResolver(consensus_xml_file);
+
+            // Normalize intensities
+            var normalized_consensus_xml_file = RunConsensusMapNormalizer(conflictresolved_idmapped_consensusxml);
 
             // Dictionary {feature ID -> consensusXML element} with original RTs
             Dictionary<string, XmlElement> consensus_dict;
 
             // ConsensusXML file with original RTs
-            string consensus_xml_file_orig_rt;
+            string final_consensus_xml_file_orig_rt;
 
-            // Create them
-            BuildConsensusXMLWithOrigRTs(consensus_xml_file, featurexml_files_orig, out consensus_dict, out consensus_xml_file_orig_rt);
-
-            // Export filtered PSMs to idXML
-            var filtered_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms.idXML");
-            ExportPSMsToIdXML(filtered_idxml, false);
-
-            // Run PeptideIndexer in order to get peptide <-> protein associations
-            var filtered_indexed_idxml = Path.Combine(NodeScratchDirectory, "filtered_psms_peptides_indexed.idXML");
-            RunPeptideIndexer(filtered_idxml, filtered_indexed_idxml);
-
-            // Map IDs to intensity-normalized consensusXML file
-            var idmapped_consensusxml = Path.Combine(NodeScratchDirectory, "idmapped.consensusXML");
-            RunIDMapper(consensus_xml_file_orig_rt, filtered_indexed_idxml, idmapped_consensusxml);
-
-            // Resolve conflicting IDs within consensus features before protein quantification (if advanced parameter is not set to 'none')
-            var conflictresolved_idmapped_consensusxml = RunIDConflictResolver(idmapped_consensusxml);
-
-            // Normalize intensities
-            var normalized_consensus_xml_file_orig_rt = RunConsensusMapNormalizer(conflictresolved_idmapped_consensusxml);
+            // Create consensusXML with original RTs (from featurexml_files_orig), keep mapping in consensus_dict
+            BuildConsensusXMLWithOrigRTs(normalized_consensus_xml_file, featurexml_files_orig, out consensus_dict, out final_consensus_xml_file_orig_rt);
 
             // Set up consensus feature table ("Quantified features") and fill it
             var feature_table_column_names = SetupConsensusFeaturesTable(raw_files);
-            PopulateConsensusFeaturesTable(consensus_dict, idmapped_consensusxml, feature_table_column_names);
+            PopulateConsensusFeaturesTable(consensus_dict, final_consensus_xml_file_orig_rt, feature_table_column_names);
 
             // Export all PSMs for Fido
-            var idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms.idXML");
+            var idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "fido_psms.idXML");
             ExportPSMsToIdXML(idxml_filename_for_fido, true);
 
             // Run PeptideIndexer in order to get peptide <-> protein associations
-            var indexed_idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "all_psms_peptides_indexed.idXML");
+            var indexed_idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "fido_psms_indexed.idXML");
             RunPeptideIndexer(idxml_filename_for_fido, indexed_idxml_filename_for_fido);
 
             // Run FidoAdapter
             var fido_output_file = RunFidoAdapter(indexed_idxml_filename_for_fido);
 
             // Run ProteinQuantifier
-            RunProteinQuantifier(normalized_consensus_xml_file_orig_rt, fido_output_file);
+            RunProteinQuantifier(final_consensus_xml_file_orig_rt, fido_output_file);
 
             // Finished!
             FireProcessingFinishedEvent(new SingleResultsArguments(new[] { ProteomicsDataTypes.Psms }, this));
@@ -761,7 +779,7 @@ namespace PD.OpenMS.AdapterNodes
                 var aligned_featurexmls = new List<string>();
                 if (param_perform_map_alignment.Value)
                 {
-                    exec_path = Path.Combine(m_openms_dir, @"bin/MapAlignerPoseClustering.exe");
+                    exec_path = Path.Combine(m_openms_dir, @"bin/MapAlignerIdentification.exe");
                     for (int i = 0; i < m_num_files; i++)
                     {
                         in_files[i] = featurexml_files_orig[i];
@@ -771,18 +789,16 @@ namespace PD.OpenMS.AdapterNodes
                     }
 
                     Dictionary<string, string> map_parameters = new Dictionary<string, string> {
-                        {"max_num_peaks_considered", "10000"},
-                        {"ignore_charge", "false"},
+                        {"min_run_occur", param_min_run_occur.Value.ToString()},
                         {"threads", param_num_threads.ToString()}
                     };
-                    ini_path = Path.Combine(NodeScratchDirectory, @"MapAlignerPoseClusteringDefault.ini");
+                    ini_path = Path.Combine(NodeScratchDirectory, @"MapAlignerIdentification.ini");
                     OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                     OpenMSCommons.WriteParamsToINI(ini_path, map_parameters);
                     OpenMSCommons.WriteItemListToINI(in_files, ini_path, "in");
                     OpenMSCommons.WriteItemListToINI(out_files, ini_path, "out");
-                    OpenMSCommons.WriteThresholdsToINI(param_mz_threshold, param_rt_threshold, ini_path);
 
-                    SendAndLogMessage("Starting MapAlignerPoseClustering");
+                    SendAndLogMessage("Starting MapAlignerIdentification");
                     OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                     m_current_step += 1;
                     ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -869,7 +885,7 @@ namespace PD.OpenMS.AdapterNodes
         /// <summary>
         /// Export PSMs from PD search results to idXML
         /// </summary>
-        public void ExportPSMsToIdXML(string idxml_filename, bool fido)
+        public void ExportPSMsToIdXML(string idxml_filename, bool fido, string original_raw_file = "")
         {
             XmlDocument doc = new XmlDocument();
             XmlNode docNode = doc.CreateXmlDeclaration("1.0", "UTF-8", null);
@@ -961,12 +977,11 @@ namespace PD.OpenMS.AdapterNodes
 
             idxml_node.AppendChild(id_run_node);
 
-            IdXMLExportHelper<TargetPeptideSpectrumMatch>(doc, id_run_node, fido);
+            IdXMLExportHelper<TargetPeptideSpectrumMatch>(doc, id_run_node, fido, original_raw_file);
 
             if (fido)
             {
-                var decoy_psms = EntityDataService.CreateEntityItemReader().ReadAllFlat<DecoyPeptideSpectrumMatch, MSnSpectrumInfo>();
-                IdXMLExportHelper<DecoyPeptideSpectrumMatch>(doc, id_run_node, fido);
+                IdXMLExportHelper<DecoyPeptideSpectrumMatch>(doc, id_run_node, fido, original_raw_file);
             }
 
             doc.Save(idxml_filename);
@@ -975,12 +990,22 @@ namespace PD.OpenMS.AdapterNodes
         /// <summary>
         /// Helper method for ExportPSMsToIdXML(...). Does the actual export of search engine results.
         /// </summary>
-        void IdXMLExportHelper<PSMType>(XmlDocument doc, XmlElement id_run_node, bool fido)
+        void IdXMLExportHelper<PSMType>(XmlDocument doc, XmlElement id_run_node, bool fido, string original_raw_file = "")
             where PSMType : PeptideSpectrumMatch
         {
             bool decoy = typeof(PSMType) == typeof(DecoyPeptideSpectrumMatch);
 
-            var psms = EntityDataService.CreateEntityItemReader().ReadAllFlat<PSMType, MSnSpectrumInfo>();
+            IEnumerable<Tuple<PSMType, IList<MSnSpectrumInfo>>> psms = null;
+            if (original_raw_file != "")
+            {
+                // write only IDs originating from original_raw_file
+                psms = EntityDataService.CreateEntityItemReader().ReadAllFlat<PSMType, MSnSpectrumInfo>().Where(x => x.Item1.SpectrumFileName == Path.GetFileName(original_raw_file));
+            }
+            else
+            {
+                // write all IDs
+                psms = EntityDataService.CreateEntityItemReader().ReadAllFlat<PSMType, MSnSpectrumInfo>();
+            }
 
             var scoreProperties = EntityDataService
                     .GetProperties<PSMType>(ScoreSemanticTerms.Score)
@@ -1098,9 +1123,9 @@ namespace PD.OpenMS.AdapterNodes
         }
 
         /// <summary>
-        /// Run IDMapper on a given consensusXML and idXML file.
+        /// Run IDMapper on a given featureXML and idXML file.
         /// </summary>
-        void RunIDMapper(string consensusxml_file, string idxml_file, string result_consensusxml_file)
+        void RunIDMapper(string featurexml_file, string idxml_file, string result_featurexml_file)
         {
             var exec_path = Path.Combine(m_openms_dir, @"bin/IDMapper.exe");
             var ini_path = Path.Combine(NodeScratchDirectory, @"IDMapper.ini");
@@ -1108,9 +1133,9 @@ namespace PD.OpenMS.AdapterNodes
             Dictionary<string, string> idmapper_parameters = new Dictionary<string, string> {
                         {"mz_tolerance", param_id_mapping_mz_threshold.Value.Tolerance.ToString()},
                         {"rt_tolerance", (param_id_mapping_rt_threshold.Value * 60.0).ToString()},
-                        {"in", consensusxml_file},
+                        {"in", featurexml_file},
                         {"id", idxml_file},
-                        {"out", result_consensusxml_file},
+                        {"out", result_featurexml_file},
                         {"threads", param_num_threads.ToString()}
             };
             if (param_mz_reference.Value == "precursor")
@@ -1124,9 +1149,8 @@ namespace PD.OpenMS.AdapterNodes
                 idmapper_parameters["use_centroid_mz"] = "true";
             }
             OpenMSCommons.WriteParamsToINI(ini_path, idmapper_parameters);
-            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("consensus", "use_subelements", "true"));
 
-            SendAndLogMessage("IDMapper");
+            SendAndLogMessage("Starting IDMapper");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1141,23 +1165,19 @@ namespace PD.OpenMS.AdapterNodes
             string exec_path = "";
             string ini_path = "";
 
-            string fasta_filename = param_fasta_db.Value.FullPhysicalFileName;
-
-            // check whether selected FASTA file exists
-            if (File.Exists(fasta_filename) == false)
+            if (m_openms_fasta_file == "" || !File.Exists(m_openms_fasta_file))
             {
-                SendAndLogErrorMessage("Cannot access FASTA file because the file cannot be found!");
-                throw new FileNotFoundException(String.Format("The FASTA file {0} cannot be found!", param_fasta_db.Value.VirtualFileName), fasta_filename);
-            }
+                // check whether FASTA file exists
+                string fasta_filename = param_fasta_db.Value.FullPhysicalFileName;
+                if (!File.Exists(fasta_filename))
+                {
+                    SendAndLogErrorMessage("Cannot access FASTA file because the file cannot be found!");
+                    throw new FileNotFoundException(String.Format("The FASTA file {0} cannot be found!", param_fasta_db.Value.VirtualFileName), fasta_filename);
+                }
 
-            m_openms_fasta_file = Path.Combine(NodeScratchDirectory, @"peptide_indexer.fasta");
-            ProcessingServices.FastaFileService.CreateOriginalFastaFile(param_fasta_db.Value, m_openms_fasta_file, true);
+                m_openms_fasta_file = Path.Combine(NodeScratchDirectory, @"peptide_indexer.fasta");
+                ProcessingServices.FastaFileService.CreateOriginalFastaFile(param_fasta_db.Value, m_openms_fasta_file, true);
 
-            //string decoy_filename = Path.Combine(
-            //    Path.GetDirectoryName(fasta_filename),
-            //    Path.GetFileNameWithoutExtension(fasta_filename) + "_reversed" + Path.GetExtension(fasta_filename));
-            //if (File.Exists(decoy_filename))
-            {
                 exec_path = Path.Combine(m_openms_dir, @"bin/DecoyDatabase.exe");
                 ini_path = Path.Combine(NodeScratchDirectory, @"DecoyDatabase.ini");
                 OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
@@ -1173,7 +1193,7 @@ namespace PD.OpenMS.AdapterNodes
                 in_list[0] = m_openms_fasta_file;
                 OpenMSCommons.WriteItemListToINI(in_list, ini_path, "in");
 
-                SendAndLogMessage("DecoyDatabase");
+                SendAndLogMessage("Starting DecoyDatabase");
                 OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
@@ -1198,7 +1218,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("enzyme", "name", param_enzyme.Value));
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("enzyme", "specificity", "none"));
 
-            SendAndLogMessage("PeptideIndexer");
+            SendAndLogMessage("Starting PeptideIndexer");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);

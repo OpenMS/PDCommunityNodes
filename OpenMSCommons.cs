@@ -199,7 +199,7 @@ namespace PD.OpenMS.AdapterNodes
                 }
                 else if ((item.ParentNode.Attributes["name"].Value == "distance_RT") && (item.Attributes["name"].Value == "max_difference"))
                 {
-                    item.Attributes["value"].Value = (rt_threshold.Value * 60).ToString(); //need to convert minute(CD) to seconds(OpenMS)!
+                    item.Attributes["value"].Value = (rt_threshold.Value * 60).ToString(); //need to convert minute(PD) to seconds(OpenMS)!
                 }
             }
             doc.Save(ini_path);
