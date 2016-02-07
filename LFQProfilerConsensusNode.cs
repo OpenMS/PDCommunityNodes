@@ -156,14 +156,14 @@ namespace PD.OpenMS.AdapterNodes
             Position = 100)]
         public SimpleSelectionParameter<string> param_mz_reference;
 
-        [StringSelectionParameter(Category = "2. ID mapping",
-            DisplayName = "ID conflict resolution",
-            Description = "Resolve conflicts with different peptide identifications matching to the same consensus feature before protein quantification? 'best_score' always chooses the hit with the best score; 'upvote_identical' also takes the number of identical hits into account and multiplies the scores of identical sequences before choosing.",
-            DefaultValue = "none",
-            SelectionValues = new string[] { "none", "best_score", "upvote_identical" },
-            Position = 110,
-            IsAdvanced = true)]
-        public SimpleSelectionParameter<string> param_id_conflict_resolution;
+        //[StringSelectionParameter(Category = "2. ID mapping",
+        //    DisplayName = "ID conflict resolution",
+        //    Description = "Resolve conflicts with different peptide identifications matching to the same consensus feature before protein quantification? 'best_score' always chooses the hit with the best score; 'upvote_identical' also takes the number of identical hits into account and multiplies the scores of identical sequences before choosing.",
+        //    DefaultValue = "none",
+        //    SelectionValues = new string[] { "none", "best_score", "upvote_identical" },
+        //    Position = 110,
+        //    IsAdvanced = true)]
+        //public SimpleSelectionParameter<string> param_id_conflict_resolution;
 
         [StringSelectionParameter(Category = "3. Intensity normalization",
             DisplayName = "Method",
@@ -187,6 +187,16 @@ namespace PD.OpenMS.AdapterNodes
             Position = 140)]
         public StringParameter param_normalization_desc_filter;
 
+        [DoubleParameter(
+            Category = "4. Protein quantification",
+            DisplayName = "Protein-level FDR",
+            Description = "Protein-level false discovery rate threshold. Peptides corresponding to proteins with a q-value larger than this threshold are filtered out before running the actual protein quantification step.",
+            DefaultValue = "0.05",
+            MinimumValue = "0",
+            MaximumValue = "1",
+            Position = 141)]
+        public DoubleParameter param_protein_q_value_threshold;
+
         [StringSelectionParameter(Category = "4. Protein quantification",
             DisplayName = "Use peptides",
             Description = "Specify which peptides should be used for quantification: only unique peptides, unique + indistinguishable proteins, or unique + indistinguishable + other shared peptides (using a greedy resolution which is similar to selecting the razor peptides)",
@@ -197,11 +207,12 @@ namespace PD.OpenMS.AdapterNodes
 
         [DoubleParameter(
             Category = "4. Protein quantification",
-            DisplayName = "Fido pre-filtering threshold",
-            Description = "Filter out PSMs with posterior error probability (PEP) exceeding this threshold before running protein inference using FidoAdapter. A higher threshold can yield (slightly) better results but results in longer runtime.",
-            DefaultValue = "0.2",
+            DisplayName = "Fido pre-filtering PEP threshold",
+            Description = "Filter out PSMs with posterior error probability (PEP) exceeding this threshold before running protein inference using FidoAdapter. Thresholds < 1 can significantly reduce running time but the pre-filtering has an impact on the result of protein-level FDR filtering: the smaller this threshold, the more optimistic the protein-level FDR q-values become, i.e., the more likely that the protein-level FDR is underestimated.",
+            DefaultValue = "1",
             MinimumValue = "0",
             MaximumValue = "1",
+            IsAdvanced = true,
             Position = 160)]
         public DoubleParameter param_fido_prefiltering_threshold;
 
@@ -315,11 +326,11 @@ namespace PD.OpenMS.AdapterNodes
             // Run alignment and linking
             string consensus_xml_file = AlignAndLink(featurexml_files_idmapped);
 
-            // Resolve conflicting IDs within consensus features before protein quantification (if advanced parameter is not set to 'none')
-            var conflictresolved_idmapped_consensusxml = RunIDConflictResolver(consensus_xml_file);
+            //// Resolve conflicting IDs within consensus features before protein quantification (if advanced parameter is not set to 'none')
+            //var conflictresolved_idmapped_consensusxml = RunIDConflictResolver(consensus_xml_file);
 
             // Normalize intensities
-            var normalized_consensus_xml_file = RunConsensusMapNormalizer(conflictresolved_idmapped_consensusxml);
+            var normalized_consensus_xml_file = RunConsensusMapNormalizer(consensus_xml_file);
 
             // Dictionary {feature ID -> consensusXML element} with original RTs
             Dictionary<string, XmlElement> consensus_dict;
@@ -345,44 +356,104 @@ namespace PD.OpenMS.AdapterNodes
             // Run FidoAdapter
             var fido_output_file = RunFidoAdapter(indexed_idxml_filename_for_fido);
 
+            // Filter FidoAdapter output by protein-level FDR
+            var fdr_filtered_fido_output_file = FilterFidoOutputByProteinLevelFDR(fido_output_file);
+
             // Run ProteinQuantifier
-            RunProteinQuantifier(final_consensus_xml_file_orig_rt, fido_output_file);
+            RunProteinQuantifier(final_consensus_xml_file_orig_rt, fdr_filtered_fido_output_file);
 
             // Finished!
             FireProcessingFinishedEvent(new SingleResultsArguments(new[] { ProteomicsDataTypes.Psms }, this));
         }
 
         /// <summary>
-        /// Run IDConflictResolver on the input_file (consensusXML) and write results to output_file (consensusXML)
+        /// Filter FidoAdapter output by protein-level FDR
         /// </summary>
-        private string RunIDConflictResolver(string input_file)
+        private string FilterFidoOutputByProteinLevelFDR(string input_file)
         {
-            if (param_id_conflict_resolution.Value == "none")
+            if (param_protein_q_value_threshold.Value == 1.0)
             {
                 return input_file;
             }
 
-            string output_file = Path.Combine(NodeScratchDirectory, "idmapped_resolved.consensusXML");
-            var exec_path = Path.Combine(m_openms_dir, @"bin/IDConflictResolver.exe");
-            var ini_path = Path.Combine(NodeScratchDirectory, @"IDConflictResolver.ini");
+            // ================================ FalseDiscoveryRate =================================
 
-            Dictionary<string, string> ini_params = new Dictionary<string, string> {
-                            {"in", input_file},
-                            {"out", output_file},
-                            {"method", param_id_conflict_resolution.Value},
-                            {"threads", param_num_threads.ToString()}};
+            string exec_path = Path.Combine(m_openms_dir, @"bin/FalseDiscoveryRate.exe");
+            string ini_path = Path.Combine(NodeScratchDirectory, @"FalseDiscoveryRate.ini");
+            string fdr_output_file = Path.Combine(NodeScratchDirectory, "fido_results_fdr_output.idXML");
+
             OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
-            OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
+            Dictionary<string, string> fdr_parameters = new Dictionary<string, string> {
+                        {"in", input_file},
+                        {"out", fdr_output_file},
+                        {"proteins_only", "true"},
+                        {"threads", param_num_threads.ToString()}
+            };
+            OpenMSCommons.WriteParamsToINI(ini_path, fdr_parameters);
 
-            SendAndLogMessage("Starting IDConflictResolver");
+            SendAndLogMessage("Starting FalseDiscoveryRate");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
-            
-            // TODO: fix progress bars!
+
             //m_current_step += 1;
             //ReportTotalProgress((double)m_current_step / m_num_steps);
 
-            return output_file;
+            // ===================================== IDFilter =======================================
+
+            exec_path = Path.Combine(m_openms_dir, @"bin/IDFilter.exe");
+            ini_path = Path.Combine(NodeScratchDirectory, @"IDFilter.ini");
+            string idfilter_output_file = Path.Combine(NodeScratchDirectory, "fido_results_idfilter_output.idXML");
+
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
+            Dictionary<string, string> idfilter_parameters = new Dictionary<string, string> {
+                        {"in", fdr_output_file},
+                        {"out", idfilter_output_file},
+                        {"delete_unreferenced_peptide_hits", "true"},
+                        {"threads", param_num_threads.ToString()}
+            };
+            OpenMSCommons.WriteParamsToINI(ini_path, idfilter_parameters);
+            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("score", "prot", param_protein_q_value_threshold));
+
+            SendAndLogMessage("Starting IDFilter");
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
+
+            //m_current_step += 1;
+            //ReportTotalProgress((double)m_current_step / m_num_steps);
+
+            return idfilter_output_file;
         }
+
+
+        ///// <summary>
+        ///// Run IDConflictResolver on the input_file (consensusXML) and write results to output_file (consensusXML)
+        ///// </summary>
+        //private string RunIDConflictResolver(string input_file)
+        //{
+        //    if (param_id_conflict_resolution.Value == "none")
+        //    {
+        //        return input_file;
+        //    }
+
+        //    string output_file = Path.Combine(NodeScratchDirectory, "idmapped_resolved.consensusXML");
+        //    var exec_path = Path.Combine(m_openms_dir, @"bin/IDConflictResolver.exe");
+        //    var ini_path = Path.Combine(NodeScratchDirectory, @"IDConflictResolver.ini");
+
+        //    Dictionary<string, string> ini_params = new Dictionary<string, string> {
+        //                    {"in", input_file},
+        //                    {"out", output_file},
+        //                    {"method", param_id_conflict_resolution.Value},
+        //                    {"threads", param_num_threads.ToString()}};
+        //    OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
+        //    OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
+
+        //    SendAndLogMessage("Starting IDConflictResolver");
+        //    OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
+            
+        //    // TODO: fix progress bars!
+        //    //m_current_step += 1;
+        //    //ReportTotalProgress((double)m_current_step / m_num_steps);
+
+        //    return output_file;
+        //}
 
         /// <summary>
         /// Run ProteinQuantifier on a given consensusXML file, using Fido results as protein inference input. Parse results into PD tables.
