@@ -201,10 +201,10 @@ namespace PD.OpenMS.AdapterNodes
 
             // Store file names
             var custom_raw_data_field = ProcessingServices.CustomDataService.GetOrCreateCustomDataField(WorkflowID, new Guid("1301FADF-988F-48D6-AC68-AD5BD2A7841A"), "RawFileNames", ProcessingNodeNumber, ProcessingNodeNumber, CustomDataTarget.ProcessingNode, CustomDataType.String, CustomDataAccessMode.Read, DataVisibility.Hidden, dataPurpose: "RawFiles");
-            var raw_files_string = string.Join(",", raw_files.ToArray());
+            var raw_files_string = string.Join("____S_E_P_A_R_A_T_O_R____", raw_files.ToArray());
             ProcessingServices.CustomDataService.WriteString(custom_raw_data_field, ProcessingNodeNumber, raw_files_string);
             var custom_mzml_data_field = ProcessingServices.CustomDataService.GetOrCreateCustomDataField(WorkflowID, new Guid("9E011E9D-1AB3-410C-9BD7-A1AD95B67F26"), "MzMLFileNames", ProcessingNodeNumber, ProcessingNodeNumber, CustomDataTarget.ProcessingNode, CustomDataType.String, CustomDataAccessMode.Read, DataVisibility.Hidden, dataPurpose: "MzMLFiles");
-            var mzml_files_string = string.Join(",", exported_files.ToArray());
+            var mzml_files_string = string.Join("____S_E_P_A_R_A_T_O_R____", exported_files.ToArray());
             ProcessingServices.CustomDataService.WriteString(custom_mzml_data_field, ProcessingNodeNumber, mzml_files_string);
 
             // Run pipeline
@@ -345,7 +345,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // save featureXML file names to MSF file
             var featurexml_field = ProcessingServices.CustomDataService.GetOrCreateCustomDataField(WorkflowID, new Guid("BEC3E6A6-51CB-4FBB-A579-34312EA78C05"), "FileNames", ProcessingNodeNumber, ProcessingNodeNumber, CustomDataTarget.ProcessingNode, CustomDataType.String, CustomDataAccessMode.Read, DataVisibility.Hidden, dataPurpose: "FeatureXmlFiles");
-            ProcessingServices.CustomDataService.WriteString(featurexml_field, ProcessingNodeNumber, string.Join(",", out_files.ToArray()));
+            ProcessingServices.CustomDataService.WriteString(featurexml_field, ProcessingNodeNumber, string.Join("____S_E_P_A_R_A_T_O_R____", out_files.ToArray()));
 
             SendAndLogMessage("OpenMS pipeline processing took {0}.", StringHelper.GetDisplayString(timer.Elapsed));
         }

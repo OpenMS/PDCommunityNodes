@@ -924,17 +924,19 @@ namespace PD.OpenMS.AdapterNodes
             var all_custom_data_featurexml_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "FeatureXmlFiles").ToDictionary(c => c.WorkflowID, c => c);
             //var all_custom_data_mzml_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "MzMLFiles").ToDictionary(c => c.WorkflowID, c => c);
 
+            var separator = new string[] { "____S_E_P_A_R_A_T_O_R____" };
+
             m_num_files = 0;
             foreach (var item in all_custom_data_featurexml_files)
             {
-                m_num_files += ((string)item.Value.CustomValue).Split(',').Count();
+                m_num_files += ((string)item.Value.CustomValue).Split(separator, StringSplitOptions.RemoveEmptyEntries).Count();
             }
 
             raw_files = new List<string>();
             foreach (var item in all_custom_data_raw_files)
             {
                 var raw_files_str = (string)item.Value.CustomValue;
-                var tmp = new List<string>(raw_files_str.Split(','));
+                var tmp = new List<string>(raw_files_str.Split(separator, StringSplitOptions.RemoveEmptyEntries));
 
                 foreach (var file_name in tmp)
                 {
@@ -946,7 +948,7 @@ namespace PD.OpenMS.AdapterNodes
             foreach (var item in all_custom_data_featurexml_files)
             {
                 var featurexml_files = (string)item.Value.CustomValue;
-                var featurexml_files_list = new List<string>(featurexml_files.Split(','));
+                var featurexml_files_list = new List<string>(featurexml_files.Split(separator, StringSplitOptions.RemoveEmptyEntries));
 
                 foreach (var file_name in featurexml_files_list)
                 {
