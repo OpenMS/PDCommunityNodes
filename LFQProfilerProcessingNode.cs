@@ -89,7 +89,7 @@ namespace PD.OpenMS.AdapterNodes
         [DoubleParameter(Category = "1. Feature Finding",
             DisplayName = "Typical RT",
             Description = "Typical retention time of a feature [sec]",
-            DefaultValue = "30",
+            DefaultValue = "40",
             MinimumValue = "0",
             Position = 4)]
         public DoubleParameter param_typical_rt;
@@ -105,7 +105,7 @@ namespace PD.OpenMS.AdapterNodes
         [DoubleParameter(Category = "1. Feature Finding",
             DisplayName = "Averagine similarity",
             Description = "Lower bound on similarity of observed isotopic pattern and averagine model.",
-            DefaultValue = "0.3",
+            DefaultValue = "0.8",
             MinimumValue = "0",
             MaximumValue = "1",
             Position = 6)]
@@ -326,6 +326,7 @@ namespace PD.OpenMS.AdapterNodes
                             {"out_features", out_files[i]},
                             {"labels", ""},
                             {"averagine_similarity", param_averagine_similarity.ToString()},
+                            {"averagine_similarity_scaling", "0"},
                             {"charge", param_charge_low.ToString() + ":" + param_charge_high.ToString()},
                             {"mz_unit", param_mass_tolerance.UnitToString()},
                             {"mz_tolerance", param_mass_tolerance.Value.Tolerance.ToString()},

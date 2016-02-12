@@ -140,13 +140,15 @@ namespace PD.OpenMS.AdapterNodes
             Position = 80)]
         public FastaFileParameter param_fasta_db;
 
-        [StringSelectionParameter(Category = "2. ID mapping",
-            DisplayName = "Enzyme",
-            Description = "The enzyme used for cleaving the proteins",
-            DefaultValue = "Trypsin",
-            SelectionValues = new string[] { "Trypsin", "Asp-N", "CNBr", "Formic_acid", "Chymotrypsin", "Lys-C", "Asp-N_ambic", "Arg-C", "V8-DE", "glutamyl endopeptidase", "leukocyte elastase", "no cleavage", "PepsinA", "Lys-C/P", "2-iodobenzoate", "prolineendopeptidase", "V8-E", "TrypChymo", "unspecific cleavage", "Trypsin/P" },
-            Position = 90)]
-        public SimpleSelectionParameter<string> param_enzyme;
+        // not needed because specificity = none
+
+        //[StringSelectionParameter(Category = "2. ID mapping",
+        //    DisplayName = "Enzyme",
+        //    Description = "The enzyme used for cleaving the proteins",
+        //    DefaultValue = "Trypsin",
+        //    SelectionValues = new string[] { "Trypsin", "Asp-N", "CNBr", "Formic_acid", "Chymotrypsin", "Lys-C", "Asp-N_ambic", "Arg-C", "V8-DE", "glutamyl endopeptidase", "leukocyte elastase", "no cleavage", "PepsinA", "Lys-C/P", "2-iodobenzoate", "prolineendopeptidase", "V8-E", "TrypChymo", "unspecific cleavage", "Trypsin/P" },
+        //    Position = 90)]
+        //public SimpleSelectionParameter<string> param_enzyme;
 
         [StringSelectionParameter(Category = "2. ID mapping",
             DisplayName = "m/z reference",
@@ -1286,7 +1288,7 @@ namespace PD.OpenMS.AdapterNodes
                         {"threads", param_num_threads.ToString()}
             };
             OpenMSCommons.WriteParamsToINI(ini_path, pi_parameters);
-            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("enzyme", "name", param_enzyme.Value));
+            //OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("enzyme", "name", param_enzyme.Value));
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("enzyme", "specificity", "none"));
 
             SendAndLogMessage("Starting PeptideIndexer");
