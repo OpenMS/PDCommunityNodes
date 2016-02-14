@@ -348,21 +348,25 @@ namespace PD.OpenMS.AdapterNodes
             PopulateConsensusFeaturesTable(consensus_dict, final_consensus_xml_file_orig_rt, feature_table_column_names);
 
             // Export all PSMs for Fido
-            var idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "fido_psms.idXML");
-            ExportPSMsToIdXML(idxml_filename_for_fido, true);
+            var combined_idxml_filename = Path.Combine(NodeScratchDirectory, "all_psms.idXML");
+            ExportPSMsToIdXML(combined_idxml_filename, true);
 
             // Run PeptideIndexer in order to get peptide <-> protein associations
-            var indexed_idxml_filename_for_fido = Path.Combine(NodeScratchDirectory, "fido_psms_indexed.idXML");
-            RunPeptideIndexer(idxml_filename_for_fido, indexed_idxml_filename_for_fido);
+            var indexed_idxml_file = Path.Combine(NodeScratchDirectory, "all_psms_indexed.idXML");
+            RunPeptideIndexer(combined_idxml_filename, indexed_idxml_file);
 
-            // Run FidoAdapter
-            var fido_output_file = RunFidoAdapter(indexed_idxml_filename_for_fido);
+            var pq_input_idxml = indexed_idxml_file;
+            if (param_protein_quant_mode.Value != "unique")
+            {
+                // Run FidoAdapter
+                var fido_output_file = RunFidoAdapter(indexed_idxml_file);
 
-            // Filter FidoAdapter output by protein-level FDR
-            var fdr_filtered_fido_output_file = FilterFidoOutputByProteinLevelFDR(fido_output_file);
+                // Filter FidoAdapter output by protein-level FDR
+                pq_input_idxml = FilterFidoOutputByProteinLevelFDR(fido_output_file);
+            }
 
             // Run ProteinQuantifier
-            RunProteinQuantifier(final_consensus_xml_file_orig_rt, fdr_filtered_fido_output_file);
+            RunProteinQuantifier(final_consensus_xml_file_orig_rt, pq_input_idxml);
 
             // Finished!
             FireProcessingFinishedEvent(new SingleResultsArguments(new[] { ProteomicsDataTypes.Psms }, this));
@@ -476,8 +480,11 @@ namespace PD.OpenMS.AdapterNodes
                             {"include_all", param_include_all.ToString().ToLower()},
                             {"filter_charge", param_filter_charge.ToString().ToLower()},
                             {"fix_peptides", param_fix_peptides.ToString().ToLower()},
-                            {"protein_groups", param_protein_quant_mode.Value != "unique" ? fido_idxml_file : ""},
                             {"threads", param_num_threads.ToString()}};
+            if (param_protein_quant_mode.Value != "unique")
+            {
+                ini_params["protein_groups"] = fido_idxml_file;
+            }
             OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
 
@@ -499,21 +506,20 @@ namespace PD.OpenMS.AdapterNodes
             var ini_path = Path.Combine(NodeScratchDirectory, @"FidoAdapter.ini");
             var output_file = Path.Combine(NodeScratchDirectory, "fido_results.idXML");
 
-            if (param_protein_quant_mode.Value != "unique")
-            {
-                Dictionary<string, string> ini_params = new Dictionary<string, string> {
-                            {"in", idxml_file},
-                            {"out", output_file},
-                            {"greedy_group_resolution", param_protein_quant_mode.Value == "greedy" ? "true" : "false"},
-                            {"threads", param_num_threads.ToString()}};
-                OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
-                OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
 
-                SendAndLogMessage("Starting FidoAdapter");
-                OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
-                m_current_step += 1;
-                ReportTotalProgress((double)m_current_step / m_num_steps);
-            }
+            Dictionary<string, string> ini_params = new Dictionary<string, string> {
+                        {"in", idxml_file},
+                        {"out", output_file},
+                        {"greedy_group_resolution", param_protein_quant_mode.Value == "greedy" ? "true" : "false"},
+                        {"threads", param_num_threads.ToString()}};
+            OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
+            OpenMSCommons.WriteParamsToINI(ini_path, ini_params);
+
+            SendAndLogMessage("Starting FidoAdapter");
+            OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
+            m_current_step += 1;
+            ReportTotalProgress((double)m_current_step / m_num_steps);
+            
             return output_file;
         }
 
