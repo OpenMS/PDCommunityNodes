@@ -43,7 +43,6 @@ namespace pwiz.Skyline.Controls.Graphs
         public List<double> RNPxl_MZs;
         public List<double> RNPxl_Intensities;
         public List<string> RNPxl_Annotations;
-        public double RNPxl_Tolerance = 0.3;
 
         private string m_title = "";
 
