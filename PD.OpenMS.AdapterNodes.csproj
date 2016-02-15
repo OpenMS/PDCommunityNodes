@@ -149,9 +149,9 @@
       <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.Utilities.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
-    <Reference Include="ZedGraph, Version=5.1.5.32171, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="ZedGraph_OpenMS, Version=5.1.5.23584, Culture=neutral, PublicKeyToken=8b2485f42e5e887d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\ZedGraph.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\ZedGraph_OpenMS.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

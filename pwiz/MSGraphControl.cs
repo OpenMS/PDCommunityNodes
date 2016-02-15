@@ -24,6 +24,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using System.Drawing.Imaging;
 using ZedGraph;
 
 namespace pwiz.MSGraph
@@ -256,8 +257,12 @@ namespace pwiz.MSGraph
         #endregion
 
         #region Rescaling of graph items after zoom or resize events
-        //void MSGraphControl_ZoomEvent( ZedGraphControl sender, ZoomState oldState, ZoomState newState , PointF mousePosition)
-        void MSGraphControl_ZoomEvent( ZedGraphControl sender, ZoomState oldState, ZoomState newState)
+
+
+        // This would be compatible with the original ZedGraph.dll from Thermo:
+        //void MSGraphControl_ZoomEvent( ZedGraphControl sender, ZoomState oldState, ZoomState newState)
+        //
+        void MSGraphControl_ZoomEvent( ZedGraphControl sender, ZoomState oldState, ZoomState newState , PointF mousePosition)
         {
             //MSGraphPane pane = MasterPane.FindChartRect(mousePosition) as MSGraphPane;
             //if( pane == null )
