@@ -57,7 +57,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Preprocess using ID filtering",
             Description = "If set to true, spectra containing regular (non-cross-linked) peptides are filtered out before the actual search for cross-links.",
             DefaultValue = "true",
-            Position = 1)]
+            Position = 10)]
         public BooleanParameter param_general_run_id_filtering;
 
         [BooleanParameter(
@@ -65,7 +65,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Preprocess using XIC filtering",
             Description = "Only relevant when a control file is available. Remove XICs at precursor positions that are also found in the control file from the cross-link file.",
             DefaultValue = "true",
-            Position = 2)]
+            Position = 20)]
         public BooleanParameter param_general_run_xic_filtering;
 
         [BooleanParameter(
@@ -73,7 +73,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "XIC filtering uses RT alignment",
             Description = "Only relevant when a control file is available and 'Preprocess using XIC filtering' is set to 'true'. Specifies whether control file should be aligned to cross-link file.",
             DefaultValue = "true",
-            Position = 3)]
+            Position = 30)]
         public BooleanParameter param_general_run_map_alignment;
 
         [FastaFileParameter(
@@ -82,7 +82,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "The sequence database to be used for both peptide ID filtering and searching for peptide-RNA crosslinks",
             IntendedPurpose = ParameterPurpose.SequenceDatabase,
             ValueRequired = true,
-            Position = 4)]
+            Position = 40)]
         public FastaFileParameter param_general_fasta_db;
 
         [IntegerParameter(
@@ -91,7 +91,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Maximum number of CPU cores allowed to be used by the algorithms",
             DefaultValue = "1",
             MinimumValue = "1",
-            Position = 5)]
+            Position = 50)]
         public IntegerParameter param_general_num_threads;
 
         [IntegerParameter(
@@ -100,7 +100,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Maximum length of oligonucleotides. 0 = disable search for RNA variants.",
             DefaultValue = "1",
             MinimumValue = "0",
-            Position = 6)]
+            Position = 60)]
         public IntegerParameter param_cross_linking_length;
 
         [StringParameter(
@@ -108,7 +108,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Sequence",
             Description = "Sequence to restrict the generation of oligonucleotide chains. (disabled for empty sequence)",
             DefaultValue = "",
-            Position = 7)]
+            Position = 70)]
         public StringParameter param_cross_linking_sequence;
 
         [StringParameter(
@@ -117,7 +117,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Format: target nucleotide=empirical formula of nucleoside monophosphate, e.g., A=C10H14N5O7P, ..., U=C10H14N5O7P, X=C9H13N2O8PS  where X represents e.g. tU or e.g. Y=C10H14N5O7PS where Y represents tG (default: '[A=C10H14N5O7P C=C9H14N3O8P G=C10H14N5O8P U=C9H13N2O9P]')",
             DefaultValue = "[A=C10H14N5O7P C=C9H14N3O8P G=C10H14N5O8P U=C9H13N2O9P]",
             IsAdvanced = true,
-            Position = 8)]
+            Position = 80)]
         public StringParameter param_cross_linking_target_nucleotides;
 
         [StringParameter(
@@ -126,7 +126,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Format: source->target e.g. A->A, ..., U->U, U->X (default: '[A->A C->C G->G U->U]')",
             DefaultValue = "[A->A C->C G->G U->U]",
             IsAdvanced = true,
-            Position = 9)]
+            Position = 90)]
         public StringParameter param_cross_linking_mapping;
 
         [StringParameter(
@@ -135,8 +135,17 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Format: target nucleotide=min_count: e.g U=1 if at least one U must be in the generated sequence. (default: '[A=0 C=0 U=1 G=0]')",
             DefaultValue = "[A=0 C=0 U=1 G=0]",
             IsAdvanced = true,
-            Position = 10)]
+            Position = 100)]
         public StringParameter param_cross_linking_restrictions;
+
+        [StringParameter(
+            Category = "2. Cross-links",
+            DisplayName = "Fragment adducts",
+            Description = "Format: [formula] or [precursor adduct]->[fragment adduct formula],[name]: e.g 'C9H10N2O5,U-H3PO4' or 'U-H2O->C9H11N2O8P1,U-H2O', (default: '[C9H10N2O5,U-H3PO4 C4H4N2O2,U' C4H2N2O1,U'-H2O C3O,C3O C9H13N2O9P1,U C9H11N2O8P1,U-H2O C9H12N2O6,U-HPO3]')",
+            DefaultValue = "[C9H10N2O5,U-H3PO4 C4H4N2O2,U' C4H2N2O1,U'-H2O C3O,C3O C9H13N2O9P1,U C9H11N2O8P1,U-H2O C9H12N2O6,U-HPO3]",
+            IsAdvanced = true,
+            Position = 101)]
+        public StringParameter param_cross_linking_fragment_adducts;
 
         [StringParameter(
             Category = "2. Cross-links",
@@ -144,7 +153,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Format: empirical formula e.g -H2O, ..., H2O+PO3 (default: '[ -H2O -H2O-HPO3 -HPO3 -H2O+HPO3 +HPO3]')",
             DefaultValue = "[ -H2O -H2O-HPO3 -HPO3 -H2O+HPO3 +HPO3]",
             IsAdvanced = true,
-            Position = 11)]
+            Position = 110)]
         public StringParameter param_cross_linking_modifications;
 
         [BooleanParameter(
@@ -152,7 +161,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Localization",
             Description = "Use this flag to perform crosslink localization by partial loss scoring as post-analysis.",
             DefaultValue = "true",
-            Position = 12)]
+            Position = 120)]
         public BooleanParameter param_cross_linking_localization;
 
         [BooleanParameter(
@@ -160,7 +169,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Cysteine adduct",
             Description = "Use this flag if the +152 adduct is expected.",
             DefaultValue = "false",
-            Position = 13)]
+            Position = 130)]
         public BooleanParameter param_cross_linking_cysteine_adduct;
 
         [BooleanParameter(
@@ -168,7 +177,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Filter fractional mass",
             Description = "Use this flag to filter non-crosslinks by fractional mass.",
             DefaultValue = "false",
-            Position = 14)]
+            Position = 140)]
         public BooleanParameter param_cross_linking_filter_fractional_mass;
 
         [BooleanParameter(
@@ -176,7 +185,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Carbon-labeled fragments",
             Description = "Generate fragment shifts assuming full labeling of carbon (e.g. completely labeled U13).",
             DefaultValue = "false",
-            Position = 15)]
+            Position = 150)]
         public BooleanParameter param_cross_linking_carbon_labeled_fragments;
 
         [MassToleranceParameter(
@@ -184,7 +193,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Precursor mass tolerance",
             Description = "This parameter specifies the precursor mass tolerance for peptide identification",
             DefaultValue = "10 ppm",
-            Position = 16,
+            Position = 160,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_rnpxlsearch_precursor_mass_tolerance;
 
@@ -193,7 +202,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Fragment mass tolerance",
             Description = "This parameter specifies the fragment mass tolerance for peptide identification",
             DefaultValue = "10 ppm",
-            Position = 17,
+            Position = 170,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_rnpxlsearch_fragment_mass_tolerance;
 
@@ -203,7 +212,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Lowest charge state to search for.",
             DefaultValue = "2",
             MinimumValue = "1",
-            Position = 18)]
+            Position = 180)]
         public IntegerParameter param_rnpxlsearch_charge_low;
 
         [IntegerParameter(
@@ -212,7 +221,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Highest charge state to search for.",
             DefaultValue = "5",
             MinimumValue = "1",
-            Position = 19)]
+            Position = 190)]
         public IntegerParameter param_rnpxlsearch_charge_high;
 
         [StringSelectionParameter(
@@ -221,7 +230,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "The enzyme used for cleaving the proteins",
             DefaultValue = "Trypsin",
             SelectionValues = new string[] { "Trypsin", "Asp-N", "CNBr", "Formic_acid", "Chymotrypsin", "Lys-C", "Asp-N_ambic", "Arg-C", "V8-DE", "glutamyl endopeptidase", "leukocyte elastase", "no cleavage", "PepsinA", "Lys-C/P", "2-iodobenzoate", "prolineendopeptidase", "V8-E", "TrypChymo", "unspecific cleavage", "Trypsin/P" },
-            Position = 20)]
+            Position = 200)]
         public SimpleSelectionParameter<string> param_rnpxlsearch_enzyme;
 
         [IntegerParameter(
@@ -230,7 +239,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Maximum allowed number of missed cleavages.",
             DefaultValue = "1",
             MinimumValue = "0",
-            Position = 21)]
+            Position = 210)]
         public IntegerParameter param_rnpxlsearch_missed_cleavages;
 
         [ModificationParameter(
@@ -240,7 +249,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Static,
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
             IntendedPurpose = ParameterPurpose.StaticTerminalModification,
-            Position = 22)]
+            Position = 220)]
         public ModificationParameter param_rnpxlsearch_static_n_terminal_mod;
 
         [ModificationParameter(
@@ -250,7 +259,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Static,
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
             IntendedPurpose = ParameterPurpose.StaticTerminalModification,
-            Position = 23)]
+            Position = 230)]
         public ModificationParameter param_rnpxlsearch_static_c_terminal_mod;
 
         [ModificationParameter(
@@ -260,7 +269,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
-            Position = 24)]
+            Position = 240)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_1;
@@ -272,7 +281,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
-            Position = 25)]
+            Position = 250)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_2;
@@ -284,7 +293,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
-            Position = 26)]
+            Position = 260)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_3;
@@ -296,7 +305,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
-            Position = 27)]
+            Position = 270)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_4;
@@ -308,7 +317,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
-            Position = 28)]
+            Position = 280)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_5;
@@ -320,7 +329,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
-            Position = 29)]
+            Position = 290)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_static_mod_6;
@@ -331,7 +340,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Maximum number of dynamic modifications per peptide. Includes all terminal and internal modifications.",
             DefaultValue = "2",
             MinimumValue = "0",
-            Position = 30)]
+            Position = 300)]
         public IntegerParameter param_rnpxlsearch_num_dynamic_mods;
 
         [ModificationParameter(
@@ -341,7 +350,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
-            Position = 40)]
+            Position = 400)]
         public ModificationParameter param_rnpxlsearch_dynamic_n_terminal_mod_1;
 
         [ModificationParameter(
@@ -351,7 +360,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
-            Position = 41)]
+            Position = 410)]
         public ModificationParameter param_rnpxlsearch_dynamic_n_terminal_mod_2;
 
         [ModificationParameter(
@@ -361,7 +370,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
-            Position = 42)]
+            Position = 420)]
         public ModificationParameter param_rnpxlsearch_dynamic_n_terminal_mod_3;
 
         [ModificationParameter(
@@ -371,7 +380,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
-            Position = 43)]
+            Position = 430)]
         public ModificationParameter param_rnpxlsearch_dynamic_c_terminal_mod_1;
 
         [ModificationParameter(
@@ -381,7 +390,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
-            Position = 44)]
+            Position = 440)]
         public ModificationParameter param_rnpxlsearch_dynamic_c_terminal_mod_2;
 
         [ModificationParameter(
@@ -391,7 +400,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
-            Position = 45)]
+            Position = 450)]
         public ModificationParameter param_rnpxlsearch_dynamic_c_terminal_mod_3;
 
         [ModificationParameter(
@@ -401,7 +410,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
-            Position = 46)]
+            Position = 460)]
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_1;
@@ -413,7 +422,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
-            Position = 47)]
+            Position = 470)]
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_2;
@@ -425,7 +434,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
-            Position = 48)]
+            Position = 480)]
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_3;
@@ -437,7 +446,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
-            Position = 49)]
+            Position = 490)]
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_4;
@@ -449,7 +458,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
-            Position = 50)]
+            Position = 500)]
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_5;
@@ -461,7 +470,7 @@ namespace PD.OpenMS.AdapterNodes
             ModificationType = ModificationType.Dynamic,
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
-            Position = 51)]
+            Position = 510)]
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_rnpxlsearch_dynamic_mod_6;
@@ -471,7 +480,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "q-value threshold",
             Description = "The q-value threshold for PSMs to be kept.",
             DefaultValue = "0.01",
-            Position = 52)]
+            Position = 520)]
         public DoubleParameter param_id_filtering_q_value_threshold;
 
         [BooleanParameter(
@@ -479,7 +488,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Use same settings as in main peptide identification",
             Description = "If set to false, the advanced settings from this category will be used instead for in the ID filtering step ('Show Advanced Parameters' above)",
             DefaultValue = "true",
-            Position = 53)]
+            Position = 530)]
         public BooleanParameter param_id_filtering_use_same_settings;
 
         [MassToleranceParameter(
@@ -487,7 +496,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Precursor mass tolerance",
             Description = "This parameter specifies the precursor mass tolerance for peptide identification",
             DefaultValue = "10 ppm",
-            Position = 54,
+            Position = 540,
             IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_id_filtering_precursor_mass_tolerance;
@@ -497,7 +506,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Fragment mass tolerance",
             Description = "This parameter specifies the fragment mass tolerance for peptide identification",
             DefaultValue = "10 ppm",
-            Position = 55,
+            Position = 550,
             IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_id_filtering_fragment_mass_tolerance;
@@ -509,7 +518,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "2",
             MinimumValue = "1",
             IsAdvanced = true,
-            Position = 56)]
+            Position = 560)]
         public IntegerParameter param_id_filtering_charge_low;
 
         [IntegerParameter(
@@ -519,7 +528,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "5",
             MinimumValue = "1",
             IsAdvanced = true,
-            Position = 57)]
+            Position = 570)]
         public IntegerParameter param_id_filtering_charge_high;
 
         [StringSelectionParameter(
@@ -529,7 +538,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "Trypsin",
             IsAdvanced = true,
             SelectionValues = new string[] { "Trypsin", "Asp-N", "CNBr", "Formic_acid", "Chymotrypsin", "Lys-C", "Asp-N_ambic", "Arg-C", "V8-DE", "glutamyl endopeptidase", "leukocyte elastase", "no cleavage", "PepsinA", "Lys-C/P", "2-iodobenzoate", "prolineendopeptidase", "V8-E", "TrypChymo", "unspecific cleavage", "Trypsin/P" },
-            Position = 58)]
+            Position = 580)]
         public SimpleSelectionParameter<string> param_id_filtering_enzyme;
 
         [IntegerParameter(
@@ -539,7 +548,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "1",
             MinimumValue = "0",
             IsAdvanced = true,
-            Position = 59)]
+            Position = 590)]
         public IntegerParameter param_id_filtering_missed_cleavages;
 
         [ModificationParameter(
@@ -550,7 +559,7 @@ namespace PD.OpenMS.AdapterNodes
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
             IntendedPurpose = ParameterPurpose.StaticTerminalModification,
             IsAdvanced = true,
-            Position = 60)]
+            Position = 600)]
         public ModificationParameter param_id_filtering_static_n_terminal_mod;
 
         [ModificationParameter(
@@ -561,7 +570,7 @@ namespace PD.OpenMS.AdapterNodes
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
             IntendedPurpose = ParameterPurpose.StaticTerminalModification,
             IsAdvanced = true,
-            Position = 61)]
+            Position = 610)]
         public ModificationParameter param_id_filtering_static_c_terminal_mod;
 
         [ModificationParameter(
@@ -572,7 +581,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             IsAdvanced = true,
-            Position = 62)]
+            Position = 620)]
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_1;
@@ -585,7 +594,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             IsAdvanced = true,
-            Position = 63)]
+            Position = 630)]
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_2;
@@ -598,7 +607,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             IsAdvanced = true,
-            Position = 64)]
+            Position = 640)]
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_3;
@@ -611,7 +620,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             IsAdvanced = true,
-            Position = 65)]
+            Position = 650)]
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_4;
@@ -624,7 +633,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             IsAdvanced = true,
-            Position = 66)]
+            Position = 660)]
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_5;
@@ -637,7 +646,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             IsAdvanced = true,
-            Position = 67)]
+            Position = 670)]
         [ParameterGroup(GroupName = "Static Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_static_mod_6;
@@ -649,7 +658,7 @@ namespace PD.OpenMS.AdapterNodes
             DefaultValue = "2",
             MinimumValue = "0",
             IsAdvanced = true,
-            Position = 68)]
+            Position = 680)]
         public IntegerParameter param_id_filtering_num_dynamic_mods;
 
         [ModificationParameter(
@@ -660,7 +669,7 @@ namespace PD.OpenMS.AdapterNodes
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             IsAdvanced = true,
-            Position = 69)]
+            Position = 690)]
         public ModificationParameter param_id_filtering_dynamic_n_terminal_mod_1;
 
         [ModificationParameter(
@@ -671,7 +680,7 @@ namespace PD.OpenMS.AdapterNodes
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             IsAdvanced = true,
-            Position = 70)]
+            Position = 700)]
         public ModificationParameter param_id_filtering_dynamic_n_terminal_mod_2;
 
         [ModificationParameter(
@@ -682,7 +691,7 @@ namespace PD.OpenMS.AdapterNodes
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             IsAdvanced = true,
-            Position = 71)]
+            Position = 710)]
         public ModificationParameter param_id_filtering_dynamic_n_terminal_mod_3;
 
         [ModificationParameter(
@@ -693,7 +702,7 @@ namespace PD.OpenMS.AdapterNodes
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             IsAdvanced = true,
-            Position = 72)]
+            Position = 720)]
         public ModificationParameter param_id_filtering_dynamic_c_terminal_mod_1;
 
         [ModificationParameter(
@@ -704,7 +713,7 @@ namespace PD.OpenMS.AdapterNodes
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             IsAdvanced = true,
-            Position = 73)]
+            Position = 730)]
         public ModificationParameter param_id_filtering_dynamic_c_terminal_mod_2;
 
         [ModificationParameter(
@@ -715,7 +724,7 @@ namespace PD.OpenMS.AdapterNodes
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             IsAdvanced = true,
-            Position = 74)]
+            Position = 740)]
         public ModificationParameter param_id_filtering_dynamic_c_terminal_mod_3;
 
         [ModificationParameter(
@@ -726,7 +735,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
             IsAdvanced = true,
-            Position = 75)]
+            Position = 750)]
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_1;
@@ -739,7 +748,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
             IsAdvanced = true,
-            Position = 76)]
+            Position = 760)]
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_2;
@@ -752,7 +761,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
             IsAdvanced = true,
-            Position = 77)]
+            Position = 770)]
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_3;
@@ -765,7 +774,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
             IsAdvanced = true,
-            Position = 78)]
+            Position = 780)]
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_4;
@@ -778,7 +787,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
             IsAdvanced = true,
-            Position = 79)]
+            Position = 790)]
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_5;
@@ -791,7 +800,7 @@ namespace PD.OpenMS.AdapterNodes
             IsMultiSelect = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
             IsAdvanced = true,
-            Position = 80)]
+            Position = 800)]
         [ParameterGroup(GroupName = "Dynamic Modifications for ID Filtering", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications for ID Filtering", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_id_filtering_dynamic_mod_6;
@@ -802,7 +811,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Minimum fold change required for an eluting peptide in the UV sample to be considered a putative cross-link. Extracted ion chromatograms (XICs) of eluting analytes are compared between control and treatment, If the UV signal is not significantly stronger than the control (according to a minimum fold change threshold), the analyte is considered a co-eluting non-cross-linked species or contaminant and its tandem spectra are removed from the analysis.",
             DefaultValue = "2",
             MinimumValue = "0",
-            Position = 81)]
+            Position = 810)]
         public IntegerParameter param_xic_filtering_fold_change;
 
         [DoubleParameter(
@@ -810,7 +819,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Max. RT difference [min]",
             Description = "This parameter specifies the maximum allowed retention time difference between corresponding XICs.",
             DefaultValue = "0.33",
-            Position = 82)]
+            Position = 820)]
         public DoubleParameter param_xic_filtering_rt_threshold;
 
         [MassToleranceParameter(
@@ -820,7 +829,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "This parameter specifies the maximum allowed m/z difference between corresponding XICs",
             DefaultValue = "10 ppm",
             IntendedPurpose = ParameterPurpose.MassTolerance,
-            Position = 83)]
+            Position = 830)]
         public MassToleranceParameter param_xic_filtering_mz_threshold;
 
         [DoubleParameter(
@@ -828,7 +837,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Max. RT difference [min]",
             Description = "This parameter specifies the maximum allowed retention time difference between corresponding peaks.",
             DefaultValue = "0.33",
-            Position = 84)]
+            Position = 840)]
         public DoubleParameter param_alignment_rt_threshold;
 
         [MassToleranceParameter(
@@ -838,7 +847,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "This parameter specifies the maximum allowed m/z difference between corresponding peaks.",
             DefaultValue = "10 ppm",
             IntendedPurpose = ParameterPurpose.MassTolerance,
-            Position = 85)]
+            Position = 850)]
         public MassToleranceParameter param_alignment_mz_threshold;
 
 
@@ -1591,14 +1600,16 @@ namespace PD.OpenMS.AdapterNodes
                 "mapping",
                 "modifications",
                 "restrictions",
-                "target_nucleotides"
+                "target_nucleotides",
+                "fragment_adducts"
             };
             var pd_parameters = new List<StringParameter>()
             {
                 param_cross_linking_mapping,
                 param_cross_linking_modifications,
                 param_cross_linking_restrictions,
-                param_cross_linking_target_nucleotides
+                param_cross_linking_target_nucleotides,
+                param_cross_linking_fragment_adducts
             };
 
             try
