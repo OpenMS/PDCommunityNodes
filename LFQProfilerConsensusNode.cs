@@ -267,6 +267,7 @@ namespace PD.OpenMS.AdapterNodes
 
         private string m_openms_dir;
         private string m_openms_fasta_file;
+        private List<string> m_raw_files;
         private NodeDelegates m_node_delegates;
         private int m_current_step;
         private int m_num_steps;
@@ -302,14 +303,13 @@ namespace PD.OpenMS.AdapterNodes
 
             // Extract input filenames from MSF file
             List<string> featurexml_files_orig;
-            List<string> raw_files;
-            ReadInputFilenames(out featurexml_files_orig, out raw_files);
-            var idxml_files = new List<string>(from f in raw_files select Path.Combine(NodeScratchDirectory, Path.GetFileNameWithoutExtension(f) + ".idXML"));
+            ReadInputFilenames(out featurexml_files_orig);
+            var idxml_files = new List<string>(from f in m_raw_files select Path.Combine(NodeScratchDirectory, Path.GetFileNameWithoutExtension(f) + ".idXML"));
             var featurexml_files_idmapped = new List<string>();
             
-            for (int i = 0; i < raw_files.Count; ++i)
+            for (int i = 0; i < m_raw_files.Count; ++i)
             {
-                var raw_file = raw_files[i];
+                var raw_file = m_raw_files[i];
                 var idxml_file = idxml_files[i];
 
                 // Export filtered PSMs to idXML
@@ -344,7 +344,7 @@ namespace PD.OpenMS.AdapterNodes
             BuildConsensusXMLWithOrigRTs(normalized_consensus_xml_file, featurexml_files_orig, out consensus_dict, out final_consensus_xml_file_orig_rt);
 
             // Set up consensus feature table ("Quantified features") and fill it
-            var feature_table_column_names = SetupConsensusFeaturesTable(raw_files);
+            var feature_table_column_names = SetupConsensusFeaturesTable();
             PopulateConsensusFeaturesTable(consensus_dict, final_consensus_xml_file_orig_rt, feature_table_column_names);
 
             // Export all PSMs for Fido
@@ -730,7 +730,7 @@ namespace PD.OpenMS.AdapterNodes
         /// <summary>
         /// Set up the "Quantified Features" table (with dynamic number of abundance columns)
         /// </summary>
-        private List<string> SetupConsensusFeaturesTable(List<string> raw_files)
+        private List<string> SetupConsensusFeaturesTable()
         {
             EntityDataService.RegisterEntity<ConsensusFeatureEntity>(ProcessingNodeNumber);
 
@@ -801,17 +801,17 @@ namespace PD.OpenMS.AdapterNodes
             var column_names = new List<String>(m_num_files);
             for (int i = 0; i < m_num_files; i++)
             {
-                string raw_file_name = Path.GetFileName(raw_files[i]);
+                string raw_file_name = Path.GetFileName(m_raw_files[i]);
 
                 var new_intensity_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<ConsensusFeatureEntity, double?>(
                     new PropertyDescription()
                     {
-                        DisplayName = "Abundance " + (i + 1),
-                        FormatString = "0.000e-00",
-                        Description = raw_file_name
+                        DisplayName = "Abundance " + (i + 1) + " (" + raw_file_name + ")",
+                        Description = "Abundance " + (i + 1) + " (" + raw_file_name + ")",
+                        FormatString = "0.0000e-00"
                     }
                 );
-                new_intensity_column.GridDisplayOptions.ColumnWidth = 80;
+                new_intensity_column.GridDisplayOptions.ColumnWidth = 90;
                 EntityDataService.RegisterProperties(ProcessingNodeNumber, new_intensity_column);
                 column_names.Add(new_intensity_column.Name);
             }
@@ -923,7 +923,7 @@ namespace PD.OpenMS.AdapterNodes
         /// <summary>
         /// Read file names of featureXML files and RAW files from MSF file / entity data service (were stored by the ProcessingNode)
         /// </summary>
-        private void ReadInputFilenames(out List<string> orig_features, out List<string> raw_files)
+        private void ReadInputFilenames(out List<string> orig_features)
         {
             //Read in featureXmls contained in the study result folder, read only those associated with the project MSF
             var all_custom_data_raw_files = EntityDataService.CreateEntityItemReader().ReadAll<ProcessingNodeCustomData>().Where(c => c.DataPurpose == "RawFiles").ToDictionary(c => c.WorkflowID, c => c);
@@ -938,7 +938,7 @@ namespace PD.OpenMS.AdapterNodes
                 m_num_files += ((string)item.Value.CustomValue).Split(separator, StringSplitOptions.RemoveEmptyEntries).Count();
             }
 
-            raw_files = new List<string>();
+            m_raw_files = new List<string>();
             foreach (var item in all_custom_data_raw_files)
             {
                 var raw_files_str = (string)item.Value.CustomValue;
@@ -946,7 +946,7 @@ namespace PD.OpenMS.AdapterNodes
 
                 foreach (var file_name in tmp)
                 {
-                    raw_files.Add(file_name);
+                    m_raw_files.Add(file_name);
                 }
             }
 
@@ -1327,11 +1327,13 @@ namespace PD.OpenMS.AdapterNodes
             var column_names = new List<String>(n_abundances);
             for (int i = 0; i < n_abundances; ++i)
             {
+                string raw_file_name = Path.GetFileName(m_raw_files[i]);
                 var new_abundance_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<DechargedPeptideEntity, double?>(
                     new PropertyDescription()
                     {
-                        DisplayName = "Abundance " + (i + 1),
-                        FormatString = "0.000e-00"
+                        DisplayName = "Abundance " + (i + 1) + " (" + raw_file_name + ")",
+                        Description = "Abundance " + (i + 1) + " (" + raw_file_name + ")",
+                        FormatString = "0.0000e-00"
                     }
                 );
                 new_abundance_column.GridDisplayOptions.ColumnWidth = 80;
@@ -1402,11 +1404,13 @@ namespace PD.OpenMS.AdapterNodes
             var column_names = new List<String>(n_abundances);
             for (int i = 0; i < n_abundances; ++i)
             {
+                string raw_file_name = Path.GetFileName(m_raw_files[i]);
                 var new_abundance_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<QuantifiedProteinEntity, double?>(
                     new PropertyDescription()
                     {
-                        DisplayName = "Abundance " + (i + 1),
-                        FormatString = "0.000e-00"
+                        DisplayName = "Abundance " + (i + 1) + " (" + raw_file_name + ")",
+                        Description = "Abundance " + (i + 1) + " (" + raw_file_name + ")",
+                        FormatString = "0.0000e-00"
                     }
                 );
                 new_abundance_column.GridDisplayOptions.ColumnWidth = 80;
