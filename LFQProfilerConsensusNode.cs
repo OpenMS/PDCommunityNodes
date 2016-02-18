@@ -153,7 +153,7 @@ namespace PD.OpenMS.AdapterNodes
         [StringSelectionParameter(Category = "2. ID mapping",
             DisplayName = "m/z reference",
             Description = "Source of m/z values for peptide identifications. If 'precursor', the precursor-m/z as determined by the instrument is used. If 'peptide', masses are computed from the sequences of peptide hits.",
-            DefaultValue = "precursor",
+            DefaultValue = "peptide",
             SelectionValues = new string[] { "precursor", "peptide" },
             Position = 100)]
         public SimpleSelectionParameter<string> param_mz_reference;
@@ -202,7 +202,7 @@ namespace PD.OpenMS.AdapterNodes
         [StringSelectionParameter(Category = "4. Protein quantification",
             DisplayName = "Use peptides",
             Description = "Specify which peptides should be used for quantification: only unique peptides, unique + indistinguishable proteins, or unique + indistinguishable + other shared peptides (using a greedy resolution which is similar to selecting the razor peptides)",
-            DefaultValue = "greedy",
+            DefaultValue = "indistinguishable",
             SelectionValues = new string[] { "unique", "indistinguishable", "greedy" },
             Position = 150)]
         public SimpleSelectionParameter<string> param_protein_quant_mode;
@@ -211,7 +211,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "4. Protein quantification",
             DisplayName = "Fido pre-filtering PEP threshold",
             Description = "Filter out PSMs with posterior error probability (PEP) exceeding this threshold before running protein inference using FidoAdapter. Thresholds < 1 can significantly reduce running time but the pre-filtering has an impact on the result of protein-level FDR filtering: the smaller this threshold, the more optimistic the protein-level FDR q-values become, i.e., the more likely that the protein-level FDR is underestimated.",
-            DefaultValue = "1",
+            DefaultValue = "0.3",
             MinimumValue = "0",
             MaximumValue = "1",
             IsAdvanced = true,

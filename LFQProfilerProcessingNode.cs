@@ -65,7 +65,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "1. Feature Finding",
             DisplayName = "Mass tolerance",
             Description = "This parameter specifies the mass tolerance for feature detection",
-            DefaultValue = "10 ppm",
+            DefaultValue = "6 ppm",
             Position = 1,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_mass_tolerance;
@@ -73,7 +73,7 @@ namespace PD.OpenMS.AdapterNodes
         [IntegerParameter(Category = "1. Feature Finding",
             DisplayName = "Charge Low",
             Description = "Lowest charge state to search for.",
-            DefaultValue = "1",
+            DefaultValue = "2",
             MinimumValue = "1",
             Position = 2)]
         public IntegerParameter param_charge_low;
@@ -81,7 +81,7 @@ namespace PD.OpenMS.AdapterNodes
         [IntegerParameter(Category = "1. Feature Finding",
             DisplayName = "Charge High",
             Description = "Highest charge state to search for.",
-            DefaultValue = "5",
+            DefaultValue = "4",
             MinimumValue = "1",
             Position = 3)]
         public IntegerParameter param_charge_high;
