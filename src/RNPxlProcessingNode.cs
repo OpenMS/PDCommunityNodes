@@ -141,8 +141,8 @@ namespace PD.OpenMS.AdapterNodes
         [StringParameter(
             Category = "2. Cross-links",
             DisplayName = "Fragment adducts",
-            Description = "Format: [formula] or [precursor adduct]->[fragment adduct formula],[name]: e.g 'C9H10N2O5,U-H3PO4' or 'U-H2O->C9H11N2O8P1,U-H2O', (default: '[C9H10N2O5,U-H3PO4 C4H4N2O2,U' C4H2N2O1,U'-H2O C3O,C3O C9H13N2O9P1,U C9H11N2O8P1,U-H2O C9H12N2O6,U-HPO3]')",
-            DefaultValue = "[C9H10N2O5,U-H3PO4 C4H4N2O2,U' C4H2N2O1,U'-H2O C3O,C3O C9H13N2O9P1,U C9H11N2O8P1,U-H2O C9H12N2O6,U-HPO3]",
+            Description = "Format: [formula] or [precursor adduct]->[fragment adduct formula];[name]: e.g 'C9H10N2O5;U-H3PO4' or 'U-H2O->C9H11N2O8P1;U-H2O' (default: '[C9H10N2O5;U-H3PO4 C4H4N2O2;U' C4H2N2O1;U'-H2O C3O;C3O C9H13N2O9P1;U C9H11N2O8P1;U-H2O C9H12N2O6;U-HPO3]')",
+            DefaultValue = "[C9H10N2O5;U-H3PO4 C4H4N2O2;U' C4H2N2O1;U'-H2O C3O;C3O C9H13N2O9P1;U C9H11N2O8P1;U-H2O C9H12N2O6;U-HPO3]",
             IsAdvanced = true,
             Position = 101)]
         public StringParameter param_cross_linking_fragment_adducts;
@@ -1204,15 +1204,16 @@ namespace PD.OpenMS.AdapterNodes
                             {"enzyme", param_id_filtering_enzyme.Value},
                             {"missed_cleavages", param_id_filtering_missed_cleavages.ToString()},
                             {"variable_max_per_peptide", param_id_filtering_num_dynamic_mods.ToString()},
-                            {"threads", param_general_num_threads.ToString()}
+                            {"threads", "1"} // for now: force to 1 because of OpenMS bug
+                            //{"threads", param_general_num_threads.ToString()}
             };
             OpenMSCommons.WriteParamsToINI(ini_path, rnpxlsearch_parameters);
 
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("precursor", "min_charge", param_id_filtering_charge_low));
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("precursor", "max_charge", param_id_filtering_charge_high));
-            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("precursor", "mass_tolerance", param_id_filtering_precursor_mass_tolerance.ValueToString()));
+            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("precursor", "mass_tolerance", param_id_filtering_precursor_mass_tolerance.Value.Tolerance.ToString()));
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("precursor", "mass_tolerance_unit", param_id_filtering_precursor_mass_tolerance.UnitToString()));
-            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("fragment", "mass_tolerance", param_id_filtering_fragment_mass_tolerance.ValueToString()));
+            OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("fragment", "mass_tolerance", param_id_filtering_fragment_mass_tolerance.Value.Tolerance.ToString()));
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("fragment", "mass_tolerance_unit", param_id_filtering_fragment_mass_tolerance.UnitToString()));
 
             // disable searching for oligonucleotides => normal peptide identification
@@ -1552,7 +1553,8 @@ namespace PD.OpenMS.AdapterNodes
                             {"enzyme", param_rnpxlsearch_enzyme.Value},
                             {"missed_cleavages", param_rnpxlsearch_missed_cleavages.ToString()},
                             {"variable_max_per_peptide", param_rnpxlsearch_num_dynamic_mods.ToString()},
-                            {"threads", param_general_num_threads.ToString()}
+                            {"threads", "1"} // for now: force to 1 because of OpenMS bug
+                            //{"threads", param_general_num_threads.ToString()}
             };
             OpenMSCommons.WriteParamsToINI(rnpxlsearch_ini_file, rnpxlsearch_parameters);
 
@@ -1564,9 +1566,9 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(rnpxlsearch_ini_file, new Triplet("RNPxl", "carbon_labeled_fragments", param_cross_linking_carbon_labeled_fragments.ToString().ToLower()));
             OpenMSCommons.WriteNestedParamToINI(rnpxlsearch_ini_file, new Triplet("precursor", "min_charge", param_rnpxlsearch_charge_low));
             OpenMSCommons.WriteNestedParamToINI(rnpxlsearch_ini_file, new Triplet("precursor", "max_charge", param_rnpxlsearch_charge_high));
-            OpenMSCommons.WriteNestedParamToINI(rnpxlsearch_ini_file, new Triplet("precursor", "mass_tolerance", param_rnpxlsearch_precursor_mass_tolerance.ValueToString()));
+            OpenMSCommons.WriteNestedParamToINI(rnpxlsearch_ini_file, new Triplet("precursor", "mass_tolerance", param_rnpxlsearch_precursor_mass_tolerance.Value.Tolerance.ToString()));
             OpenMSCommons.WriteNestedParamToINI(rnpxlsearch_ini_file, new Triplet("precursor", "mass_tolerance_unit", param_rnpxlsearch_precursor_mass_tolerance.UnitToString()));
-            OpenMSCommons.WriteNestedParamToINI(rnpxlsearch_ini_file, new Triplet("fragment", "mass_tolerance", param_rnpxlsearch_fragment_mass_tolerance.ValueToString()));
+            OpenMSCommons.WriteNestedParamToINI(rnpxlsearch_ini_file, new Triplet("fragment", "mass_tolerance", param_rnpxlsearch_fragment_mass_tolerance.Value.Tolerance.ToString()));
             OpenMSCommons.WriteNestedParamToINI(rnpxlsearch_ini_file, new Triplet("fragment", "mass_tolerance_unit", param_rnpxlsearch_fragment_mass_tolerance.UnitToString()));
 
             var static_mods = new List<string>();
