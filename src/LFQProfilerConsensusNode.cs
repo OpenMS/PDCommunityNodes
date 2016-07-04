@@ -8,6 +8,7 @@ using System.Xml;
 using System.Web.UI;
 using System.Xml.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using Thermo.Magellan.BL.Data;
 using Thermo.Magellan.BL.Data.Constants;
@@ -134,11 +135,12 @@ namespace PD.OpenMS.AdapterNodes
 
         [FastaFileParameter(Category = "2. ID mapping",
             DisplayName = "Protein database",
-            Description = "The sequence database to be used for (re-)indexing protein hits",
+            Description = "The sequence database(s) to be used for (re-)indexing protein hits",
             IntendedPurpose = ParameterPurpose.SequenceDatabase,
             ValueRequired = true,
+            IsMultiSelect = true,
             Position = 80)]
-        public FastaFileParameter param_fasta_db;
+        public FastaFileParameter param_fasta_dbs;
 
         // not needed because specificity = none
 
@@ -1248,16 +1250,28 @@ namespace PD.OpenMS.AdapterNodes
 
             if (m_openms_fasta_file == "" || !File.Exists(m_openms_fasta_file))
             {
-                // check whether FASTA file exists
-                string fasta_filename = param_fasta_db.Value.FullPhysicalFileName;
-                if (!File.Exists(fasta_filename))
+                // concatenate all selected fasta files to a single file for OpenMS
+                m_openms_fasta_file = Path.Combine(NodeScratchDirectory, @"peptide_indexer.fasta");
+                var tmp_fasta_file = Path.Combine(NodeScratchDirectory, @"tmp.fasta");
+                var fasta_file_values = param_fasta_dbs.Values;
+                foreach (var v in fasta_file_values)
                 {
-                    SendAndLogErrorMessage("Cannot access FASTA file because the file cannot be found!");
-                    throw new FileNotFoundException(String.Format("The FASTA file {0} cannot be found!", param_fasta_db.Value.VirtualFileName), fasta_filename);
+                    var fn = v.FullPhysicalFileName;
+                    if (!File.Exists(fn))
+                    {
+                        SendAndLogErrorMessage("Cannot access FASTA file because the file cannot be found!");
+                        throw new FileNotFoundException(String.Format("The FASTA file {0} cannot be found!", fn), fn);
+                    }
+                    if (File.Exists(tmp_fasta_file))
+                    {
+                        File.Delete(tmp_fasta_file);
+                    }
+                    ProcessingServices.FastaFileService.CreateOriginalFastaFile(v, tmp_fasta_file, true);
+                    File.AppendAllText(m_openms_fasta_file, File.ReadAllText(tmp_fasta_file));
                 }
 
-                m_openms_fasta_file = Path.Combine(NodeScratchDirectory, @"peptide_indexer.fasta");
-                ProcessingServices.FastaFileService.CreateOriginalFastaFile(param_fasta_db.Value, m_openms_fasta_file, true);
+                //PeptideIndexer fails when the database contains multiple sequences with the same accession
+                RemoveDuplicatesInFastaFile(m_openms_fasta_file);
 
                 exec_path = Path.Combine(m_openms_dir, @"bin/DecoyDatabase.exe");
                 ini_path = Path.Combine(NodeScratchDirectory, @"DecoyDatabase.ini");
@@ -1303,6 +1317,32 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
+        }
+
+        /// <summary>
+        /// Remove duplicates (same accession) from FASTA file
+        /// </summary>
+        void RemoveDuplicatesInFastaFile(string fasta_file)
+        {
+            var result_fasta_text = "";
+            var accession_set = new HashSet<string>();
+            var fasta_text = File.ReadAllText(fasta_file);
+            var fasta_parts = Regex.Split(fasta_text, "^>", RegexOptions.Multiline);
+            foreach (var fp in fasta_parts)
+            {
+                if (fp.IsNullOrEmpty())
+                {
+                    continue;
+                }
+                var accession = fp.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[0];
+                if (!accession_set.Contains(accession))
+                {
+                    accession_set.Add(accession);
+                    result_fasta_text += ">";
+                    result_fasta_text += fp;
+                }
+            }
+            File.WriteAllText(fasta_file, result_fasta_text);
         }
 
 
