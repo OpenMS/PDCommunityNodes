@@ -241,7 +241,6 @@ namespace PD.OpenMS.AdapterNodes
             try
             {
                 process.Start();
-
                 try
                 {
                     string current_work = "";
@@ -305,7 +304,6 @@ namespace PD.OpenMS.AdapterNodes
                     throw;
                 }
 
-
                 if (process.ExitCode != 0)
                 {
                     throw new MagellanProcessingException(
@@ -316,6 +314,8 @@ namespace PD.OpenMS.AdapterNodes
             }
             catch (System.Threading.ThreadAbortException)
             {
+                // workflow was aborted ==> kill process so PD can finish abortion
+                process.Kill();
                 throw;
             }
             catch (Exception ex)

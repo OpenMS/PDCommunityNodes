@@ -141,6 +141,14 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.Proteomics.dll</HintPath>
     </Reference>
+    <Reference Include="Thermo.Magellan.Services, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.Services.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Magellan.Services.Interfaces, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.Services.Interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Thermo.Magellan.StudyManagement, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.StudyManagement.dll</HintPath>
