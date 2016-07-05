@@ -1704,7 +1704,7 @@ namespace PD.OpenMS.AdapterNodes
                 x.peptide = items[4];
                 x.charge = Int32.TryParse(items[5], out int_val) ? int_val : 0;
                 x.score = Double.TryParse(items[6], out dbl_val) ? dbl_val : 0.0;
-                x.best_loc_score = Double.TryParse(items[7], out dbl_val) ? (dbl_val > 1e-20 ? dbl_val : 0.0) : 0.0;
+                x.best_loc_score = Double.TryParse(items[7], out dbl_val) ? (dbl_val > 1e-20 ? dbl_val * 100.0 : 0.0) : 0.0;
                 x.loc_scores = items[8];
                 x.best_localizations = items[9];
                 x.peptide_weight = Double.TryParse(items[10], out dbl_val) ? dbl_val : 0.0;

@@ -57,15 +57,15 @@ namespace PD.OpenMS.AdapterNodes
         [GridDisplayOptions(VisiblePosition = 10)]
         public int charge { get; set; }
 
-        [EntityProperty(DisplayName = "Score")]
+        [EntityProperty(DisplayName = "Score", FormatString = "0.0000")]
         [GridDisplayOptions(VisiblePosition = 10)]
         public double score { get; set; }
 
-        [EntityProperty(DisplayName = "Best localization score")]
+        [EntityProperty(DisplayName = "Best loc score", FormatString = "0.0000")]
         [GridDisplayOptions(VisiblePosition = 10)]
         public double best_loc_score { get; set; }
 
-        [EntityProperty(DisplayName = "Localization scores")]
+        [EntityProperty(DisplayName = "All localization scores")]
         [GridDisplayOptions(VisiblePosition = 10)]
         public string loc_scores { get; set; }
 
