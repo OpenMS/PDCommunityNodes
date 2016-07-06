@@ -1271,7 +1271,7 @@ namespace PD.OpenMS.AdapterNodes
                 }
 
                 //PeptideIndexer fails when the database contains multiple sequences with the same accession
-                RemoveDuplicatesInFastaFile(m_openms_fasta_file);
+                OpenMSCommons.RemoveDuplicatesInFastaFile(m_openms_fasta_file);
 
                 exec_path = Path.Combine(m_openms_dir, @"bin/DecoyDatabase.exe");
                 ini_path = Path.Combine(NodeScratchDirectory, @"DecoyDatabase.ini");
@@ -1318,33 +1318,6 @@ namespace PD.OpenMS.AdapterNodes
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
         }
-
-        /// <summary>
-        /// Remove duplicates (same accession) from FASTA file
-        /// </summary>
-        void RemoveDuplicatesInFastaFile(string fasta_file)
-        {
-            var result_fasta_text = "";
-            var accession_set = new HashSet<string>();
-            var fasta_text = File.ReadAllText(fasta_file);
-            var fasta_parts = Regex.Split(fasta_text, "^>", RegexOptions.Multiline);
-            foreach (var fp in fasta_parts)
-            {
-                if (fp.IsNullOrEmpty())
-                {
-                    continue;
-                }
-                var accession = fp.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[0];
-                if (!accession_set.Contains(accession))
-                {
-                    accession_set.Add(accession);
-                    result_fasta_text += ">";
-                    result_fasta_text += fp;
-                }
-            }
-            File.WriteAllText(fasta_file, result_fasta_text);
-        }
-
 
         /// <summary>
         /// Parse peptide quantification results of ProteinQuantifier, fill "Quantified peptides" table

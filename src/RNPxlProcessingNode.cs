@@ -82,8 +82,9 @@ namespace PD.OpenMS.AdapterNodes
             Description = "The sequence database to be used for both peptide ID filtering and searching for peptide-RNA crosslinks",
             IntendedPurpose = ParameterPurpose.SequenceDatabase,
             ValueRequired = true,
+            IsMultiSelect = true,
             Position = 40)]
-        public FastaFileParameter param_general_fasta_db;
+        public FastaFileParameter param_general_fasta_dbs;
 
         [IntegerParameter(
             Category = "1. General",
@@ -1189,8 +1190,30 @@ namespace PD.OpenMS.AdapterNodes
             string rnpxlsearch_result_idxml_filename = Path.Combine(NodeScratchDirectory, "search_results_id_filtering.idXML");
 
             // FASTA DB
-            string fasta_path = Path.Combine(NodeScratchDirectory, "rnpxl_target_decoy_db.fasta");
-            ProcessingServices.FastaFileService.CreateOriginalFastaFile(param_general_fasta_db.Value, fasta_path, true);
+
+            // concatenate all selected fasta files to a single file for OpenMS
+            var fasta_path = Path.Combine(NodeScratchDirectory, "rnpxl_target_decoy_db.fasta");
+            var tmp_fasta_file = Path.Combine(NodeScratchDirectory, @"tmp.fasta");
+            var fasta_file_values = param_general_fasta_dbs.Values;
+            foreach (var v in fasta_file_values)
+            {
+                var fn = v.FullPhysicalFileName;
+                if (!File.Exists(fn))
+                {
+                    SendAndLogErrorMessage("Cannot access FASTA file because the file cannot be found!");
+                    throw new FileNotFoundException(String.Format("The FASTA file {0} cannot be found!", fn), fn);
+                }
+                if (File.Exists(tmp_fasta_file))
+                {
+                    File.Delete(tmp_fasta_file);
+                }
+                ProcessingServices.FastaFileService.CreateOriginalFastaFile(v, tmp_fasta_file, true);
+                File.AppendAllText(fasta_path, File.ReadAllText(tmp_fasta_file));
+            }
+
+            //PeptideIndexer fails when the database contains multiple sequences with the same accession
+            OpenMSCommons.RemoveDuplicatesInFastaFile(fasta_path);
+
             addDecoys(fasta_path);
 
             // INI file
@@ -1538,8 +1561,30 @@ namespace PD.OpenMS.AdapterNodes
             string idxml_filename = Path.Combine(NodeScratchDirectory, "rnpxl_search_results.idXML");
 
             // FASTA DB
-            string fasta_path = Path.Combine(NodeScratchDirectory, "rnpxl_db.fasta");
-            ProcessingServices.FastaFileService.CreateOriginalFastaFile(param_general_fasta_db.Value, fasta_path, true);
+
+            // concatenate all selected fasta files to a single file for OpenMS
+            var fasta_path = Path.Combine(NodeScratchDirectory, "rnpxl_db.fasta");
+            var tmp_fasta_file = Path.Combine(NodeScratchDirectory, @"tmp.fasta");
+            var fasta_file_values = param_general_fasta_dbs.Values;
+            foreach (var v in fasta_file_values)
+            {
+                var fn = v.FullPhysicalFileName;
+                if (!File.Exists(fn))
+                {
+                    SendAndLogErrorMessage("Cannot access FASTA file because the file cannot be found!");
+                    throw new FileNotFoundException(String.Format("The FASTA file {0} cannot be found!", fn), fn);
+                }
+                if (File.Exists(tmp_fasta_file))
+                {
+                    File.Delete(tmp_fasta_file);
+                }
+                ProcessingServices.FastaFileService.CreateOriginalFastaFile(v, tmp_fasta_file, true);
+                File.AppendAllText(fasta_path, File.ReadAllText(tmp_fasta_file));
+            }
+
+            //PeptideIndexer fails when the database contains multiple sequences with the same accession
+            OpenMSCommons.RemoveDuplicatesInFastaFile(fasta_path);
+            
             //addDecoys(fasta_path); // here, we don't need the decoys anymore
 
             // INI file

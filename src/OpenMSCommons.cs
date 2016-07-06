@@ -463,5 +463,31 @@ namespace PD.OpenMS.AdapterNodes
                 }
             }
         }
+
+        /// <summary>
+        /// Remove duplicates (same accession) from FASTA file
+        /// </summary>
+        public static void RemoveDuplicatesInFastaFile(string fasta_file)
+        {
+            var result_fasta_text = "";
+            var accession_set = new HashSet<string>();
+            var fasta_text = File.ReadAllText(fasta_file);
+            var fasta_parts = Regex.Split(fasta_text, "^>", RegexOptions.Multiline);
+            foreach (var fp in fasta_parts)
+            {
+                if (fp.IsNullOrEmpty())
+                {
+                    continue;
+                }
+                var accession = fp.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[0];
+                if (!accession_set.Contains(accession))
+                {
+                    accession_set.Add(accession);
+                    result_fasta_text += ">";
+                    result_fasta_text += fp;
+                }
+            }
+            File.WriteAllText(fasta_file, result_fasta_text);
+        }
     }
 }
