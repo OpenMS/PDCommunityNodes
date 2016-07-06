@@ -140,32 +140,39 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
                 return;
             }
 
-            // Now read the corresponding spectrum using the EntityDataService.
-            var reader = m_entityDataService.CreateEntityItemReader();
-            var spectrumInfo = reader.Read<MSnSpectrumInfo>(ids);
-
-            // Actually, use the DiscoveryEntityDataService to read the whole spectrum. 
-            // In PD this cast should always succeed, but we check anyway.
-            var dds = m_entityDataService as DiscovererEntityDataService;
-            if (dds == null)
+            try
             {
-                ShowCouldNotShowSpectrumError("Discoverer Entity Data Service not available");
+                // Now read the corresponding spectrum using the EntityDataService.
+                var reader = m_entityDataService.CreateEntityItemReader();
+                var spectrumInfo = reader.Read<MSnSpectrumInfo>(ids);
+
+                // Actually, use the DiscoveryEntityDataService to read the whole spectrum. 
+                // In PD this cast should always succeed, but we check anyway.
+                var dds = m_entityDataService as DiscovererEntityDataService;
+                if (dds == null)
+                {
+                    ShowCouldNotShowSpectrumError("Discoverer Entity Data Service not available");
+                    return;
+                }
+
+                var spectrum = dds.GetSpectrum(spectrumInfo);
+
+                string ot = "m/z " + String.Format("{0:0.0000}", spectrumInfo.MassOverCharge) + "  |  RT " + String.Format("{0:0.00}", spectrumInfo.RetentionTime) + "  |  Charge " + spectrumInfo.Charge;
+
+                var view = new SpectrumView
+                           {
+                               Title = ot,
+                               Annotations = annotations,
+                               // Show centroids when available, otherwise profiles.
+                               PeakList = spectrum.HasPeakCentroids ? spectrum.PeakCentroids.Select(c => Tuple.Create(c.Position, c.Intensity)).ToList() : spectrum.ProfilePoints.ToList().Select(p => Tuple.Create(p.Position, p.Intensity)).ToList()
+                           };
+                view.ShowDialog();
+            }
+            catch (Exception)
+            {
+                ShowCouldNotShowSpectrumError("Please make sure the 'Spectra to store' parameter in the 'MSF Files' node of your consensus workflow is set to 'All'. If it is not, please set it to 'All' and rerun the consensus workflow");
                 return;
             }
-
-            var spectrum = dds.GetSpectrum(spectrumInfo);
-
-            string ot = "m/z " + String.Format("{0:0.0000}", spectrumInfo.MassOverCharge) + "  |  RT " + String.Format("{0:0.00}", spectrumInfo.RetentionTime) + "  |  Charge " + spectrumInfo.Charge;
-
-            var view = new SpectrumView
-                       {
-                           Title = ot,
-                           Annotations = annotations,
-                           // Show centroids when available, otherwise profiles.
-                           PeakList = spectrum.HasPeakCentroids ? spectrum.PeakCentroids.Select(c => Tuple.Create(c.Position, c.Intensity)).ToList() : spectrum.ProfilePoints.ToList().Select(p => Tuple.Create(p.Position, p.Intensity)).ToList()
-                       };
-
-            view.ShowDialog();
         }
 
         /// <summary>
@@ -174,7 +181,7 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
         /// <param name="additionalMessage">The MSG.</param>
 	    private void ShowCouldNotShowSpectrumError(string additionalMessage = "")
 	    {
-	        MessageBox.Show(additionalMessage == "" ? "Could not show spectrum." : String.Format("Could not show spectrum: {0}.", additionalMessage));
+	        MessageBox.Show(additionalMessage == "" ? "Could not show spectrum." : String.Format("Could not show spectrum: {0}.", additionalMessage), "Error");
 	    }
 
         /// <summary>
