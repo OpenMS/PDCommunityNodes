@@ -42,7 +42,7 @@ namespace PD.OpenMS.AdapterNodes
         public double orig_mz { get; set; }
 
         [EntityProperty(DisplayName = "Proteins")]
-        [GridDisplayOptions(VisiblePosition = 10)]
+        [GridDisplayOptions(VisiblePosition = 10, ColumnWidth = 150)]
         public string proteins { get; set; }
 
         [EntityProperty(DisplayName = "RNA")]
