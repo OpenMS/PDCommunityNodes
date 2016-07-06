@@ -1769,7 +1769,7 @@ namespace PD.OpenMS.AdapterNodes
                 x.m_2h = Double.TryParse(items[24], out dbl_val) ? dbl_val : 0.0;
                 x.m_3h = Double.TryParse(items[25], out dbl_val) ? dbl_val : 0.0;
                 x.m_4h = Double.TryParse(items[26], out dbl_val) ? dbl_val : 0.0;
-                x.fragment_annotation = items[27];
+                x.fragment_annotation = items[27];                
 
                 if (x.peptide == "" && x.rna == "")
                 {
