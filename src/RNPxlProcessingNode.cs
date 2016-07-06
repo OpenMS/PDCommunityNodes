@@ -1736,7 +1736,7 @@ namespace PD.OpenMS.AdapterNodes
 
                 var x = new RNPxlItem();
 
-                x.WorkflowID = -1;
+                x.WorkflowID = WorkflowID;
                 x.Id = EntityDataService.NextId<RNPxlItem>();
 
                 double dbl_val;
