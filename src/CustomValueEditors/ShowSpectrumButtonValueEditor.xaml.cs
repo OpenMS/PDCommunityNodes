@@ -170,7 +170,7 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
             }
             catch (Exception)
             {
-                ShowCouldNotShowSpectrumError("Please make sure the 'Spectra to store' parameter in the 'MSF Files' node of your consensus workflow is set to 'All'. If it is not, please set it to 'All' and rerun the consensus workflow");
+                ShowCouldNotShowSpectrumError("Please make sure the 'Spectra to store' parameter in the 'MSF Files' node of your consensus workflow is set to 'All'. If it is not, please set it to 'All' and rerun the consensus workflow. If it is, you've found a bug. Please report it to the OpenMS developers");
                 return;
             }
         }
