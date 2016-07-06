@@ -1358,12 +1358,15 @@ namespace PD.OpenMS.AdapterNodes
             var new_peptide_items = new List<DechargedPeptideEntity>();
             int idCounter = 1;
             Dictionary<string, string> fasta_acc_to_descr = BuildFastaAccToDescDict();
+            Dictionary<string, string> fasta_acc_to_pd_acc = BuildFastaAccToPDAccDict();
+
             while ((line = reader.ReadLine()) != null)
             {
                 string[] items = line.Split('\t');
                 string pep_seq = items[0].Substring(1, items[0].Length - 2);
                 string protein_accs = items[1].Substring(1, items[1].Length - 2);
                 var protein_acc_list = protein_accs.Split('/').ToList();
+                protein_accs = string.Join("; ", from p in protein_acc_list where fasta_acc_to_pd_acc.ContainsKey(p) select fasta_acc_to_pd_acc[p]);
                 string protein_descs = string.Join(" /// ", from p in protein_acc_list where fasta_acc_to_descr.ContainsKey(p) select fasta_acc_to_descr[p]);
                 Int32 n_proteins = Convert.ToInt32(items[2]);
                 List<double?> abundances = new List<double?>();
@@ -1407,7 +1410,7 @@ namespace PD.OpenMS.AdapterNodes
             string line;
 
             // ignore #comment lines
-            while ((line = reader.ReadLine()) != null && line.Substring(0, 1) == "#") ;
+            while ((line = reader.ReadLine()) != null && line.Substring(0, 1) == "#");
 
             // store header (should be ||| "protein"       "n_proteins"    "protein_score" "n_peptides"    "abundance_1", ..., "abundance_n" |||)
             string header = line;
@@ -1435,11 +1438,13 @@ namespace PD.OpenMS.AdapterNodes
             var new_protein_items = new List<QuantifiedProteinEntity>();
             int idCounter = 1;
             Dictionary<string, string> fasta_acc_to_descr = BuildFastaAccToDescDict();
+            Dictionary<string, string> fasta_acc_to_pd_acc = BuildFastaAccToPDAccDict();
             while ((line = reader.ReadLine()) != null)
             {
                 string[] items = line.Split('\t');
                 string protein_accs = items[0].Substring(1, items[0].Length - 2);
                 var protein_acc_list = protein_accs.Split('/').ToList();
+                protein_accs = string.Join("; ", from p in protein_acc_list where fasta_acc_to_pd_acc.ContainsKey(p) select fasta_acc_to_pd_acc[p]);
                 string protein_descs = string.Join(" /// ", from p in protein_acc_list where fasta_acc_to_descr.ContainsKey(p) select fasta_acc_to_descr[p]);
                 Int32 n_proteins = Convert.ToInt32(items[1]);
                 Int32 n_peptides = Convert.ToInt32(items[3]);
@@ -1474,7 +1479,7 @@ namespace PD.OpenMS.AdapterNodes
         }
 
         /// <summary>
-        /// Return a dictionary {protein accession -> protein description} for a given FASTA file
+        /// Return a dictionary {protein accession -> protein description} for m_openms_fasta_file
         /// </summary>
         Dictionary<string, string> BuildFastaAccToDescDict()
         {
@@ -1492,7 +1497,7 @@ namespace PD.OpenMS.AdapterNodes
                     }
                     line = line.Substring(1).Trim();
                     var items = line.Split(' ').ToList();
-                    if (items.Count < 2)
+                    if (items.Count == 0)
                     {
                         continue;
                     }
@@ -1506,6 +1511,35 @@ namespace PD.OpenMS.AdapterNodes
             {
                 SendAndLogErrorMessage("Could not parse FASTA file '{0}'", m_openms_fasta_file);
             }
+            return result;
+        }
+
+        /// <summary>
+        /// Return a dictionary {protein accession from FASTA file -> protein accession used by PD} for all proteins in the EntityDataService
+        /// </summary>
+        Dictionary<string, string> BuildFastaAccToPDAccDict()
+        {
+            var result = new Dictionary<string, string>();
+            var target_proteins = EntityDataService.CreateEntityItemReader().ReadAll<TargetProtein>();
+            foreach(var p in target_proteins)
+            {
+                var line = p.FastaTitleLines;
+                line = line.Trim();
+                if (line.Length == 0 || line[0] != '>')
+                {
+                    continue;
+                }
+                line = line.Substring(1).Trim();
+                var items = line.Split(' ').ToList();
+                if (items.Count == 0)
+                {
+                    continue;
+                }
+                string acc = items[0];
+                result[acc] = p.Accession;
+                result["REV_" + acc] = "DECOY_" + p.Accession;
+            }
+
             return result;
         }
     }
