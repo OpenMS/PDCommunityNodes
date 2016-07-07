@@ -120,7 +120,9 @@ namespace PD.OpenMS.AdapterNodes
 
                         // For simplicity, we also store the entire annotation string in the button value in order to avoid
                         // storing IDs for RNPxlItems and re-reading them in ShowSpectrumButtonValueEditor.xaml.cs
-                        var idString = string.Concat(m.WorkflowID, ";", m.SpectrumID, ";", r.fragment_annotation);
+                        //
+                        // Additional HACK: also store GUID of result file (see ShowSpectrumButtonValueEditor.xaml.cs for an explanation)
+                        var idString = string.Concat(m.WorkflowID, ";", m.SpectrumID, ";", r.fragment_annotation, ";REPORT_GUID=", EntityDataService.ReportFile.ReportGuid);
 
                         // use r.WorkflowID, r.Id to specify which RNPxlItem to update
                         updates.Add(Tuple.Create(new[] { (object)r.WorkflowID, (object)r.Id }, new object[] { idString }));

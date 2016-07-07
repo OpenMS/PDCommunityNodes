@@ -17,6 +17,7 @@ using Thermo.Magellan.BL.ReportProcessing;
 using Thermo.Magellan.EntityDataFramework;
 using Thermo.Magellan.EntityDataFramework.ReportFile;
 using Thermo.PD.EntityDataFramework;
+using System.Collections.Generic;
 
 namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.CustomValueEditors
 {
@@ -27,7 +28,19 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
     [ApplicationExtension("WPFGridControlExtension", "7875B499-672B-40D7-838E-91B65C7471E2", typeof(ICustomValueEditor))]
     public partial class ShowSpectrumButtonValueEditor : ICustomValueEditor
 	{
-	    private IEntityDataService m_entityDataService;
+        // HACK: store all entity data services that are passed via PrepareEditorDataField(...) over time instead of just one.
+        // 
+        // This is currently the only known workaround to make this work with several RNPxl result tabs open at the same time.
+        // An instance of this class is created automatically when needed and PrepareEditorDataField(...) is called when
+        // a new result file is loaded by PD itself. We cannot access the code that does this.
+        //
+        // In the original implementation, the m_entityDataService member stored only the EntityDataService of the result file
+        // that most recently triggered PrepareEditorDataField(...). In order to find out which of the entity data services
+        // to use, we now store the GUID of the result file as a string in the button values and do a string comparison.
+        //
+        // When result files are closed, their EntityDataServices become invalid and must be removed from this list. Thus, we
+        // first remove all invalidated EntityDataServices whenever the "Show Spectrum" button is pressed.
+	    private HashSet<IEntityDataService> m_entityDataServices = new HashSet<IEntityDataService>();
 
 	    /// <summary>
 		/// Initializes a new instance of the <see cref="CheckImageValueEditor" /> class.
@@ -73,7 +86,10 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
 	    public void PrepareEditorDataField(Field dataField, IEntityDataService entityDataService = null, PropertyColumn propertyColumn = null)
         {
             PrepareEditorStyle<ShowSpectrumButtonValueEditor>(dataField);
-            m_entityDataService = entityDataService;
+            if (!m_entityDataServices.Contains(entityDataService))
+            {
+                m_entityDataServices.Add(entityDataService);
+            }
         }
 
 		/// <summary>
@@ -110,20 +126,59 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
             // and in addition the string describing all fragment annotations concatenated using ';'.
             // This is a simple hack to enable reading the entire spectrum by its IDs and also handing over the
             // fragment annotation information without having to read the entire RNPxl row again.
-            // The cell contents is set by the node (see RNPxlConsensusNode.cs) especially for this. 
-            
-            if (m_entityDataService == null || !(cellContents is string))
+            // The cell contents is set by the node (see RNPxlConsensusNode.cs) especially for this.
+
+            // Another hack: as of version 2.0.3, we also add a prefix specifying the result file name, so we know which
+            // of the EntityDataServices to use. This is a workaround to make it work when several RNPxl result
+            // tabs are open (see documentation of m_entityDataServices above)
+
+            if (m_entityDataServices == null || !(cellContents is string))
             {
-                ShowCouldNotShowSpectrumError("Unexpected data");
+                ShowCouldNotShowSpectrumError("Unexpected data. Please report this bug to the OpenMS developers");
                 return;
             }
 
+            // clean up invalidated EntityDataServices (from result files that have been closed in the meantime)
+            HashSet<IEntityDataService> remove_these = new HashSet<IEntityDataService>();
+            foreach (var e in m_entityDataServices)
+            {
+                try
+                {
+                    // when this throws, we assume this EntityDataService is no longer available and remove it from our list
+                    // (shouldn't throw an exception if EDS is still valid, even if there is no spectrum info for the specified indices)
+                    var r = e.CreateEntityItemReader();
+                    var crash_test = r.Read<MSnSpectrumInfo>((new[] {-1 as object, -1 as object}));
+                }
+                catch (Exception ex)
+                {
+                    remove_these.Add(e);
+                }
+            }
+            foreach (var x in remove_these)
+            {
+                m_entityDataServices.Remove(x);
+            }
+
+            // split ID string
             var strings = ((string)cellContents).Split(new [] {';'}, StringSplitOptions.None);
 
-            if (strings.Count() != 3)
+            // we want to be able to view results generated by older versions of RNPxl, so we also allow
+            // IDs consisting of 3 parts (no result filename)
+            if (strings.Count() != 3 && strings.Count() != 4)
             {
-                ShowCouldNotShowSpectrumError("Unexpected number of IDs");
+                ShowCouldNotShowSpectrumError("Unexpected number of IDs. Please report this bug to the OpenMS developers");
                 return;
+            }
+
+            string report_guid = "";
+            if (strings.Count() == 4)
+            {
+                if (!strings[3].StartsWith("REPORT_GUID="))
+                {   
+                    ShowCouldNotShowSpectrumError("Unexpected ID string format. Report GUID is missing. Please report this bug to the OpenMS developers");
+                    return;
+                }
+                report_guid = strings[3].Substring(12);
             }
 
             string annotations = strings[2];
@@ -136,12 +191,56 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
             }
             catch (Exception)
             {
-                ShowCouldNotShowSpectrumError("Unable to decode id data");
+                ShowCouldNotShowSpectrumError("Unable to decode id data. Please report this bug to the OpenMS developers");
                 return;
             }
             
-            var reader = m_entityDataService.CreateEntityItemReader();
-            MSnSpectrumInfo spectrumInfo;
+            // Now, choose which EntityDataService to use. If the result file was specified in the ID string,
+            // we know which one to use. However, if the ID string is in the old format (generated by version
+            // 2.0.2 or earlier), we have to guess.
+            IEntityDataService eds = null;
+            if (report_guid != "")
+            {
+                foreach(var e in m_entityDataServices)
+                {
+                    if (e.ReportFile.ReportGuid.ToString() == report_guid)
+                    {
+                        eds = e;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // ID string is in old format which we still support
+                // ==> probe the different EntityDataServices and check whether they contain a spectrum with these IDs
+                bool found_eds = false;
+                foreach (var e in m_entityDataServices)
+                {
+                    var r = e.CreateEntityItemReader();
+                    if (r.Read<MSnSpectrumInfo>(ids) != null)
+                    {
+                        if (found_eds)
+                        {
+                            ShowCouldNotShowSpectrumError("This is most likely due to a bug in the older version of RNPxl with which this result file was generated. Please re-run the analysis using the currently installed version and try again, or close other RNPxl result files if you have multiple tabs open. If both doesn't help, please report this bug to the OpenMS developers");
+                            return;
+                        }
+                        eds = e;
+                        found_eds = true;
+                    }
+                }
+            }
+
+            if (eds == null)
+            {
+                ShowCouldNotShowSpectrumError("EntityDataService unavailable. Please report this bug to the OpenMS developers");
+                return;
+            }
+
+            var reader = eds.CreateEntityItemReader();
+            
+            MSnSpectrumInfo spectrumInfo = null;
+            bool no_spectrum_info = false;
             try
             {
                 // Now read the corresponding spectrum using the EntityDataService.
@@ -149,13 +248,17 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
             }
             catch (Exception)
             {
+                no_spectrum_info = true;
+            }
+            if (no_spectrum_info || spectrumInfo == null)
+            {
                 ShowCouldNotShowSpectrumError("SpectrumInfo not found. Please make sure the 'Spectra to store' parameter in the 'MSF Files' node of your consensus workflow is set to 'All'. If it is not, please set it to 'All' and rerun the consensus workflow. If it is, you've found a bug. Please report it to the OpenMS developers");
                 return;
             }
 
             // Actually, use the DiscoveryEntityDataService to read the whole spectrum. 
             // In PD this cast should always succeed, but we check anyway.
-            var dds = m_entityDataService as DiscovererEntityDataService;
+            var dds = eds as DiscovererEntityDataService;
 
             if (dds == null)
             {
@@ -163,12 +266,17 @@ namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.Cust
                 return;
             }
 
-            Magellan.MassSpec.MassSpectrum spectrum;
+            Magellan.MassSpec.MassSpectrum spectrum = null;
+            bool no_spectrum = false;
             try
             {
                 spectrum = dds.GetSpectrum(spectrumInfo);
             }
             catch (Exception)
+            {
+                no_spectrum = true;
+            }
+            if (no_spectrum || spectrum == null)
             {
                 ShowCouldNotShowSpectrumError("Spectrum not found. Please make sure the 'Spectra to store' parameter in the 'MSF Files' node of your consensus workflow is set to 'All'. If it is not, please set it to 'All' and rerun the consensus workflow. If it is, you've found a bug. Please report it to the OpenMS developers");
                 return;
