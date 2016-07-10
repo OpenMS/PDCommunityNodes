@@ -142,6 +142,13 @@ namespace PD.OpenMS.AdapterNodes
             Position = 80)]
         public FastaFileParameter param_fasta_dbs;
 
+        [BooleanParameter(Category = "2. ID mapping",
+            DisplayName = "Keep unidentified features",
+            Description = "Whether to include unidentified features (no ID could be mapped in any of the runs) in the quantified feature result table.",
+            DefaultValue = "false",
+            Position = 81)]
+        public BooleanParameter param_unidentified_features;
+
         // not needed because specificity = none
 
         //[StringSelectionParameter(Category = "2. ID mapping",
@@ -585,6 +592,12 @@ namespace PD.OpenMS.AdapterNodes
                 new_consensus_item.SetValue("RT", rt);
 
                 var peptide_ids = ce.GetElementsByTagName("PeptideIdentification");
+
+                // check if feature has any identifications, drop if none
+                if (!param_unidentified_features.Value && peptide_ids.Count == 0)
+                {
+                    continue;
+                }
 
                 Double best_pep_score = 1.1;
                 foreach (XmlNode peptide_id in peptide_ids)
