@@ -18,7 +18,7 @@ namespace PD.OpenMS.AdapterNodes
           Visibility = GridVisibility.Visible,
           VisiblePosition = 410)]
     [PredefinedEntityProperty(PredefinedEntityPropertyNames.Checkable)]
-    public class ConsensusFeatureEntity : DynamicEntity
+    public class ConsensusFeatureEntity : DynamicEntity, IEquatable<ConsensusFeatureEntity>
     {
         /// <summary>
         /// Gets or sets the workflow ID.
@@ -33,6 +33,49 @@ namespace PD.OpenMS.AdapterNodes
         [EntityProperty(DataPurpose = EntityDataPurpose.ID)]
         [EntityId(2)]
         public int Id { get; set; }
+
+        [EntityProperty(DisplayName = "Sequence", Description = "Peptide Sequence")]
+        [GridDisplayOptions(VisiblePosition = 10, ColumnWidth = 150)]
+        public string Sequence { get; set; }
+
+        [EntityProperty(DisplayName = "Accessions", Description = "Protein Accessions")]
+        [GridDisplayOptions(VisiblePosition = 20, ColumnWidth = 150)]
+        public string Accessions { get; set; }
+
+        [EntityProperty(DisplayName = "Descriptions", Description = "Protein Descriptions")]
+        [GridDisplayOptions(VisiblePosition = 30, ColumnWidth = 300)]
+        public string Descriptions { get; set; }
+
+        [EntityProperty(DisplayName = "Charge", Description = "Charge of the peptide")]
+        [GridDisplayOptions(VisiblePosition = 40)]
+        public int Charge { get; set; }
+
+        [EntityProperty(DisplayName = "m/z", FormatString = "0.0000", Description = "m/z")]
+        [GridDisplayOptions(VisiblePosition = 50, ColumnWidth = 90)]
+        public double? MZ { get; set; }
+
+        [EntityProperty(DisplayName = "RT", FormatString = "0.00", Description = "Retention Time")]
+        [GridDisplayOptions(VisiblePosition = 60, ColumnWidth = 80)]
+        public double? RT { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || obj.GetType() != GetType())
+            {
+                return false;
+            }
+            return (Equals((ConsensusFeatureEntity)obj));
+        }
+
+        public bool Equals(ConsensusFeatureEntity rhs)
+        {
+            return rhs.WorkflowID == WorkflowID && rhs.Id == Id;
+        }
+
+        public override int GetHashCode()
+        {
+            return (int)((long)(WorkflowID + Id) * 2654435761) % 2^32;
+        }
     }
 
     // ==========================================================================
@@ -45,7 +88,7 @@ namespace PD.OpenMS.AdapterNodes
       Visibility = GridVisibility.Visible,
       VisiblePosition = 410)]
     [PredefinedEntityProperty(PredefinedEntityPropertyNames.Checkable)]
-    public class DechargedPeptideEntity : DynamicEntity
+    public class DechargedPeptideEntity : DynamicEntity, IEquatable<DechargedPeptideEntity>
     {
         /// <summary>
         /// Gets or sets the workflow ID.
@@ -78,6 +121,25 @@ namespace PD.OpenMS.AdapterNodes
         public int num_proteins { get; set; }
 
         //abundance columns are dynamically added (don't know how many)
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || obj.GetType() != GetType())
+            {
+                return false;
+            }
+            return (Equals((DechargedPeptideEntity)obj));
+        }
+
+        public bool Equals(DechargedPeptideEntity rhs)
+        {
+            return rhs.WorkflowID == WorkflowID && rhs.Id == Id;
+        }
+
+        public override int GetHashCode()
+        {
+            return (int)((long)(WorkflowID + Id) * 2654435761) % 2 ^ 32;
+        }
     }
 
     // ==========================================================================
@@ -90,7 +152,7 @@ namespace PD.OpenMS.AdapterNodes
       Visibility = GridVisibility.Visible,
       VisiblePosition = 410)]
     [PredefinedEntityProperty(PredefinedEntityPropertyNames.Checkable)]
-    public class QuantifiedProteinEntity : DynamicEntity
+    public class QuantifiedProteinEntity : DynamicEntity, IEquatable<QuantifiedProteinEntity>
     {
         /// <summary>
         /// Gets or sets the workflow ID.
@@ -123,6 +185,25 @@ namespace PD.OpenMS.AdapterNodes
         public int num_peptides { get; set; }
 
         //abundance columns are dynamically added (don't know how many)
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || obj.GetType() != GetType())
+            {
+                return false;
+            }
+            return (Equals((QuantifiedProteinEntity)obj));
+        }
+
+        public bool Equals(QuantifiedProteinEntity rhs)
+        {
+            return rhs.WorkflowID == WorkflowID && rhs.Id == Id;
+        }
+
+        public override int GetHashCode()
+        {
+            return (int)((long)(WorkflowID + Id) * 2654435761) % 2 ^ 32;
+        }
     }
 }
 

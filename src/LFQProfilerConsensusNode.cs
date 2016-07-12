@@ -377,8 +377,305 @@ namespace PD.OpenMS.AdapterNodes
             // Run ProteinQuantifier
             RunProteinQuantifier(final_consensus_xml_file_orig_rt, pq_input_idxml);
 
+            // Interconnect all result tables
+            ConnectResultTables();
+
             // Finished!
             FireProcessingFinishedEvent(new SingleResultsArguments(new[] { ProteomicsDataTypes.Psms }, this));
+        }
+
+        /// <summary>
+        /// Interconnect all result tables (proteins, PSMs, MSnSpectrumInfos and quantified features / peptides / proteins)
+        /// </summary>
+        private void ConnectResultTables()
+        {
+            SendAndLogMessage("Interconnecting result tables");
+
+            #region register new connections
+
+            EntityDataService.RegisterEntityConnection<ConsensusFeatureEntity, QuantifiedProteinEntity>(ProcessingNodeNumber);
+            var feature_quant_prot_connections = new HashSet<Tuple<ConsensusFeatureEntity, QuantifiedProteinEntity>>();
+
+            EntityDataService.RegisterEntityConnection<ConsensusFeatureEntity, TargetProtein>(ProcessingNodeNumber);
+            var feature_pd_prot_connections = new HashSet<Tuple<ConsensusFeatureEntity, TargetProtein>>();
+
+            EntityDataService.RegisterEntityConnection<QuantifiedProteinEntity, TargetPeptideSpectrumMatch>(ProcessingNodeNumber);
+            var quant_prot_psm_connections = new HashSet<Tuple<QuantifiedProteinEntity, TargetPeptideSpectrumMatch>>();
+
+            EntityDataService.RegisterEntityConnection<DechargedPeptideEntity, ConsensusFeatureEntity>(ProcessingNodeNumber);
+            var peptide_feature_connections = new HashSet<Tuple<DechargedPeptideEntity, ConsensusFeatureEntity>>();
+
+            EntityDataService.RegisterEntityConnection<DechargedPeptideEntity, QuantifiedProteinEntity>(ProcessingNodeNumber);
+            var peptide_quant_prot_connections = new HashSet<Tuple<DechargedPeptideEntity, QuantifiedProteinEntity>>();
+
+            EntityDataService.RegisterEntityConnection<DechargedPeptideEntity, TargetProtein>(ProcessingNodeNumber);
+            var peptide_pd_prot_connections = new HashSet<Tuple<DechargedPeptideEntity, TargetProtein>>();
+
+            EntityDataService.RegisterEntityConnection<DechargedPeptideEntity, TargetPeptideSpectrumMatch>(ProcessingNodeNumber);
+            var peptide_psm_connections = new HashSet<Tuple<DechargedPeptideEntity, TargetPeptideSpectrumMatch>>();
+            
+            EntityDataService.RegisterEntityConnection<QuantifiedProteinEntity, TargetProtein>(ProcessingNodeNumber);
+            var quant_prot_pd_prot_connections = new HashSet<Tuple<QuantifiedProteinEntity, TargetProtein>>();
+
+            EntityDataService.RegisterEntityConnection<QuantifiedProteinEntity, MSnSpectrumInfo>(ProcessingNodeNumber);
+            var quant_prot_spectrum_connections = new HashSet<Tuple<QuantifiedProteinEntity, MSnSpectrumInfo>>();
+
+            EntityDataService.RegisterEntityConnection<DechargedPeptideEntity, MSnSpectrumInfo>(ProcessingNodeNumber);
+            var peptide_spectrum_connections = new HashSet<Tuple<DechargedPeptideEntity, MSnSpectrumInfo>>();
+
+            EntityDataService.RegisterEntityConnection<MSnSpectrumInfo, ConsensusFeatureEntity>(ProcessingNodeNumber);
+            var feature_spectrum_connections = new List<Tuple<ConsensusFeatureEntity, MSnSpectrumInfo>>();
+            
+            #endregion
+
+            var eds_reader = EntityDataService.CreateEntityItemReader();
+
+            // Note: would be nice to uses HashSets as values here for easier uniqueness later, but
+            // the builtin classes (PSM, Spectrum Info) lack a useful implementation of GetHashCode()
+            // and Equals(), so it doesn't work. Thus, we just use Lists in order to avoid confusion.
+            var feature_id_tuple_to_psms = new Dictionary<Tuple<int, int>, List<TargetPeptideSpectrumMatch>>();
+            var feature_id_tuple_to_spectra = new Dictionary<Tuple<int, int>, List<MSnSpectrumInfo>>();
+
+            // HashSets do work with our own types, though.
+            var seq_to_features = new Dictionary<string, HashSet<ConsensusFeatureEntity>>();
+            var acc_to_features = new Dictionary<string, HashSet<ConsensusFeatureEntity>>();
+
+            var acc_to_peptides = new Dictionary<string, HashSet<DechargedPeptideEntity>>();
+            var acc_to_quant_proteins = new Dictionary<string, HashSet<QuantifiedProteinEntity>>();
+
+            // Build a fast lookup for spectra by IDs of corresponding PSM
+            var psm_id_tuple_to_spectrum = new Dictionary<Tuple<int, int>, MSnSpectrumInfo>();
+            foreach (var psm_with_spectrum in eds_reader.ReadAllFlat<TargetPeptideSpectrumMatch, MSnSpectrumInfo>())
+            {
+                var psm = psm_with_spectrum.Item1;
+                var spectrum = psm_with_spectrum.Item2.First();
+                var key = Tuple.Create(psm.WorkflowID, psm.PeptideID);
+                psm_id_tuple_to_spectrum.Add(key, spectrum);
+            }
+
+            // - Set up lookup tables for features, PSMs, spectra
+            // - Connect features to spectra
+            foreach (var f_with_psms in eds_reader.ReadAllFlat<ConsensusFeatureEntity, TargetPeptideSpectrumMatch>())
+            {
+                // Careful, these connections between consensus features and PSMs are reflecting the ID mapping results,
+                // i.e., they don't all need to have the same sequence as the feature f itself. The assigned ID is the
+                // best mapping ID (highest score).
+
+                var f = f_with_psms.Item1;
+                var psms = f_with_psms.Item2;
+
+                // Fill lookup tables
+                seq_to_features.AddIfNotContainsKey(f.Sequence, new HashSet<ConsensusFeatureEntity>());
+                seq_to_features[f.Sequence].Add(f);
+
+                foreach (var acc in f.Accessions.Split(new string[] { "; " }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    acc_to_features.AddIfNotContainsKey(acc, new HashSet<ConsensusFeatureEntity>());
+                    acc_to_features[acc].Add(f);
+                }
+
+                // Prepare lookup tables + connect features to spectra
+                var key = Tuple.Create(f.WorkflowID, f.Id);
+                feature_id_tuple_to_psms.AddIfNotContainsKey(key, new List<TargetPeptideSpectrumMatch>());
+                feature_id_tuple_to_spectra.AddIfNotContainsKey(key, new List<MSnSpectrumInfo>());
+
+                if (psms != null)
+                {
+                    foreach (var psm in psms)
+                    {
+                        // CONNECT
+                        // Add exactly those MSnSpectrumInfos matching the PSMs IDmapped to this feature
+                        var psm_key = Tuple.Create(psm.WorkflowID, psm.PeptideID);
+                        feature_spectrum_connections.Add(Tuple.Create(f, psm_id_tuple_to_spectrum[psm_key]));
+
+                        // Propagate only those ID-mapped peptide hits that match feature's "consensus" sequence
+                        if (OpenMSCommons.ModSequence(psm.Sequence, psm.Modifications) != f.Sequence)
+                        {
+                            continue;
+                        }
+
+                        // Fill lookup tables
+                        feature_id_tuple_to_psms[key].Add(psm);
+                        feature_id_tuple_to_spectra[key].Add(psm_id_tuple_to_spectrum[psm_key]);
+                    }
+                }
+            }
+
+            // Connect Quantified Peptides to features, PSMs, spectra; fill additional lookup tables
+            var all_peptides = eds_reader.ReadAll<DechargedPeptideEntity>();
+            foreach (var peptide in all_peptides)
+            {
+                var protein_accessions = peptide.proteins.Split(new string[] { "; " }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var acc in protein_accessions)
+                {
+                    acc_to_peptides.AddIfNotContainsKey(acc, new HashSet<DechargedPeptideEntity>());
+                    acc_to_peptides[acc].Add(peptide);
+                }
+
+                var features = seq_to_features.ContainsKey(peptide.sequence) ? seq_to_features[peptide.sequence] : new HashSet<ConsensusFeatureEntity>();
+                var psms = new List<TargetPeptideSpectrumMatch>();
+                var spectra = new List<MSnSpectrumInfo>();
+                foreach (var f in features)
+                {
+                    var key = Tuple.Create(f.WorkflowID, f.Id);
+                    foreach (var p in feature_id_tuple_to_psms[key])
+                    {
+                        bool already_contained = false;
+                        foreach (var other_psm in psms)
+                        {
+                            if (p.WorkflowID == other_psm.WorkflowID &&
+                                p.PeptideID == other_psm.PeptideID)
+                            {
+                                already_contained = true;
+                                break;
+                            }
+                        }
+                        if (!already_contained) psms.Add(p);
+                    }
+                    foreach (var s in feature_id_tuple_to_spectra[key])
+                    {
+                        bool already_contained = false;
+                        foreach (var other_spectrum in spectra)
+                        {
+                            if (s.WorkflowID == other_spectrum.WorkflowID &&
+                                s.SpectrumID == other_spectrum.SpectrumID)
+                            {
+                                already_contained = true;
+                                break;
+                            }
+                        }
+                        if (!already_contained) spectra.Add(s);
+                    }
+                }
+
+                foreach (var f in features)
+                {
+                    // CONNECT
+                    peptide_feature_connections.Add(Tuple.Create(peptide, f));
+                }
+                foreach (var psm in psms)
+                {
+                    // CONNECT
+                    peptide_psm_connections.Add(Tuple.Create(peptide, psm));
+                }
+                foreach (var s in spectra)
+                {
+                    // CONNECT
+                    peptide_spectrum_connections.Add(Tuple.Create(peptide, s));
+                }
+            }
+
+            // Connect Quantified Proteins to the rest (except for PD's Proteins); fill lookup table for last step
+            var quant_proteins = eds_reader.ReadAll<QuantifiedProteinEntity>();
+            foreach (var qp in quant_proteins)
+            {
+                foreach (var acc in qp.proteins.Split(new string[] { "; " }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var features = acc_to_features.ContainsKey(acc) ? acc_to_features[acc] : new HashSet<ConsensusFeatureEntity>();
+                    var psms = new List<TargetPeptideSpectrumMatch>();
+                    var spectra = new List<MSnSpectrumInfo>();
+
+                    foreach (var f in features)
+                    {
+                        var key = Tuple.Create(f.WorkflowID, f.Id);
+                        foreach (var p in feature_id_tuple_to_psms[key])
+                        {
+                            bool already_contained = false;
+                            foreach (var other_psm in psms)
+                            {
+                                if (p.WorkflowID == other_psm.WorkflowID &&
+                                    p.PeptideID == other_psm.PeptideID)
+                                {
+                                    already_contained = true;
+                                    break;
+                                }
+                            }
+                            if (!already_contained) psms.Add(p);
+                        }
+                        foreach (var s in feature_id_tuple_to_spectra[key])
+                        {
+                            bool already_contained = false;
+                            foreach (var other_spectrum in spectra)
+                            {
+                                if (s.WorkflowID == other_spectrum.WorkflowID &&
+                                    s.SpectrumID == other_spectrum.SpectrumID)
+                                {
+                                    already_contained = true;
+                                    break;
+                                }
+                            }
+                            if (!already_contained) spectra.Add(s);
+                        }
+                    }
+
+
+                    foreach (var f in features)
+                    {
+                        // CONNECT
+                        feature_quant_prot_connections.Add(Tuple.Create(f, qp));
+                    }
+                    foreach (var psm in psms)
+                    {
+                        // CONNECT
+                        quant_prot_psm_connections.Add(Tuple.Create(qp, psm));
+                    }
+                    foreach (var s in spectra)
+                    {
+                        // CONNECT
+                        quant_prot_spectrum_connections.Add(Tuple.Create(qp, s));
+                    }
+                    foreach (var pep in acc_to_peptides[acc])
+                    {
+                        // CONNECT
+                        peptide_quant_prot_connections.Add(Tuple.Create(pep, qp));
+                    }
+
+                    // Fill lookup table
+                    acc_to_quant_proteins.AddIfNotContainsKey(acc, new HashSet<QuantifiedProteinEntity>());
+                    acc_to_quant_proteins[acc].Add(qp);
+                }
+            }
+
+            // Connect PD's Proteins to the rest
+            var pd_proteins = eds_reader.ReadAll<TargetProtein>();
+            foreach (var protein in pd_proteins)
+            {
+                var acc = protein.Accession;
+                var features = acc_to_features.ContainsKey(acc) ? acc_to_features[acc] : new HashSet<ConsensusFeatureEntity>();
+                var quan_prots = acc_to_quant_proteins.ContainsKey(acc) ? acc_to_quant_proteins[acc] : new HashSet<QuantifiedProteinEntity>();
+                var peps = acc_to_peptides.ContainsKey(acc) ? acc_to_peptides[acc] : new HashSet<DechargedPeptideEntity>();
+
+                foreach (var f in features)
+                {
+                    // CONNECT
+                    feature_pd_prot_connections.Add(Tuple.Create(f, protein));
+                }
+                foreach (var qp in quan_prots)
+                {
+                    // CONNECT
+                    quant_prot_pd_prot_connections.Add(Tuple.Create(qp, protein));
+                }
+                foreach (var pep in peps)
+                {
+                    // CONNECT
+                    peptide_pd_prot_connections.Add(Tuple.Create(pep, protein));
+                }        
+            }
+
+            // Insert connections
+            EntityDataService.ConnectItems(feature_quant_prot_connections);
+            EntityDataService.ConnectItems(feature_pd_prot_connections);
+            EntityDataService.ConnectItems(quant_prot_psm_connections);
+            EntityDataService.ConnectItems(peptide_feature_connections);
+            EntityDataService.ConnectItems(peptide_quant_prot_connections);
+            EntityDataService.ConnectItems(peptide_pd_prot_connections);
+            EntityDataService.ConnectItems(peptide_psm_connections);
+            EntityDataService.ConnectItems(quant_prot_pd_prot_connections);
+            EntityDataService.ConnectItems(quant_prot_spectrum_connections);
+            EntityDataService.ConnectItems(peptide_spectrum_connections);
+            EntityDataService.ConnectItems(feature_spectrum_connections);
+
+            SendAndLogMessage("Finished interconnecting result tables");
         }
 
         /// <summary>
@@ -538,6 +835,7 @@ namespace PD.OpenMS.AdapterNodes
         private void PopulateConsensusFeaturesTable(Dictionary<string, XmlElement> consensus_dict, string cn_output_file, List<string> feature_table_column_names)
         {
             EntityDataService.RegisterEntityConnection<TargetPeptideSpectrumMatch, ConsensusFeatureEntity>(ProcessingNodeNumber);
+
             var psms_with_quantification = new List<Tuple<TargetPeptideSpectrumMatch, ConsensusFeatureEntity>>();
 
             var doc = new XmlDocument();
@@ -582,14 +880,14 @@ namespace PD.OpenMS.AdapterNodes
                 ConsensusFeatureEntity new_consensus_item = new ConsensusFeatureEntity()
                 {
                     WorkflowID = WorkflowID,
-                    Id = idCounter++
+                    Id = idCounter++,
+                    Sequence = "",
+                    Accessions = "",
+                    Descriptions = "",
+                    Charge = charge,
+                    MZ = mz,
+                    RT = rt
                 };
-
-                new_consensus_item.SetValue("Sequence", "");
-                new_consensus_item.SetValue("Accessions", "");
-                new_consensus_item.SetValue("Charge", charge);
-                new_consensus_item.SetValue("mz", mz);
-                new_consensus_item.SetValue("RT", rt);
 
                 var peptide_ids = ce.GetElementsByTagName("PeptideIdentification");
 
@@ -644,15 +942,14 @@ namespace PD.OpenMS.AdapterNodes
                     }
 
                     var psm = eds_reader.Read<TargetPeptideSpectrumMatch>(new object[] { workflow_id, pd_peptide_id });
-
                     psms_with_quantification.Add(Tuple.Create(psm, new_consensus_item));
 
                     var current_pep_score = Convert.ToDouble(pep_score.GetValue(psm));
                     if (current_pep_score < best_pep_score)
                     {
-                        new_consensus_item.SetValue("Sequence", peptide_hit.Attributes["sequence"].Value);
-                        new_consensus_item.SetValue("Accessions", psm.ParentProteinAccessions);
-                        new_consensus_item.SetValue("Descriptions", psm.ParentProteinDescriptions);
+                        new_consensus_item.Sequence = peptide_hit.Attributes["sequence"].Value;
+                        new_consensus_item.Accessions = psm.ParentProteinAccessions;
+                        new_consensus_item.Descriptions = psm.ParentProteinDescriptions;
                         best_pep_score = current_pep_score;
                     }
                 }
@@ -747,72 +1044,12 @@ namespace PD.OpenMS.AdapterNodes
         /// </summary>
         private List<string> SetupConsensusFeaturesTable()
         {
-            EntityDataService.RegisterEntity<ConsensusFeatureEntity>(ProcessingNodeNumber);
+            if (!EntityDataService.ContainsEntity<ConsensusFeatureEntity>())
+            {
+                EntityDataService.RegisterEntity<ConsensusFeatureEntity>(ProcessingNodeNumber);
+            }
 
-            // Add columns to (yet empty) consensus item table
-            // First: sequence, charge, average mz & rt (only once per row)
-            var seq_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<ConsensusFeatureEntity, string>(
-                new PropertyDescription()
-                {
-                    DisplayName = "Sequence",
-                    Description = "Peptide Sequence"
-                }
-            );
-            seq_column.GridDisplayOptions.ColumnWidth = 150;
-            EntityDataService.RegisterProperties(ProcessingNodeNumber, seq_column);
-
-            var acc_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<ConsensusFeatureEntity, string>(
-                new PropertyDescription()
-                {
-                    DisplayName = "Accessions",
-                    Description = "Protein Accessions"
-                }
-            );
-            acc_column.GridDisplayOptions.ColumnWidth = 150;
-            EntityDataService.RegisterProperties(ProcessingNodeNumber, acc_column);
-
-            var desc_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<ConsensusFeatureEntity, string>(
-                new PropertyDescription()
-                {
-                    DisplayName = "Descriptions",
-                    Description = "Protein Descriptions"
-                }
-            );
-            desc_column.GridDisplayOptions.ColumnWidth = 300;
-            EntityDataService.RegisterProperties(ProcessingNodeNumber, desc_column);
-
-            var charge_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<ConsensusFeatureEntity, int>(
-               new PropertyDescription()
-               {
-                   DisplayName = "Charge",
-                   Description = "Charge of the peptide"
-               }
-            );
-            EntityDataService.RegisterProperties(ProcessingNodeNumber, charge_column);
-
-            var mz_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<ConsensusFeatureEntity, double?>(
-               new PropertyDescription()
-               {
-                   DisplayName = "m/z",
-                   FormatString = "0.0000",
-                   Description = "m/z"
-               }
-            );
-            mz_column.GridDisplayOptions.ColumnWidth = 90;
-            EntityDataService.RegisterProperties(ProcessingNodeNumber, mz_column);
-
-            var rt_column = PropertyAccessorFactory.CreateDynamicPropertyAccessor<ConsensusFeatureEntity, double?>(
-               new PropertyDescription()
-               {
-                   DisplayName = "RT",
-                   FormatString = "0.00",
-                   Description = "Retention Time"
-               }
-            );
-            rt_column.GridDisplayOptions.ColumnWidth = 80;
-            EntityDataService.RegisterProperties(ProcessingNodeNumber, rt_column);
-
-            //second: add one intensity column for each sample
+            // add one intensity column for each sample
             var column_names = new List<String>(m_num_files);
             for (int i = 0; i < m_num_files; i++)
             {
