@@ -40,7 +40,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\</OutputPath>
+    <OutputPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>

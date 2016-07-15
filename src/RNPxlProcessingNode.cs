@@ -1398,7 +1398,7 @@ namespace PD.OpenMS.AdapterNodes
                 {"out", result_filename},
                 {"fold_change", param_xic_filtering_fold_change.ToString()},
                 {"rt_tol", (param_xic_filtering_rt_threshold.Value * 60.0).ToString()},
-                {"mz_tol", param_xic_filtering_mz_threshold.ToString()},
+                {"mz_tol", param_xic_filtering_mz_threshold.Value.Tolerance.ToString()},
                 {"threads", param_general_num_threads.ToString()}
             };
             OpenMSCommons.WriteParamsToINI(ini_path, fdr_parameters);
