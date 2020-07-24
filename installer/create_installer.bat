@@ -3,4 +3,4 @@ REM harvest all files from share/OpenMS folder and automatically generate compon
 REM compile to wixobj
 "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle" "OpenMSShareComponents.wxs" "NuXLMain.wxs"
 REM link into msi installer
-"C:\Program Files (x86)\WiX Toolset v3.11\bin\light" -o PDNuXLNodes.wsi NuXLMain.wixobj OpenMSShareComponents.wixobj
+"C:\Program Files (x86)\WiX Toolset v3.11\bin\light" -o PDNuXLNodes.wsi NuXLMain.wixobj OpenMSShareComponents.wixobj -b "SourceDir\share\OpenMS"
