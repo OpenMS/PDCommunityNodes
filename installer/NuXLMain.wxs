@@ -5,18 +5,26 @@
         Id='477329ad-a5a8-42f0-8114-7db495b978ce' 
         UpgradeCode='4843834a-e325-46c2-a782-ff0c38bab16a'
         Language='1033' Codepage='1252' Version='2.5.0'
-		>	
-		
+		>
+					
 		<!-- elevated InstallPrivileges needed because we install into the Proteome Discoverer Folder -->
-		<Package Id='*' Keywords='Installer' Description="OpenMS PD nodes Installer"
+		<Package Id='*' 
+			Keywords='Installer' 
+			Description="OpenMS PD nodes Installer"
 			InstallerVersion='300' 
 			Languages='1033' 
 			Compressed='yes' 
 			SummaryCodepage='1252'
 			InstallPrivileges="elevated"
+			InstallScope="perMachine"
 			/>
+		
+		<!-- For development purpose only. Allow to overwrite same version number. -->		
+		<MajorUpgrade Schedule="afterInstallInitialize"
+                DowngradeErrorMessage="A later version of [ProductName] is already installed"
+                AllowSameVersionUpgrades="yes" />
 
-    <Media Id="1" Cabinet="opennuxl.cab" EmbedCab="yes" CompressionLevel="medium" />
+		<Media Id="1" Cabinet="opennuxl.cab" EmbedCab="yes" CompressionLevel="medium" />
 
 <!-- Set target directory to Proteome Discoverer Folder -->
 		<CustomAction Id="SetTARGETDIR"
@@ -32,11 +40,11 @@
 			<Directory Id='PDSystemFiles' Name='System'>
 				<Directory Id='PDSystemReleaseFiles' Name='Release'/>
 			</Directory>
-			<Directory Id='Tools' Name='PDToolsFiles'>
-				<Directory Id='NuXL' Name='PDSystemReleaseNuXLFiles'>
-					<Directory Id='NuXLBin' Name='PDSystemReleaseNuXLBinFiles' />
-					<Directory Id='NuXLShare' Name='PDSystemReleaseNuXLShareFiles'>
-						<Directory Id='NuXLShareOpenMS' Name='PDSystemReleaseNuXLShareOpenMSFiles'>						
+			<Directory Id='PDToolsFiles' Name='Tools'>
+				<Directory Id='PDSystemReleaseNuXLFiles' Name='NuXL'>
+					<Directory Id='PDSystemReleaseNuXLBinFiles' Name='bin' />
+					<Directory Id='PDSystemReleaseNuXLShareFiles' Name='share'>
+						<Directory Id='PDSystemReleaseNuXLShareOpenMSFiles' Name='OpenMS'>						
 						</Directory>							
 					</Directory>
 				</Directory>
@@ -53,12 +61,15 @@
 			</Component>
 		</DirectoryRef>
 		
-		<DirectoryRef Id='NuXLBin'>
+		<DirectoryRef Id='PDSystemReleaseNuXLBinFiles'>
 			<Component Id='OpenMSDLL' Guid='45eba75f-de71-4aec-a4fc-63f9843e2dca'>
 				<File Id='OpenMS.dll' Name='OpenMS.dll' Source='SourceDir\bin\OpenMS.dll' KeyPath='yes' />
 			</Component>
 			<Component Id='OpenNuXLExe' Guid='62a9b8df-b548-4f7c-a760-870ecb3f62cf'>
 				<File Id='OpenNuXL.exe' Name='OpenNuXL.exe' Source='SourceDir\bin\OpenNuXL.exe' KeyPath='yes' />
+			</Component>
+			<Component Id='Qt5Core' Guid='55eba75f-de71-4aec-a4fc-63f4843e2dca'>
+				<File Id='Qt5Core.dll' Name='Qt5Core.dll' Source='SourceDir\bin\Qt5Core.dll' KeyPath='yes' />
 			</Component>
 			<Component Id='percolator' Guid='63f62d47-e8b5-47a3-a920-55c9bbb3245b'>
 				<File Id='percolator.exe' Name='percolator.exe' Source='SourceDir\bin\percolator.exe' KeyPath='yes' />
@@ -74,6 +85,7 @@
 			<ComponentRef Id='percolator' />
 <!-- This will include the heat generated components (both wix files need to be passed to candle) -->		
 			<ComponentGroupRef Id='OpenMSShareComponents' />
-		</Feature>
+		</Feature>	
+		
     </Product>
 </Wix>
