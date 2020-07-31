@@ -35,6 +35,17 @@
 			<Custom Action="SetTARGETDIR" After="InstallValidate" />
 		</InstallExecuteSequence>
 
+<!-- Register nodes after installation -->
+		<CustomAction Id="RegisterNodes" 
+			Directory="TARGETDIR" 
+			Execute="commit" 
+			Impersonate="no" 
+			ExeCommand="cmd.exe /c &quot;System/Release/Thermo.Magellan.Server -install&quot;" 
+			Return="check" />
+		<InstallExecuteSequence>
+			<Custom Action="RegisterNodes" After="InstallInitialize" />
+		</InstallExecuteSequence>
+
 		<!-- Step 1: Define the directory structure -->
 		<Directory Id='TARGETDIR' Name='SourceDir'>
 			<Directory Id='PDSystemFiles' Name='System'>
