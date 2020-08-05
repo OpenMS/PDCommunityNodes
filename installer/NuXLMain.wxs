@@ -1,5 +1,7 @@
 <?xml version='1.0' encoding='windows-1252'?>
 
+<!--  Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Thermo Scientific\Proteome Discoverer\2.5\(Standard) -->
+
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
     <Product Name='OpenMS PD nodes' Manufacturer='OpenMS Team'
         Id='477329ad-a5a8-42f0-8114-7db495b978ce' 
@@ -26,16 +28,25 @@
 
 		<Media Id="1" Cabinet="opennuxl.cab" EmbedCab="yes" CompressionLevel="medium" />
 
-<!-- Set target directory to Proteome Discoverer Folder -->
+		<Property Id="PDRootFolder">
+			<RegistrySearch 
+					Id="Locate_PDRootFolder"
+                    Root="HKLM"
+                    Key="SOFTWARE\Thermo Scientific\Proteome Discoverer\2.5"
+                    Type="directory" />
+		</Property>
+
+		<!-- Set target directory to Proteome Discoverer Folder -->
+		<!-- or hardcoded Value="[ProgramFiles64Folder]\Thermo\Proteome Discoverer 2.5" -->
 		<CustomAction Id="SetTARGETDIR"
               Directory="TARGETDIR"
-              Value="[ProgramFiles64Folder]\Thermo\Proteome Discoverer 2.5"
+			  Value="[PDRootFolder]"
               Return="check" />
 		<InstallExecuteSequence>
 			<Custom Action="SetTARGETDIR" After="InstallValidate" />
 		</InstallExecuteSequence>
 
-<!-- Register nodes after installation -->
+		<!-- Register nodes after installation -->
 		<CustomAction Id="RegisterNodes" 
 			Directory="TARGETDIR" 
 			Execute="commit" 
