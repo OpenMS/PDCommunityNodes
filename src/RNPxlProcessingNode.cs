@@ -10,16 +10,18 @@ using System.Text;
 using System.Web.UI;
 using Thermo.Magellan.BL.Data;
 using Thermo.Magellan.BL.Data.ProcessingNodeScores;
-using Thermo.Magellan.BL.Processing;
 using Thermo.Magellan.BL.Processing.Interfaces;
+using Thermo.Magellan.BL.Processing;
 using Thermo.Magellan.DataLayer.FileIO;
 using Thermo.Magellan.EntityDataFramework;
-using Thermo.Magellan.Exceptions;
 using Thermo.Magellan.MassSpec;
 using Thermo.Magellan.Utilities;
 using Thermo.Magellan.Proteomics;
 using Thermo.Magellan.StudyManagement;
 using Thermo.Magellan.StudyManagement.DataObjects;
+using Thermo.Magellan.Core.Logging;
+using Thermo.Magellan.Core.Exceptions;
+using Thermo.Magellan.PeptideIdentificationNodes;
 
 namespace PD.OpenMS.AdapterNodes
 {
@@ -899,7 +901,9 @@ namespace PD.OpenMS.AdapterNodes
             }
             try
             {
-                ProcessingServices.SpectrumProcessingService.PersistSpectra(sender, this, spectra_to_store, true, true);
+                ProcessingServices.SpectrumPersistenceService.PersistMSnSpectra(sender, spectra_to_store);
+                // PD 2.0 node version
+               // ProcessingServices.SpectrumProcessingService.PersistSpectra(sender, this, spectra_to_store, true, true);
             }
             catch (MagellanException e)
             {
@@ -1059,7 +1063,7 @@ namespace PD.OpenMS.AdapterNodes
                 SoftwareVersion = new Version(FileVersionInfo.GetVersionInfo(Assembly.GetEntryAssembly().Location).FileVersion)
             };
 
-            bool export_file_is_open = exporter.Open(spectrum_export_file_name, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read);
+            bool export_file_is_open = exporter.Open(spectrum_export_file_name);
 
             if (!export_file_is_open)
             {
@@ -1075,14 +1079,14 @@ namespace PD.OpenMS.AdapterNodes
 
                 if (spectra.Count == 1000)
                 {
-                    exporter.ExportMassSpectra(spectra);
+                    exporter.SendMassSpectra(spectra, WorkflowID);
                     spectra.Clear();
                 }
             }
 
-            exporter.ExportMassSpectra(spectra);
+            exporter.SendMassSpectra(spectra, WorkflowID);
 
-            exporter.Close();
+            exporter.Dispose();
 
             SendAndLogMessage("Exporting {0} spectra took {1}.", spectrum_ids.Count, StringHelper.GetDisplayString(timer.Elapsed));
         }
@@ -1142,7 +1146,7 @@ namespace PD.OpenMS.AdapterNodes
                 return uv_mzml_filename;
             }
 
-            string openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0/");
+            string openms_dir = Path.Combine(ServerConfiguration.ToolsDirectory, "OpenMS-2.0");
             string exec_path = "";
             string ini_path = "";
             string result_filename = Path.Combine(NodeScratchDirectory, "UV_ID_filtered.mzML");
@@ -1183,7 +1187,7 @@ namespace PD.OpenMS.AdapterNodes
                 param_id_filtering_dynamic_mod_6 = param_rnpxlsearch_dynamic_mod_6;
             }
 
-            exec_path = Path.Combine(openms_dir, @"bin/RNPxlSearch.exe");
+            exec_path = Path.Combine(openms_dir, "bin", "RNPxlSearch.exe");
 
             // result filenames
             string rnpxlsearch_result_tsv_filename = Path.Combine(NodeScratchDirectory, "search_results_id_filtering.tsv");
@@ -1831,12 +1835,12 @@ namespace PD.OpenMS.AdapterNodes
             return result;
         }
 
-        protected override void OnAllSpectraSentForSearch(IProcessingNode sender, ResultsArguments eventArgs)
+        protected override void OnSpectraSentForSearch(IProcessingNode sender, MassSpectrumCollection spectra)
         {
             //throw new NotImplementedException();
         }
 
-        protected override void OnSpectraSentForSearch(IProcessingNode sender, MassSpectrumCollection spectra)
+        protected override void OnAllSpectraSentForSearch()
         {
             //throw new NotImplementedException();
         }

@@ -1,21 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Thermo.Magellan.BL.Data;
 using Thermo.Magellan.BL.Data.Constants;
 using Thermo.Magellan.BL.Processing;
 using Thermo.Magellan.BL.Processing.Interfaces;
-using Thermo.Magellan.DataLayer.FileIO;
 using Thermo.Magellan.EntityDataFramework;
-using Thermo.Magellan.Exceptions;
-using Thermo.Magellan.MassSpec;
-using Thermo.Magellan.Utilities;
 using Thermo.Magellan.Proteomics;
-using Thermo.Magellan;
 using Thermo.PD.EntityDataFramework;
-using Thermo.Magellan.Semantics;
 
 namespace PD.OpenMS.AdapterNodes
 {
