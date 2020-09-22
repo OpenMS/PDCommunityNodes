@@ -1243,6 +1243,8 @@ namespace PD.OpenMS.AdapterNodes
             {
                 string[] items = line.Split(new char[] { '\t' }, StringSplitOptions.None);
 
+                if (items.Length != 40) continue; // skip empty lines
+
                 var x = new NuXLItem();
 
                 x.WorkflowID = WorkflowID;
@@ -1278,7 +1280,7 @@ namespace PD.OpenMS.AdapterNodes
                 x.m_2h = Double.TryParse(items[24], out dbl_val) ? dbl_val : 0.0;
                 x.m_3h = Double.TryParse(items[25], out dbl_val) ? dbl_val : 0.0;
                 x.m_4h = Double.TryParse(items[26], out dbl_val) ? dbl_val : 0.0;
-                x.fragment_annotation = items[27];                
+                x.fragment_annotation = items[39];                
 
                 // don't add unidentified spectra
                 if (x.peptide == "" && x.rna == "")
@@ -1418,16 +1420,13 @@ namespace PD.OpenMS.AdapterNodes
                         // storing IDs for NuXLItems and re-reading them in ShowSpectrumButtonValueEditor.xaml.cs
                         //
                         // Additional HACK: also store GUID of result file (see ShowSpectrumButtonValueEditor.xaml.cs for an explanation)
-                        var idString = string.Concat(m.WorkflowID, ";", m.SpectrumID, ";", r.fragment_annotation, ";REPORT_GUID=", EntityDataService.ReportFile.ReportGuid);
+                        var idString = string.Concat(m.WorkflowID, "§", m.SpectrumID, "§", r.fragment_annotation, "§REPORT_GUID=", EntityDataService.ReportFile.ReportGuid);
 
                         // use r.WorkflowID, r.Id to specify which NuXLItem to update
                         updates.Add(Tuple.Create(new[] { (object)r.WorkflowID, (object)r.Id }, new object[] { idString }));
                     }
                 }
             }
-
-            // Write back the data
-            //EntityDataService.UpdateItems(EntityDataService.GetEntity<NuXLItem>().Name, new[] { accessor.Name }, updates);
 
             // Register connections
             EntityDataService.ConnectItems(nuxl_to_spectrum_connections);

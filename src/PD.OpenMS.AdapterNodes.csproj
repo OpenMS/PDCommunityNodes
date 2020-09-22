@@ -210,8 +210,10 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(TargetDir)$(TargetName).dll" "C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\$(TargetName).dll"
+copy /Y "$(TargetDir)$(TargetName).pdb" "C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\$(TargetName).pdb"
 
-"C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Magellan.Server.exe" -install</PostBuildEvent>
+"C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Magellan.Server.exe" -install
+"C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Discoverer.exe" -startServer -showServerWindow</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
