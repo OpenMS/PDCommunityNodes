@@ -10,7 +10,7 @@ using Thermo.Magellan.Utilities;
 namespace PD.OpenMS.AdapterNodes
 {
     [EntityExport("cd2d425e-3750-4a81-b6cc-a3847024a7cd",
-          EntityName = "NuXL",
+          EntityName = "NuXLItem",
           TableName = "NuXLs",
           DisplayName = "NuXLs",
           Description = "NuXLs",

@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Drawing;
-using System.Text;
-using ZedGraph;
-using pwiz;
 using pwiz.MSGraph;
 using pwiz.Skyline.Controls.Graphs;
 

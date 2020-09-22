@@ -96,8 +96,8 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             // Also connect with MS/MS spectrum info table		
-            EntityDataService.RegisterEntityConnection<NuXLItem, MSnSpectrumInfo>(ProcessingNodeNumber);		
-            var nuxl_to_spectrum_connections = new List<Tuple<NuXLItem, MSnSpectrumInfo>>();
+//            EntityDataService.RegisterEntityConnection<NuXLItem, MSnSpectrumInfo>(ProcessingNodeNumber);		
+//            var nuxl_to_spectrum_connections = new List<Tuple<NuXLItem, MSnSpectrumInfo>>();
 
             var msn_spectrum_info_items = EntityDataService.CreateEntityItemReader().ReadAll<MSnSpectrumInfo>().ToList();
             foreach (var m in msn_spectrum_info_items)
@@ -113,7 +113,7 @@ namespace PD.OpenMS.AdapterNodes
                         NuXLItem r = mz_dict[mz_str];
 
                         // Add connection
-                        nuxl_to_spectrum_connections.Add(Tuple.Create(r, m));
+//                        nuxl_to_spectrum_connections.Add(Tuple.Create(r, m));
 
                         // Concatenate the spectrum ids and use them as the value that is stored in the button-cell. This value is not visible to the user but
                         // is used to re-read the spectrum when the button is pressed (see ShowSpectrumButtonValueEditor.xaml.cs).
@@ -134,7 +134,7 @@ namespace PD.OpenMS.AdapterNodes
             EntityDataService.UpdateItems(EntityDataService.GetEntity<NuXLItem>().Name, new[] { accessor.Name }, updates);
 
             // Register connections
-            EntityDataService.ConnectItems(nuxl_to_spectrum_connections);
+            //EntityDataService.ConnectItems(nuxl_to_spectrum_connections);
         }
     }
 }

@@ -31,6 +31,8 @@ using Thermo.PD.EntityDataFramework;
 // - run .\Thermo.Magellan.Server.exe -install
 // - run Thermo.Discoverer.exe –startServer –showServerWindow
 
+// Log files can be found in: C:\ProgramData\Thermo\Proteome Discoverer 2.5\Logs
+
 namespace PD.OpenMS.AdapterNodes
 {
     # region NodeSetup
@@ -1289,6 +1291,9 @@ namespace PD.OpenMS.AdapterNodes
 
             EntityDataService.InsertItems(nuxl_items);
 
+            // establish connection between results and spectra
+            connectNuXLItemWithSpectra();
+
             // add CV column
             AddCompVoltageToCsm();
         }
@@ -1352,6 +1357,81 @@ namespace PD.OpenMS.AdapterNodes
             //throw new NotImplementedException();
         }
 
+        private void connectNuXLItemWithSpectra()
+        {
+            // TODO: add nativeID column to csv
+
+            // TODO: map between nativeID from NuXLItem (from csv) and from spectra
+
+
+            var xl_items = EntityDataService.CreateEntityItemReader().ReadAll<NuXLItem>().ToList();
+
+            // store in RT-m/z-dictionary for associating NuXL table with PD spectra later
+            // dictionary RT -> (dictionary m/z -> NuXLItem.Id)
+            // (convert to string, round to 1 decimal)
+            var rt_mz_to_nuxl_id = new Dictionary<string, Dictionary<string, NuXLItem>>();
+
+            // Prepare a list that contains the button values
+            var updates = new List<Tuple<object[], object[]>>();
+
+            foreach (var r in xl_items)
+            {
+                string rt_str = String.Format("{0:0.0}", r.rt);
+                string mz_str = String.Format("{0:0.0000}", r.orig_mz);
+                Dictionary<string, NuXLItem> mz_dict;
+                if (rt_mz_to_nuxl_id.ContainsKey(rt_str))
+                {
+                    mz_dict = rt_mz_to_nuxl_id[rt_str];
+                }
+                else
+                {
+                    mz_dict = new Dictionary<string, NuXLItem>();
+                }
+                mz_dict[mz_str] = r;
+                rt_mz_to_nuxl_id[rt_str] = mz_dict;
+            }
+
+            // Also connect with MS/MS spectrum info table		
+            EntityDataService.RegisterEntityConnection<NuXLItem, MSnSpectrumInfo>(ProcessingNodeNumber);
+            var nuxl_to_spectrum_connections = new List<Tuple<NuXLItem, MSnSpectrumInfo>>();
+
+            var msn_spectrum_info_items = EntityDataService.CreateEntityItemReader().ReadAll<MSnSpectrumInfo>().ToList();
+            foreach (var m in msn_spectrum_info_items)
+            {
+                // TODO: use m.SpectrumID() to match between 
+                string rt_str = String.Format("{0:0.0}", m.RetentionTime);
+                string mz_str = String.Format("{0:0.0000}", m.MassOverCharge);
+                if (rt_mz_to_nuxl_id.ContainsKey(rt_str))
+                {
+                    Dictionary<string, NuXLItem> mz_dict = rt_mz_to_nuxl_id[rt_str];
+                    if (mz_dict.ContainsKey(mz_str))
+                    {
+                        NuXLItem r = mz_dict[mz_str];
+
+                        // Add connection
+                        nuxl_to_spectrum_connections.Add(Tuple.Create(r, m));
+
+                        // Concatenate the spectrum ids and use them as the value that is stored in the button-cell. This value is not visible to the user but
+                        // is used to re-read the spectrum when the button is pressed (see ShowSpectrumButtonValueEditor.xaml.cs).
+
+                        // For simplicity, we also store the entire annotation string in the button value in order to avoid
+                        // storing IDs for NuXLItems and re-reading them in ShowSpectrumButtonValueEditor.xaml.cs
+                        //
+                        // Additional HACK: also store GUID of result file (see ShowSpectrumButtonValueEditor.xaml.cs for an explanation)
+                        var idString = string.Concat(m.WorkflowID, ";", m.SpectrumID, ";", r.fragment_annotation, ";REPORT_GUID=", EntityDataService.ReportFile.ReportGuid);
+
+                        // use r.WorkflowID, r.Id to specify which NuXLItem to update
+                        updates.Add(Tuple.Create(new[] { (object)r.WorkflowID, (object)r.Id }, new object[] { idString }));
+                    }
+                }
+            }
+
+            // Write back the data
+            //EntityDataService.UpdateItems(EntityDataService.GetEntity<NuXLItem>().Name, new[] { accessor.Name }, updates);
+
+            // Register connections
+            EntityDataService.ConnectItems(nuxl_to_spectrum_connections);
+        }
 
         private void AddCompVoltageToCsm()
         {
@@ -1398,29 +1478,18 @@ namespace PD.OpenMS.AdapterNodes
                         foreach (var spectrum in csmsWithSpectra.Item2)
                         {
                             //var spectrum = spectrumItem.EntityItem;
-                            CrosslinkSpectrumType spectrumType = CrosslinkSpectrumType.Diagnostic;
+                            // get the CV
+                            var cv = spectrum.EntityItem.AdditionalValues.GetValue(compensationVoltageProperty.Name);
 
-                            if (spectrum.ConnectionProperties.TryGetValue("SpectrumType", out var spectrumTypeObject))
+                            try
                             {
-                                spectrumType = (CrosslinkSpectrumType)EnumHelper.GetValueFromString(typeof(CrosslinkSpectrumType), spectrumTypeObject.ToString());
-
-                                if (spectrumType == CrosslinkSpectrumType.Diagnostic)
-                                {
-                                    // get the CV
-                                    var cv = spectrum.EntityItem.AdditionalValues.GetValue(compensationVoltageProperty.Name);
-
-                                    try
-                                    {
-                                        var compensationVoltage = Convert.ToDouble(cv);
-                                        // save the info
-                                        valueCache.Add(csm, compensationVoltage);
-                                    }
-                                    catch
-                                    {
-                                    }
-
-                                }
+                                var compensationVoltage = Convert.ToDouble(cv);
+                                valueCache.Add(csm, compensationVoltage);  // save the info
                             }
+                            catch
+                            {
+                            }
+
                         }
                     }
 
