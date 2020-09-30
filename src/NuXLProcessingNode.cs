@@ -1256,8 +1256,8 @@ namespace PD.OpenMS.AdapterNodes
                 x.rt = Double.TryParse(items[0], out dbl_val) ? (dbl_val / 60.0) : 0.0;
                 x.orig_mz = Double.TryParse(items[1], out dbl_val) ? dbl_val : 0.0;
                 x.proteins = items[2];
-                x.rna = items[3];
-                x.peptide = items[4];
+                x.peptide = items[3];
+                x.rna = items[4];
                 x.charge = Int32.TryParse(items[5], out int_val) ? int_val : 0;
                 x.score = Double.TryParse(items[6], out dbl_val) ? dbl_val : 0.0;
                 x.best_loc_score = Double.TryParse(items[7], out dbl_val) ? (dbl_val > 1e-20 ? dbl_val * 100.0 : 0.0) : 0.0;
