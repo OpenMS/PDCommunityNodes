@@ -28,20 +28,21 @@
 
 		<Media Id="1" Cabinet="opennuxl.cab" EmbedCab="yes" CompressionLevel="medium" />
 
-		<Property Id="PDRootFolder">
+		<Property Id="PDROOTFOLDER">
 			<RegistrySearch 
 					Id="Locate_PDRootFolder"
                     Root="HKLM"
                     Key="SOFTWARE\Thermo Scientific\Proteome Discoverer\2.5"
                     Type="directory" />
 		</Property>
-
+		  
 		<!-- Set target directory to Proteome Discoverer Folder -->
 		<!-- or hardcoded Value="[ProgramFiles64Folder]\Thermo\Proteome Discoverer 2.5" -->
 		<CustomAction Id="SetTARGETDIR"
               Directory="TARGETDIR"
-			  Value="[PDRootFolder]"
+			  Value="[PDROOTFOLDER]"
               Return="check" />
+
 		<InstallExecuteSequence>
 			<Custom Action="SetTARGETDIR" After="InstallValidate" />
 		</InstallExecuteSequence>
@@ -53,8 +54,9 @@
 			Impersonate="no" 
 			ExeCommand="cmd.exe /c &quot;System/Release/Thermo.Magellan.Server -install&quot;" 
 			Return="check" />
+			
 		<InstallExecuteSequence>
-			<Custom Action="RegisterNodes" After="InstallInitialize" />
+			<Custom Action="RegisterNodes" After="PublishProduct" />
 		</InstallExecuteSequence>
 
 		<!-- Step 1: Define the directory structure -->
@@ -78,6 +80,9 @@
 			<Component Id='OpenMSNode' Guid='245ddb1b-3166-41d7-b429-67b90a1920df'>
 				<File Id='PD.OpenMS.AdapterNodes.dll' Name='PD.OpenMS.AdapterNodes.dll' Source='SourceDir\bin\PD.OpenMS.AdapterNodes.dll' KeyPath='yes' />
 			</Component>
+			<Component Id='OpenMSNodeDebugSymbols' Guid='A4Bddb1b-3166-41d7-b429-67b90a1920df'>
+				<File Id='PD.OpenMS.AdapterNodes.pdb' Name='PD.OpenMS.AdapterNodes.pdb' Source='SourceDir\bin\PD.OpenMS.AdapterNodes.pdb' KeyPath='yes' />
+			</Component>
 			<Component Id='ZedGraphDLL' Guid='79abf4d4-fe37-495c-8d96-c74a22465cb3'>
 				<File Id='ZedGraph_OpenMS.dll' Name='ZedGraph_OpenMS.dll' Source='SourceDir\bin\ZedGraph_OpenMS.dll' KeyPath='yes' />
 			</Component>
@@ -90,8 +95,11 @@
 			<Component Id='OpenNuXLExe' Guid='62a9b8df-b548-4f7c-a760-870ecb3f62cf'>
 				<File Id='OpenNuXL.exe' Name='OpenNuXL.exe' Source='SourceDir\bin\OpenNuXL.exe' KeyPath='yes' />
 			</Component>
-			<Component Id='Qt5Core' Guid='55eba75f-de71-4aec-a4fc-63f4843e2dca'>
+			<Component Id='Qt5CoreDLL' Guid='55eba75f-de71-4aec-a4fc-63f4843e2dca'>
 				<File Id='Qt5Core.dll' Name='Qt5Core.dll' Source='SourceDir\bin\Qt5Core.dll' KeyPath='yes' />
+			</Component>
+			<Component Id='Qt5NetworkDLL' Guid='A5eba75f-de71-4aec-a4fc-63f4843e2dca'>
+				<File Id='Qt5Network.dll' Name='Qt5Network.dll' Source='SourceDir\bin\Qt5Network.dll' KeyPath='yes' />
 			</Component>
 			<Component Id='percolator' Guid='63f62d47-e8b5-47a3-a920-55c9bbb3245b'>
 				<File Id='percolator.exe' Name='percolator.exe' Source='SourceDir\bin\percolator.exe' KeyPath='yes' />
@@ -101,8 +109,11 @@
 <!-- Step 3: Tell WiX to install the files -->		
 		<Feature Id='Complete' Level='1'>
 			<ComponentRef Id='OpenMSNode' />
+			<ComponentRef Id='OpenMSNodeDebugSymbols' />
 			<ComponentRef Id='ZedGraphDLL' />
 			<ComponentRef Id='OpenMSDLL' />
+			<ComponentRef Id='Qt5CoreDLL' />
+			<ComponentRef Id='Qt5NetworkDLL' />
 			<ComponentRef Id='OpenNuXLExe' />
 			<ComponentRef Id='percolator' />
 <!-- This will include the heat generated components (both wix files need to be passed to candle) -->		
