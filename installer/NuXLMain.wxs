@@ -4,9 +4,9 @@
 
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
     <Product Name='OpenMS PD nodes' Manufacturer='OpenMS Team'
-        Id='477329ad-a5a8-42f0-8114-7db495b978ce' 
-        UpgradeCode='4843834a-e325-46c2-a782-ff0c38bab16a'
-        Language='1033' Codepage='1252' Version='2.5.0'
+        Id='987329ad-a5a8-42f0-8114-7db495b978ce' 
+        UpgradeCode='350726a2-ce30-4d67-8a1b-de4db1f4cd6d'
+        Language='1033' Codepage='1252' Version='2.6.0'
 		>
 					
 		<!-- elevated InstallPrivileges needed because we install into the Proteome Discoverer Folder -->
@@ -44,7 +44,7 @@
               Return="check" />
 
 		<InstallExecuteSequence>
-			<Custom Action="SetTARGETDIR" After="InstallValidate" />
+			<Custom Action="SetTARGETDIR" After="CostFinalize" />
 		</InstallExecuteSequence>
 
 		<!-- Register nodes after installation -->
@@ -52,7 +52,7 @@
 			Directory="TARGETDIR" 
 			Execute="commit" 
 			Impersonate="no" 
-			ExeCommand="cmd.exe /c &quot;System/Release/Thermo.Magellan.Server -install&quot;" 
+			ExeCommand="cmd.exe /c &quot;System\Release\Thermo.Magellan.Server.exe -install&quot;" 
 			Return="check" />
 			
 		<InstallExecuteSequence>
