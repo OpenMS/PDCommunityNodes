@@ -78,33 +78,42 @@
 <!-- Step 2: Add node files to your installer package -->
 		<DirectoryRef Id='PDSystemReleaseFiles'>
 			<Component Id='OpenMSNode' Guid='245ddb1b-3166-41d7-b429-67b90a1920df'>
-				<File Id='PD.OpenMS.AdapterNodes.dll' Name='PD.OpenMS.AdapterNodes.dll' Source='SourceDir\bin\PD.OpenMS.AdapterNodes.dll' KeyPath='yes' />
+				<RemoveFile Id='remove_PD.OpenMS.AdapterNodes.dll' Name='PD.OpenMS.AdapterNodes.dll' On="both"/>
+				<File Id='PD.OpenMS.AdapterNodes.dll' Name='PD.OpenMS.AdapterNodes.dll' Source='SourceDir\bin\PD.OpenMS.AdapterNodes.dll' KeyPath='yes' />								
 			</Component>
 			<Component Id='OpenMSNodeDebugSymbols' Guid='A4Bddb1b-3166-41d7-b429-67b90a1920df'>
+				<RemoveFile Id='remove_PD.OpenMS.AdapterNodes.pdb' Name='PD.OpenMS.AdapterNodes.pdb' On="both"/>
 				<File Id='PD.OpenMS.AdapterNodes.pdb' Name='PD.OpenMS.AdapterNodes.pdb' Source='SourceDir\bin\PD.OpenMS.AdapterNodes.pdb' KeyPath='yes' />
 			</Component>
 			<Component Id='ZedGraphDLL' Guid='79abf4d4-fe37-495c-8d96-c74a22465cb3'>
+				<RemoveFile Id='remove_ZedGraph_OpenMS.dll' Name='ZedGraph_OpenMS.dll' On="both"/>
 				<File Id='ZedGraph_OpenMS.dll' Name='ZedGraph_OpenMS.dll' Source='SourceDir\bin\ZedGraph_OpenMS.dll' KeyPath='yes' />
 			</Component>
 		</DirectoryRef>
 		
 		<DirectoryRef Id='PDSystemReleaseNuXLBinFiles'>
 			<Component Id='OpenMSDLL' Guid='45eba75f-de71-4aec-a4fc-63f9843e2dca'>
+				<RemoveFile Id='remove_OpenMS.dll' Name='OpenMS.dll' On="both"/>
 				<File Id='OpenMS.dll' Name='OpenMS.dll' Source='SourceDir\bin\OpenMS.dll' KeyPath='yes' />
 			</Component>
 			<Component Id='OpenNuXLEXE' Guid='285d82a4-7904-4f0f-867f-fd80c7cd0e68'>
+				<RemoveFile Id='remove_OpenNuXL.exe' Name='OpenNuXL.exe' On="both"/>
 				<File Id='OpenNuXL.exe' Name='OpenNuXL.exe' Source='SourceDir\bin\OpenNuXL.exe' KeyPath='yes' />
 			</Component>
 			<Component Id='PercolatorAdapterEXE' Guid='097bbb20-9f91-454e-9a62-f4872e28cdb1'>
+				<RemoveFile Id='remove_PercolatorAdapter.exe' Name='PercolatorAdapter.exe' On="both"/>
 				<File Id='PercolatorAdapter.exe' Name='PercolatorAdapter.exe' Source='SourceDir\bin\PercolatorAdapter.exe' KeyPath='yes' />
 			</Component>
 			<Component Id='Qt5CoreDLL' Guid='55eba75f-de71-4aec-a4fc-63f4843e2dca'>
+				<RemoveFile Id='remove_Qt5Core.dll' Name='Qt5Core.dll' On="both"/>
 				<File Id='Qt5Core.dll' Name='Qt5Core.dll' Source='SourceDir\bin\Qt5Core.dll' KeyPath='yes' />
 			</Component>
 			<Component Id='Qt5NetworkDLL' Guid='A5eba75f-de71-4aec-a4fc-63f4843e2dca'>
+				<RemoveFile Id='remove_Qt5Network.dll' Name='Qt5Network.dll' On="both"/>
 				<File Id='Qt5Network.dll' Name='Qt5Network.dll' Source='SourceDir\bin\Qt5Network.dll' KeyPath='yes' />
 			</Component>			
 			<Component Id='percolator' Guid='63f62d47-e8b5-47a3-a920-55c9bbb3245b'>
+				<RemoveFile Id='remove_percolator.exe' Name='percolator.exe' On="both"/>
 				<File Id='percolator.exe' Name='percolator.exe' Source='SourceDir\bin\percolator.exe' KeyPath='yes' />
 			</Component>								
 		</DirectoryRef>
