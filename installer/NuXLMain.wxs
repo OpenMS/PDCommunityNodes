@@ -92,15 +92,18 @@
 			<Component Id='OpenMSDLL' Guid='45eba75f-de71-4aec-a4fc-63f9843e2dca'>
 				<File Id='OpenMS.dll' Name='OpenMS.dll' Source='SourceDir\bin\OpenMS.dll' KeyPath='yes' />
 			</Component>
-			<Component Id='OpenNuXLExe' Guid='62a9b8df-b548-4f7c-a760-870ecb3f62cf'>
+			<Component Id='OpenNuXLEXE' Guid='285d82a4-7904-4f0f-867f-fd80c7cd0e68'>
 				<File Id='OpenNuXL.exe' Name='OpenNuXL.exe' Source='SourceDir\bin\OpenNuXL.exe' KeyPath='yes' />
+			</Component>
+			<Component Id='PercolatorAdapterEXE' Guid='097bbb20-9f91-454e-9a62-f4872e28cdb1'>
+				<File Id='PercolatorAdapter.exe' Name='PercolatorAdapter.exe' Source='SourceDir\bin\PercolatorAdapter.exe' KeyPath='yes' />
 			</Component>
 			<Component Id='Qt5CoreDLL' Guid='55eba75f-de71-4aec-a4fc-63f4843e2dca'>
 				<File Id='Qt5Core.dll' Name='Qt5Core.dll' Source='SourceDir\bin\Qt5Core.dll' KeyPath='yes' />
 			</Component>
 			<Component Id='Qt5NetworkDLL' Guid='A5eba75f-de71-4aec-a4fc-63f4843e2dca'>
 				<File Id='Qt5Network.dll' Name='Qt5Network.dll' Source='SourceDir\bin\Qt5Network.dll' KeyPath='yes' />
-			</Component>
+			</Component>			
 			<Component Id='percolator' Guid='63f62d47-e8b5-47a3-a920-55c9bbb3245b'>
 				<File Id='percolator.exe' Name='percolator.exe' Source='SourceDir\bin\percolator.exe' KeyPath='yes' />
 			</Component>								
@@ -114,7 +117,8 @@
 			<ComponentRef Id='OpenMSDLL' />
 			<ComponentRef Id='Qt5CoreDLL' />
 			<ComponentRef Id='Qt5NetworkDLL' />
-			<ComponentRef Id='OpenNuXLExe' />
+			<ComponentRef Id='OpenNuXLEXE' />
+			<ComponentRef Id='PercolatorAdapterEXE' />
 			<ComponentRef Id='percolator' />
 <!-- This will include the heat generated components (both wix files need to be passed to candle) -->		
 			<ComponentGroupRef Id='OpenMSShareComponents' />
