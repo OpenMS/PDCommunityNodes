@@ -135,6 +135,9 @@
 			<ComponentRef Id='OpenMSNodeDebugSymbols' />
 			<ComponentRef Id='ZedGraphDLL' />
 			<ComponentRef Id='OpenMSDLL' />
+			<ComponentRef Id='OpenSwathAlgoDLL' />
+			<ComponentRef Id='SuperHirnDLL' />
+			<ComponentRef Id='OpenMSGUIDLL' />
 			<ComponentRef Id='Qt5CoreDLL' />
 			<ComponentRef Id='Qt5NetworkDLL' />
 			<ComponentRef Id='OpenNuXLEXE' />
