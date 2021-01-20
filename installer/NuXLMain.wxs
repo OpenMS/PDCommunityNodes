@@ -95,6 +95,18 @@
 				<RemoveFile Id='remove_OpenMS.dll' Name='OpenMS.dll' On="both"/>
 				<File Id='OpenMS.dll' Name='OpenMS.dll' Source='SourceDir\bin\OpenMS.dll' KeyPath='yes' />
 			</Component>
+			<Component Id='OpenSwathAlgoDLL' Guid='7426264e-d9d1-4cba-ac3c-b59382226a15'>
+				<RemoveFile Id='remove_OpenSwathAlgo.dll' Name='OpenSwathAlgo.dll' On="both"/>
+				<File Id='OpenSwathAlgo.dll' Name='OpenSwathAlgo.dll' Source='SourceDir\bin\OpenSwathAlgo.dll' KeyPath='yes' />
+			</Component>
+			<Component Id='SuperHirnDLL' Guid='419523d7-2283-41cb-93d4-e1a2e4166680'>
+				<RemoveFile Id='remove_SuperHirnDLL.dll' Name='SuperHirn.dll' On="both"/>
+				<File Id='SuperHirn.dll' Name='SuperHirn.dll' Source='SourceDir\bin\SuperHirn.dll' KeyPath='yes' />
+			</Component>
+			<Component Id='OpenMSGUIDLL' Guid='09a6e422-e074-477a-b3d1-0b576d470e77'>
+				<RemoveFile Id='remove_OpenMSGUI.dll' Name='OpenMS_GUI.dll' On="both"/>
+				<File Id='OpenMS_GUI.dll' Name='OpenMS_GUI.dll' Source='SourceDir\bin\OpenMS_GUI.dll' KeyPath='yes' />
+			</Component>			
 			<Component Id='OpenNuXLEXE' Guid='285d82a4-7904-4f0f-867f-fd80c7cd0e68'>
 				<RemoveFile Id='remove_OpenNuXL.exe' Name='OpenNuXL.exe' On="both"/>
 				<File Id='OpenNuXL.exe' Name='OpenNuXL.exe' Source='SourceDir\bin\OpenNuXL.exe' KeyPath='yes' />
@@ -106,7 +118,7 @@
 			<Component Id='Qt5CoreDLL' Guid='55eba75f-de71-4aec-a4fc-63f4843e2dca'>
 				<RemoveFile Id='remove_Qt5Core.dll' Name='Qt5Core.dll' On="both"/>
 				<File Id='Qt5Core.dll' Name='Qt5Core.dll' Source='SourceDir\bin\Qt5Core.dll' KeyPath='yes' />
-			</Component>
+			</Component>				
 			<Component Id='Qt5NetworkDLL' Guid='A5eba75f-de71-4aec-a4fc-63f4843e2dca'>
 				<RemoveFile Id='remove_Qt5Network.dll' Name='Qt5Network.dll' On="both"/>
 				<File Id='Qt5Network.dll' Name='Qt5Network.dll' Source='SourceDir\bin\Qt5Network.dll' KeyPath='yes' />
@@ -123,6 +135,9 @@
 			<ComponentRef Id='OpenMSNodeDebugSymbols' />
 			<ComponentRef Id='ZedGraphDLL' />
 			<ComponentRef Id='OpenMSDLL' />
+			<ComponentRef Id='OpenMSGUIDLL' />
+			<ComponentRef Id='OpenSwathAlgoDLL' />
+			<ComponentRef Id='SuperHirnDLL' />
 			<ComponentRef Id='Qt5CoreDLL' />
 			<ComponentRef Id='Qt5NetworkDLL' />
 			<ComponentRef Id='OpenNuXLEXE' />
