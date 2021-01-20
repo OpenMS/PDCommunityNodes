@@ -66,10 +66,7 @@
 			<Directory Id='PDToolsFiles' Name='Tools'>
 				<Directory Id='PDSystemReleaseNuXLFiles' Name='NuXL'>
 					<Directory Id='PDSystemReleaseNuXLBinFiles' Name='bin' />
-					<Directory Id='PDSystemReleaseNuXLShareFiles' Name='share'>
-						<Directory Id='PDSystemReleaseNuXLShareOpenMSFiles' Name='OpenMS'>						
-						</Directory>							
-					</Directory>
+					<Directory Id='PDSystemReleaseNuXLShareFiles' Name='share' />
 				</Directory>
 			</Directory>
 		</Directory>
@@ -135,9 +132,9 @@
 			<ComponentRef Id='OpenMSNodeDebugSymbols' />
 			<ComponentRef Id='ZedGraphDLL' />
 			<ComponentRef Id='OpenMSDLL' />
-			<ComponentRef Id='OpenMSGUIDLL' />
 			<ComponentRef Id='OpenSwathAlgoDLL' />
 			<ComponentRef Id='SuperHirnDLL' />
+			<ComponentRef Id='OpenMSGUIDLL' />
 			<ComponentRef Id='Qt5CoreDLL' />
 			<ComponentRef Id='Qt5NetworkDLL' />
 			<ComponentRef Id='OpenNuXLEXE' />
