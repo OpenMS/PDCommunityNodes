@@ -66,10 +66,7 @@
 			<Directory Id='PDToolsFiles' Name='Tools'>
 				<Directory Id='PDSystemReleaseNuXLFiles' Name='NuXL'>
 					<Directory Id='PDSystemReleaseNuXLBinFiles' Name='bin' />
-					<Directory Id='PDSystemReleaseNuXLShareFiles' Name='share'>
-						<Directory Id='PDSystemReleaseNuXLShareOpenMSFiles' Name='OpenMS'>						
-						</Directory>							
-					</Directory>
+					<Directory Id='PDSystemReleaseNuXLShareFiles' Name='share' />
 				</Directory>
 			</Directory>
 		</Directory>
