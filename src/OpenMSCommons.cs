@@ -175,6 +175,36 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
+
+        public static void WriteItemListToINI(string[] vars, string ini_path, string parent, string name, bool clear_list_first = false)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.Load(ini_path);
+            XmlNodeList itemlist = doc.GetElementsByTagName("ITEMLIST");
+            foreach (XmlElement item in itemlist)
+            {                
+                if ((item.Attributes["name"].Value == name) // ITEMLIST name matches
+                    && (item.ParentNode.Attributes["name"].Value == parent)) // parent ITEM name matches
+                {
+                    if (clear_list_first)
+                    {
+                        item.IsEmpty = true;
+                    }
+
+                    foreach (var fn in vars)
+                    {
+                        //We add LISTITEMS to ITEMLISTS
+                        var listitem = doc.CreateElement("LISTITEM");
+                        XmlAttribute newAttribute = doc.CreateAttribute("value");
+                        newAttribute.Value = fn;
+                        listitem.SetAttributeNode(newAttribute);
+                        item.AppendChild(listitem);
+                    }
+                }
+            }
+            doc.Save(ini_path);
+        }
+
         /// <summary>
         /// Write mz and rt parameters for MapAligner or FeatureLinker. Different function than WriteParamsToINI due to specific structure in considered tools
         /// </summary>
@@ -487,5 +517,6 @@ namespace PD.OpenMS.AdapterNodes
             }
             File.WriteAllText(fasta_file, result_fasta_text);
         }
+
     }
 }

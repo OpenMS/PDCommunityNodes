@@ -209,16 +209,19 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>echo "Copy nodes to PD folder"
+    <PostBuildEvent>echo "Copy nodes and ZedGraph.dll to PD folder"
 copy /Y "$(TargetDir)$(TargetName).dll" "C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\$(TargetName).dll"
 copy /Y "$(TargetDir)$(TargetName).pdb" "C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\$(TargetName).pdb"
+copy /Y "$(ProjectDir)\..\External\ZedGraph_OpenMS.dll" "C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\ZedGraph_OpenMS.dll"
 
-echo "Copy nodes to Installer\SourceDir\bin folder"
+echo "Copy nodes and ZedGraph.dll to Installer\SourceDir\bin folder"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(ProjectDir)\..\Installer\SourceDir\bin\$(TargetName).dll"
 copy /Y "$(TargetDir)$(TargetName).pdb" "$(ProjectDir)\..\Installer\SourceDir\bin\$(TargetName).pdb"
+copy /Y "$(ProjectDir)\..\External\ZedGraph_OpenMS.dll" "$(ProjectDir)\..\Installer\SourceDir\bin\ZedGraph_OpenMS.dll"
 
-echo "C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Magellan.Server.exe" -install
-echo"C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Discoverer.exe" -startServer -showServerWindow</PostBuildEvent>
+echo "Register nodes in PD"
+"C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Magellan.Server.exe" -install
+"C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Discoverer.exe" -startServer -showServerWindow</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

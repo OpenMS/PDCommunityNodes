@@ -1122,31 +1122,19 @@ namespace PD.OpenMS.AdapterNodes
                             {"out_tsv", result_tsv_filename},
                             {"out", idxml_filename},
                             {"percolator_executable", Path.Combine(openms_dir, PercolatorExecutable)},
-                            {"threads", "1"},
+                            {"threads", "1"}, // TODO: fix multi-threading issue
                             {"log",  openms_log_path.ToString()}
             };
             OpenMSCommons.WriteParamsToINI(nuxl_ini_file, nuxl_parameters);
 
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "length", param_cross_linking_length));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "sequence", param_cross_linking_sequence));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "CysteineAdduct", param_cross_linking_cysteine_adduct.ToString().ToLower()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "filter_fractional_mass", param_cross_linking_filter_fractional_mass.ToString().ToLower()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "carbon_labeled_fragments", param_cross_linking_carbon_labeled_fragments.ToString().ToLower()));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("precursor", "mass_tolerance", param_nuxl_precursor_mass_tolerance.Value.Tolerance.ToString()));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("precursor", "mass_tolerance_unit", param_nuxl_precursor_mass_tolerance.UnitToString()));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("precursor", "min_charge", param_nuxl_charge_low));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("precursor", "max_charge", param_nuxl_charge_high));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("precursor", "isotopes", param_nuxl_isotopes));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("precursor", "mass_tolerance", param_nuxl_precursor_mass_tolerance.Value.Tolerance.ToString()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("precursor", "mass_tolerance_unit", param_nuxl_precursor_mass_tolerance.UnitToString()));
+
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("fragment", "mass_tolerance", param_nuxl_fragment_mass_tolerance.Value.Tolerance.ToString()));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("fragment", "mass_tolerance_unit", param_nuxl_fragment_mass_tolerance.UnitToString()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("modifications", "variable_max_per_peptide", param_nuxl_num_dynamic_mods.ToString()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "missed_cleavages", param_nuxl_missed_cleavages.ToString()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "enzyme", param_nuxl_enzyme.Value));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "min_size", param_nuxl_peptide_length_min.ToString()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "max_size", param_nuxl_peptide_length_max.ToString()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "decoys", "true"));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "scoring ", param_nuxl_scoring));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "can_cross_link ", param_cross_linking_can_xls));
 
             var static_mods = new List<string>();
             var variable_mods = new List<string>();
@@ -1170,9 +1158,33 @@ namespace PD.OpenMS.AdapterNodes
             variable_mods.AddRange(convertParamToModStringArray(param_nuxl_dynamic_mod_4, "RESIDUE"));
             variable_mods.AddRange(convertParamToModStringArray(param_nuxl_dynamic_mod_5, "RESIDUE"));
             variable_mods.AddRange(convertParamToModStringArray(param_nuxl_dynamic_mod_6, "RESIDUE"));
-
             OpenMSCommons.WriteItemListToINI(variable_mods.ToArray(), nuxl_ini_file, "variable", true);
             OpenMSCommons.WriteItemListToINI(static_mods.ToArray(), nuxl_ini_file, "fixed", true);
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("modifications", "variable_max_per_peptide", param_nuxl_num_dynamic_mods.ToString()));
+
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "min_size", param_nuxl_peptide_length_min.ToString()));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "max_size", param_nuxl_peptide_length_max.ToString()));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "missed_cleavages", param_nuxl_missed_cleavages.ToString()));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "enzyme", param_nuxl_enzyme.Value));
+
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "length", param_cross_linking_length));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "sequence", param_cross_linking_sequence));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "CysteineAdduct", param_cross_linking_cysteine_adduct.ToString().ToLower()));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "filter_fractional_mass", param_cross_linking_filter_fractional_mass.ToString().ToLower()));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "carbon_labeled_fragments", param_cross_linking_carbon_labeled_fragments.ToString().ToLower()));
+
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "decoys", "true"));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "scoring", param_nuxl_scoring));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "can_cross_link", param_cross_linking_can_xls));
+
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("report", "top_hits", "1")); // TODO: change?
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("report", "peptideFDR", 0.01)); // TODO: change?
+
+            List<string> xl_FDR_options = new List<string>();
+            xl_FDR_options.Add("0.01");
+            xl_FDR_options.Add("0.1");
+            xl_FDR_options.Add("1.0");
+            OpenMSCommons.WriteItemListToINI(xl_FDR_options.ToArray(), nuxl_ini_file, "report", "xlFDR", true);
 
             List<string> filter_options = new List<string>();
             if (param_general_autotune.Value) { filter_options.Add("autotune"); }
@@ -1488,7 +1500,6 @@ namespace PD.OpenMS.AdapterNodes
                             catch
                             {
                             }
-
                         }
                     }
 
