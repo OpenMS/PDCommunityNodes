@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Workflow Name="NuXL" Description="" CreationDate="1/1/0001 12:00:00 AM" CreatedFromUser="sachs" WaitForEarlierJobs="False" ContinueJob="False" Version="10" WorkflowType="Consensus" TemplateName="NuXL">
+	<WorkflowTree>
+		<WorkflowNode ProcessingNodeNumber="1" ProcessingNodeName="MsfFilesNode" FriendlyName="MSF Files" Description="Selects the .msf file(s) to be processed and copies the processing results into the result file." MainVersion="2" MinorVersion="0" Guid="439943dd-1692-450b-a8a8-b3f07633bc01" DisplayCategory="" Category="Data Input" ParentProcessingNodeNumber="-1" Comment="" Publisher="Thermo Scientific" NodeState="Created">
+			<ProcessingNodeInterfaces>
+				<ProcessingNodeInterface Kind="Functional" Name="IProcessingNode" />
+				<ProcessingNodeInterface Kind="Functional" Name="IStartProcessing" />
+			</ProcessingNodeInterfaces>
+			<ConnectionPoints>
+				<ConnectionPoint Direction="Outgoing" Multiplicity="Multiple" ConnectionRequirement="Optional" Mode="Manual" DisplayName="" ConnectionDataHandlingType="FileBased" ParentNodeConstraint="None">
+					<DataContracts>
+						<DataContract DataType="http://thermo.magellan.com/owl/DataTypes/Psms">
+							<DataTypeAttributes>
+								<DataTypeAttribute>http://thermo.magellan.com/owl/DataTypes/WithDecoys</DataTypeAttribute>
+							</DataTypeAttributes>
+						</DataContract>
+						<DataContract DataType="http://thermo.magellan.com/owl/DataTypes/Prsms">
+							<DataTypeAttributes>
+								<DataTypeAttribute>http://thermo.magellan.com/owl/DataTypes/WithDecoys</DataTypeAttribute>
+							</DataTypeAttributes>
+						</DataContract>
+						<DataContract DataType="http://thermo.magellan.com/owl/DataTypes/Proteins">
+							<DataTypeAttributes>
+								<DataTypeAttribute>http://thermo.magellan.com/owl/DataTypes/WithDecoys</DataTypeAttribute>
+							</DataTypeAttributes>
+						</DataContract>
+					</DataContracts>
+				</ConnectionPoint>
+			</ConnectionPoints>
+			<ProcessingNodeParameters>
+				<ProcessingNodeParameter Name="SpectrumStorage" FriendlyName="Spectra to Store" Category="1. Storage Settings" IsAdvanced="False" IntendedPurpose="SpectrumStorage" PurposeDetails="" IsValueSet="True" IsHidden="False" IsConfig="False" DisplayValue="All">All</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="TraceStorage" FriendlyName="Feature Traces to Store" Category="1. Storage Settings" IsAdvanced="False" IntendedPurpose="TracesStorage" PurposeDetails="" IsValueSet="True" IsHidden="False" IsConfig="False" DisplayValue="All">All</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="MergeResultsBySearchNodeType" FriendlyName="Merge Mode" Category="2. Merging of Identified Peptide and Proteins" IsAdvanced="False" IntendedPurpose="SearchEngineBasedDataMerging" PurposeDetails="" IsValueSet="True" IsHidden="False" IsConfig="False" DisplayValue="Globally by Search Engine Type">Globally by Search Engine Type</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="MaximumDeltaCn" FriendlyName="Maximum Delta Cn" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="ResultFilterSet" PurposeDetails="" IsValueSet="True" IsHidden="False" IsConfig="False" DisplayValue="0.05">0.05</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="MaximumRank" FriendlyName="Maximum Rank" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="ResultFilterSet" PurposeDetails="" IsValueSet="True" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="DeltaMassFilter" FriendlyName="Maximum Delta Mass" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="True" IsHidden="False" IsConfig="False" DisplayValue="0 ppm">0 ppm</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName1" FriendlyName="1. Score" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold1" FriendlyName="1. Threshold" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName2" FriendlyName="2. Score" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold2" FriendlyName="2. Threshold" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName3" FriendlyName="3. Score" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold3" FriendlyName="3. Threshold" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName4" FriendlyName="4. Score" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold4" FriendlyName="4. Threshold" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName5" FriendlyName="5. Score" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold5" FriendlyName="5. Threshold" Category="4. PSM Filters" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName6" FriendlyName="6. Score" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold6" FriendlyName="6. Threshold" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName7" FriendlyName="7. Score" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold7" FriendlyName="7. Threshold" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName8" FriendlyName="8. Score" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold8" FriendlyName="8. Threshold" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName9" FriendlyName="9. Score" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold9" FriendlyName="9. Threshold" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreName10" FriendlyName="10. Score" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreThreshold10" FriendlyName="10. Threshold" Category="4. PSM Filters" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue="0">0</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="PeptideScoreNames" FriendlyName="PSM scores" Category="Scores" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="True" IsHidden="True" IsConfig="True" DisplayValue="Mascot: Ions Score; Sequest HT: XCorr; SEQUEST: XCorr; MSPepSearch: dot Score; MSPepSearch: rev-dot Score; MSPepSearch: MSPepSearch Score; PMI-Byonic: |Log Prob|; PMI-Byonic: Byonic Score; MS Amanda: Amanda Score">Mascot: Ions Score; Sequest HT: XCorr; SEQUEST: XCorr; MSPepSearch: dot Score; MSPepSearch: rev-dot Score; MSPepSearch: MSPepSearch Score; PMI-Byonic: |Log Prob|; PMI-Byonic: Byonic Score; MS Amanda: Amanda Score</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="ReportedFastaTitleLines" FriendlyName="Reported FASTA Title Lines" Category="3. FASTA Title Line Display" IsAdvanced="False" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="True" IsHidden="False" IsConfig="False" DisplayValue="Best match">Best match</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="TitlelineParsingRule" FriendlyName="Title Line Rule" Category="3. FASTA Title Line Display" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="True" IsHidden="False" IsConfig="False" DisplayValue="standard">standard</ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="AccessionParsingRule" FriendlyName="Preferred Accession" Category="3. FASTA Title Line Display" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="TaxonomyParsingRule" FriendlyName="Preferred Taxonomy" Category="3. FASTA Title Line Display" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="AvoidExpressionParsingRule" FriendlyName="Avoid Expressions" Category="3. FASTA Title Line Display" IsAdvanced="True" IntendedPurpose="Unknown" PurposeDetails="" IsValueSet="False" IsHidden="False" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+				<ProcessingNodeParameter Name="MSFFileNames" FriendlyName="MSF File(s)" Category="Hidden Parameters" IsAdvanced="False" IntendedPurpose="MSFFileContainer" PurposeDetails="" IsValueSet="False" IsHidden="True" IsConfig="False" DisplayValue=""></ProcessingNodeParameter>
+			</ProcessingNodeParameters>
+			<ProcessingNodePosition X="464" Y="346" />
+		</WorkflowNode>
+		<WorkflowNode ProcessingNodeNumber="0" ProcessingNodeName="NuXLConsensusNode" FriendlyName="NuXL Consensus" Description="Post-processes the results of the NuXL search and connects them with the spectrum view" MainVersion="1" MinorVersion="49" Guid="c2ce420e-d723-469b-b8be-6b0d8332fa39" DisplayCategory="" Category="Miscellaneous" ParentProcessingNodeNumber="1" Comment="" NodeState="Created">
+			<ProcessingNodeInterfaces>
+				<ProcessingNodeInterface Kind="Functional" Name="IProcessingNode" />
+			</ProcessingNodeInterfaces>
+			<ConnectionPoints>
+				<ConnectionPoint Direction="Incoming" Multiplicity="Multiple" ConnectionRequirement="Optional" Mode="AutomaticToAllPossibleParents" DisplayName="" ConnectionDataHandlingType="FileBased" ParentNodeConstraint="OnlyToGeneratorsOfRequestedData">
+					<DataContracts>
+						<DataContract DataType="http://thermo.magellan.com/owl/DataTypes/Psms">
+							<DataTypeAttributes />
+						</DataContract>
+					</DataContracts>
+				</ConnectionPoint>
+			</ConnectionPoints>
+			<ProcessingNodeParameters />
+			<ProcessingNodePosition X="470" Y="469" />
+		</WorkflowNode>
+	</WorkflowTree>
+</Workflow>
