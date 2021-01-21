@@ -217,8 +217,8 @@ echo "Copy nodes to Installer\SourceDir\bin folder"
 copy /Y "$(TargetDir)$(TargetName).dll" "$(ProjectDir)\..\Installer\SourceDir\bin\$(TargetName).dll"
 copy /Y "$(TargetDir)$(TargetName).pdb" "$(ProjectDir)\..\Installer\SourceDir\bin\$(TargetName).pdb"
 
-"C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Magellan.Server.exe" -install
-"C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Discoverer.exe" -startServer -showServerWindow</PostBuildEvent>
+echo "C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Magellan.Server.exe" -install
+echo"C:\Program Files\Thermo\Proteome Discoverer 2.5\System\Release\Thermo.Discoverer.exe" -startServer -showServerWindow</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
