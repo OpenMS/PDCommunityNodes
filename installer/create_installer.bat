@@ -1,7 +1,9 @@
+del OpenMSShareComponents.wxs
 del OpenMSShareComponents.wixobj
+del OpenMSShareComponents.wixpdb
+
 del ExecutableInstaller.wixobj
 del NuXLMain.wixobj
-del OpenMSShareComponents.wixpdb
 del ExecutableInstaller.wixpdb
 del NuXLMain.wixpdb
 
@@ -17,7 +19,6 @@ REM link into msi installer (silence warning about same version upgrade ICE61)
 REM create executable installer from wsi file (silence warning about same version upgrade ICE61)
 "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle" -ext WixNetFxExtension -ext WixBalExtension -ext WixUtilExtension ExecutableInstaller.wxs -arch x64
 "C:\Program Files (x86)\WiX Toolset v3.11\bin\light.exe" -sice:ICE61 -ext WixNetFxExtension -ext WixBalExtension -ext WixUtilExtension ExecutableInstaller.wixobj
-REM debug with msiexec /i PDNuXLNodes.msi /l*v MyLogFile.txt
-
 move ExecutableInstaller.exe NuXL-PD2.5.exe
 move PDNuXLNodes.msi NuXL-PD2.5.msi
+REM debug with msiexec /i NuXL-PD2.5.msi /l*v MyLogFile.txt
