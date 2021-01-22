@@ -13,6 +13,7 @@ using Thermo.Magellan.BL.Processing.Interfaces;
 using Thermo.Magellan.BL.Data;
 using Thermo.Magellan.Utilities;
 using Thermo.Magellan.Core.Exceptions;
+using Thermo.Magellan.EntityDataFramework;
 
 namespace PD.OpenMS.AdapterNodes
 {
@@ -518,5 +519,148 @@ namespace PD.OpenMS.AdapterNodes
             File.WriteAllText(fasta_file, result_fasta_text);
         }
 
+        enum ParseState
+        {
+            NONE,
+            PROTEIN_HIT,
+            PEPTIDE_IDENTIFICATION,
+            PEPTIDE_HIT,
+            PEPTIDE_HIT_USERPARAM,
+            PEPTIDE_IDENTIFICATION_USERPARAM
+        };
+
+        public static List<NuXLItem> parseIdXML(string id_file)
+        {
+            var nuxl_items = new List<NuXLItem>();
+            using (XmlReader reader = XmlReader.Create(id_file))
+            {
+                // Move the reader to first ProteinIdentification
+                reader.MoveToContent();
+                reader.ReadToDescendant("ProteinHit");
+
+                ParseState s = ParseState.NONE;
+
+                // Parse
+                var x = new NuXLItem();
+                double dbl_val;
+                double spec_mz = 0;
+                double spec_rt = 0;
+                Int32 int_val;
+                string protein_identifier = "UNKNOWN";
+                string n = "", v; // name and value of UserParam
+                Dictionary<string, string> mapId2Acc = new Dictionary<string, string>(); // protein ID (e.g., PH_1) to protein accession 
+                do
+                {
+                    switch (reader.NodeType)
+                    {                        
+                        case XmlNodeType.Element:
+                            if (reader.Name == "ProteinHit")
+                            {
+                                s = ParseState.PROTEIN_HIT;
+                            }
+                            else if (reader.Name == "PeptideIdentification") // starting a new Spectrum?
+                            {
+                                s = ParseState.PEPTIDE_IDENTIFICATION;
+                            }
+                            else if (reader.Name == "PeptideHit") // starting a new PSM?
+                            {
+                                s = ParseState.PEPTIDE_HIT;
+                                x = new NuXLItem();
+                            }
+                            else if (reader.Name == "UserParam" && s == ParseState.PEPTIDE_HIT)
+                            {
+                                s = ParseState.PEPTIDE_HIT_USERPARAM;
+                            }
+                            else if (reader.Name == "UserParam" && s == ParseState.PEPTIDE_IDENTIFICATION)
+                            {
+                                s = ParseState.PEPTIDE_IDENTIFICATION_USERPARAM;
+                            }
+
+//                            Console.Write("<{0}", reader.Name);
+                            while (reader.MoveToNextAttribute())
+                            {
+                                switch(s)
+                                {
+                                    case ParseState.PROTEIN_HIT:
+                                        if (reader.Name == "id") { protein_identifier = reader.Value; continue; }
+                                        if (reader.Name == "accession") { mapId2Acc.Add(protein_identifier, reader.Value); continue; } // line must to be after id
+                                        break;
+                                    case ParseState.PEPTIDE_IDENTIFICATION:                                  
+                                        if (reader.Name == "MZ") { spec_mz = Double.TryParse(reader.Value, out dbl_val) ? dbl_val : 0.0; continue; }
+                                        if (reader.Name == "RT") { spec_rt = Double.TryParse(reader.Value, out dbl_val) ? (dbl_val / 60.0) : 0.0; continue; }
+                                        // if (reader.Name == "spectrum_reference") { x.spectrum_reference = reader.Value; continue; }
+                                        break;
+                                    case ParseState.PEPTIDE_HIT:
+                                        if (reader.Name == "score") { x.score = Double.TryParse(reader.Value, out dbl_val) ? dbl_val : 0.0; continue; }
+                                        if (reader.Name == "sequence") { x.peptide = reader.Value; continue; }
+                                        if (reader.Name == "charge") { x.charge = Int32.TryParse(reader.Value, out int_val) ? int_val : 0; continue; }
+/*                                      if (reader.Name == "aa_before") { aa_before = reader.Value; continue; }
+                                        if (reader.Name == "aa_after") { aa_after = reader.Value; continue; }
+                                        if (reader.Name == "start") { start = reader.Value; continue; }
+                                        if (reader.Name == "end") { end = reader.Value; continue; }
+*/
+                                        if (reader.Name == "protein_refs") // map to protein
+                                        { 
+                                            string[] protein_refs = reader.Value.Split(' ');
+                                            StringBuilder proteinsStringBuilder = new StringBuilder();
+                                            foreach (string r in protein_refs)
+                                            {
+                                                proteinsStringBuilder.Append(mapId2Acc[r] + ';');
+                                            }
+                                            if (proteinsStringBuilder.Length != 0) proteinsStringBuilder.Length--; // remove last semi-colon
+                                            x.proteins = proteinsStringBuilder.ToString();
+                                            continue; 
+                                        }
+
+                                        x.orig_mz = spec_mz;
+                                        x.rt = spec_rt;
+
+                                        break;
+                                    case ParseState.PEPTIDE_IDENTIFICATION_USERPARAM:
+                                        break;
+                                    case ParseState.PEPTIDE_HIT_USERPARAM:
+                                        if (reader.Name == "name") { n = reader.Value; continue; }
+                                        if (reader.Name == "value") 
+                                        { 
+                                            v = reader.Value;
+                                            if (n == "NuXL:NA") { x.rna = v; continue; }
+                                            if (n == "NuXL:best_localization_score") { x.best_loc_score = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "NuXL:best_localization") { x.best_localizations = v; continue; }
+                                            if (n == "NuXL:localization_scores") { x.loc_scores = v; continue; }
+                                            if (n == "NuXL:peptide_mass_z0") { x.peptide_weight = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "NuXL:NA_MASS_z0") { x.rna_weight = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "NuXL:xl_mass_z0") { x.xl_weight = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "NuXL:Da difference") { x.abs_prec_error_da = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "precursor_mz_error_ppm") { x.rel_prec_error_ppm = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "fragment_annotation") { x.fragment_annotation = v; continue; }
+                                            continue; 
+                                        }
+
+                                        break;
+                                    default:
+                                        break;
+                                }
+
+//                              Console.Write(" {0}='{1}'", reader.Name, reader.Value);
+                            }
+//                            Console.Write(">");
+                            break;
+                        case XmlNodeType.Text:
+                            Console.Write(reader.Value);
+                            break;
+                        case XmlNodeType.EndElement:
+                            if (reader.Name == "PeptideHit") // finished reading a PSM
+                            {
+                                nuxl_items.Add(x);
+                                x = new NuXLItem();
+                            }
+//                            Console.Write("</{0}>", reader.Name);
+//                            Console.WriteLine("");
+                            break;
+                    }
+                } while (reader.Read());
+            }
+            return nuxl_items;
+        }
     }
 }

@@ -872,8 +872,19 @@ namespace PD.OpenMS.AdapterNodes
             ArgumentHelper.AssertStringNotNullOrWhitespace(input_file, "input_file");
 
             // NuXL Search
-            string csv_file = RunNuXL(input_file);
-            ParseCSVResults(csv_file);
+            string idXML_file = RunNuXL(input_file);
+            //ParseCSVResults(csv_file);
+
+            string xl_id_perc = idXML_file.Replace(".idXML", "") + "_perc_1.0000_XLs.idXML";
+            string id_perc = idXML_file.Replace(".idXML", "") + "_1.0000_XLs.idXML";
+            if (File.Exists(idXML_file.Replace(".idXML", "") + "_perc_1.0000_XLs.idXML"))
+            { 
+                ParseIdXMLResults(xl_id_perc);
+            }
+            else
+            {
+                ParseIdXMLResults(id_perc);
+            }
         }
 
 
@@ -894,8 +905,18 @@ namespace PD.OpenMS.AdapterNodes
             string xic_filtered_uv_file = RunXICFilter(aligned_uv_file, aligned_control_file);
 
             // NuXL Search
-            string csv_file = RunNuXL(xic_filtered_uv_file);
-            ParseCSVResults(csv_file);
+            string idXML_file = RunNuXL(xic_filtered_uv_file);
+            //ParseCSVResults(csv_file);
+            string xl_id_perc = idXML_file.Replace(".idXML", "") + "_perc_1.0000_XLs.idXML";
+            string id_perc = idXML_file.Replace(".idXML", "") + "_1.0000_XLs.idXML";
+            if (File.Exists(idXML_file.Replace(".idXML", "") + "_perc_1.0000_XLs.idXML"))
+            {
+                ParseIdXMLResults(xl_id_perc);
+            }
+            else
+            {
+                ParseIdXMLResults(id_perc);
+            }
         }
 
         /// <summary>
@@ -1233,7 +1254,32 @@ namespace PD.OpenMS.AdapterNodes
             m_current_step += 1;
             ReportTotalProgress((double)m_current_step / m_num_steps);
 
-            return result_tsv_filename;
+            return idxml_filename;
+        }
+
+
+        private void ParseIdXMLResults(string idXML_file)
+        {
+            if (EntityDataService.ContainsEntity<NuXLItem>() == false)
+            {
+                EntityDataService.RegisterEntity<NuXLItem>(ProcessingNodeNumber);
+            }
+
+            var nuxl_items = OpenMSCommons.parseIdXML(idXML_file);
+
+            foreach (var x in nuxl_items)
+            {
+                x.WorkflowID = WorkflowID;
+                x.Id = EntityDataService.NextId<NuXLItem>();
+            }
+
+            EntityDataService.InsertItems(nuxl_items);
+
+            // establish connection between results and spectra
+            connectNuXLItemWithSpectra();
+
+            // add CV column
+            AddCompVoltageToCsm();
         }
 
         /// <summary>
