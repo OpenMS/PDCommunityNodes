@@ -180,9 +180,6 @@
     <Compile Include="pwiz\MSGraphPane.cs" />
     <Compile Include="pwiz\MSPointList.cs" />
     <Compile Include="pwiz\RNPxlSpectrumGraphItem.cs" />
-    <Compile Include="RNPxlConsensusNode.cs" />
-    <Compile Include="RNPxlItem.cs" />
-    <Compile Include="RNPxlProcessingNode.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />

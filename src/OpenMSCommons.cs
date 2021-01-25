@@ -14,6 +14,7 @@ using Thermo.Magellan.BL.Data;
 using Thermo.Magellan.Utilities;
 using Thermo.Magellan.Core.Exceptions;
 using Thermo.Magellan.EntityDataFramework;
+using System.Threading;
 
 namespace PD.OpenMS.AdapterNodes
 {
@@ -38,7 +39,7 @@ namespace PD.OpenMS.AdapterNodes
     }
 
     /// <summary>
-    /// Methods that are shared between several nodes. Cannot be done by inheritance (I think), as multiple inheritance isn't allowed.
+    /// Methods that are shared between several nodes.
     /// </summary>
     public class OpenMSCommons
     {
@@ -234,8 +235,11 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
+
+
+
         /// <summary>
-        /// Run TOPP tool. Parameters are passed via the OpenMS INI file at param_path
+        /// Run TOPP tool. Parameters are passed via the OpenMS INI file at param_path.
         /// </summary>        
         public static void RunTOPPTool(string exec_path, string param_path, string scratch_dir, NodeDelegates nd)
         {
@@ -250,284 +254,382 @@ namespace PD.OpenMS.AdapterNodes
             process_startinfo.UseShellExecute = false;
             process_startinfo.RedirectStandardOutput = true;
             process_startinfo.CreateNoWindow = false;
+            process_startinfo.RedirectStandardError = true;
 
-            var process = new Process
+            using (Process process = new Process())
             {
-                StartInfo = process_startinfo
-            };
+                string current_work = "";
+                process.StartInfo = process_startinfo;
+                process.EnableRaisingEvents = true;
 
-            nd.logTmpMessage(String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
-                                        process.StartInfo.FileName,
-                                        process.StartInfo.WorkingDirectory,
-                                        process.StartInfo.Arguments));
+                StringBuilder output = new StringBuilder();
+                StringBuilder error = new StringBuilder();
 
-            nd.writeLogMessage(MessageLevel.Debug,
-                            String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
-                                          process.StartInfo.FileName,
-                                          process.StartInfo.WorkingDirectory,
-                                          process.StartInfo.Arguments));
-
-            try
-            {
-                process.Start();
-                try
+                using (AutoResetEvent outputWaitHandle = new AutoResetEvent(false))
+                using (AutoResetEvent errorWaitHandle = new AutoResetEvent(false))
                 {
-                    string current_work = "";
-                    while (process.HasExited == false)
+                    // triggered when output data was recieved from std_out
+                    process.OutputDataReceived += (sender, e) =>
                     {
-                        var output = process.StandardOutput.ReadLine();
-
-                        // move on if no new announcement. 
-                        if (String.IsNullOrEmpty(output))
+                        if (e.Data == null)
                         {
-                            continue;
+                            outputWaitHandle.Set();
                         }
+                        else
+                        {
+                            output.AppendLine(e.Data);
 
-                        //store all results (for now?) of OpenMS Tool output
-                        nd.writeLogMessage(MessageLevel.Debug, output);
+                            //store all results (for now?) of OpenMS Tool output
+                            nd.writeLogMessage(MessageLevel.Debug, output.ToString());
 
-                        // Parse the output and report progress using the method SendAndLogTemporaryMessage
-                        if (output.Contains(@"Progress of 'loading mzML file':"))
-                        {
-                            current_work = "Progress of 'loading mzML file':";
-                        }
-                        else if (output.Contains("Progress of 'loading chromatograms':"))
-                        {
-                            current_work = "Progress of 'loading chromatograms':";
-                        }
-                        else if (output.Contains("Progress of 'Aligning input maps':"))
-                        {
-                            current_work = "Progress of 'Aligning input maps':";
-                        }
-                        else if (output.Contains("Progress of 'linking features':"))
-                        {
-                            current_work = "Progress of 'linking features':";
-                        }
-                        else if (output.Contains("%"))
-                        {
-                            nd.logTmpMessage(String.Format("{0} {1}", current_work, output));
-                        }
-                    }
-
-                    // Note: The child process waits until everything is read from the standard output -> A Deadlock could arise here
-                    using (var reader = new StringReader(process.StandardOutput.ReadToEnd()))
-                    {
-                        string output;
-
-                        while ((output = reader.ReadLine()) != null)
-                        {
-                            nd.writeLogMessage(MessageLevel.Debug, output);
-
-                            if (String.IsNullOrEmpty(output) == false)
+                            // Parse the output and report progress using the method SendAndLogTemporaryMessage
+                            if (output.ToString().Contains(@"Progress of 'loading mzML file':"))
                             {
-                                nd.logMessage(output, false);
+                                current_work = "Progress of 'loading mzML file':";
+                            }
+                            else if (output.ToString().Contains("Progress of 'loading chromatograms':"))
+                            {
+                                current_work = "Progress of 'loading chromatograms':";
+                            }
+                            else if (output.ToString().Contains("Progress of 'Aligning input maps':"))
+                            {
+                                current_work = "Progress of 'Aligning input maps':";
+                            }
+                            else if (output.ToString().Contains("Progress of 'linking features':"))
+                            {
+                                current_work = "Progress of 'linking features':";
+                            }
+                            else if (output.ToString().Contains("%"))
+                            {
+                                nd.logTmpMessage(String.Format("{0} {1}", current_work, output));
+                            }
+
+                        }
+                    };
+
+                    // triggered when output data was recieved from err
+                    process.ErrorDataReceived += (sender, e) =>
+                    {
+                        if (e.Data == null)
+                        {
+                            errorWaitHandle.Set();
+                        }
+                        else
+                        {
+                            error.AppendLine(e.Data);
+                        }
+                    };
+
+                    nd.logTmpMessage(String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
+                            process.StartInfo.FileName,
+                            process.StartInfo.WorkingDirectory,
+                            process.StartInfo.Arguments));
+
+                    nd.writeLogMessage(MessageLevel.Debug,
+                                    String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
+                                                  process.StartInfo.FileName,
+                                                  process.StartInfo.WorkingDirectory,
+                                                  process.StartInfo.Arguments));
+                    try
+                    {
+                        process.Start();
+                        try
+                        {
+                            process.BeginOutputReadLine();
+                            process.BeginErrorReadLine();
+
+                            if (process.WaitForExit(1000000) &&
+                                outputWaitHandle.WaitOne(1000) &&
+                                errorWaitHandle.WaitOne(1000))
+                            {
+                                // Process completed. Check process.ExitCode here.
+                            }
+                            else
+                            {
+                                // Timed out.
                             }
                         }
+                        catch (InvalidOperationException ex)
+                        {
+                            nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
+                            throw;
+                        }
+
+                        if (process.ExitCode != 0)
+                        {
+                            throw new MagellanProcessingException(
+                                String.Format("The exit code of {0} was {1}. (The expected exit code is 0)",
+                                              Path.GetFileName(process.StartInfo.FileName),
+                                              process.ExitCode));
+                        }
                     }
-
-                    process.WaitForExit();
-                }
-                catch (InvalidOperationException ex)
-                {
-                    nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
-                    throw;
-                }
-
-                if (process.ExitCode != 0)
-                {
-                    throw new MagellanProcessingException(
-                        String.Format("The exit code of {0} was {1}. (The expected exit code is 0)",
-                                      Path.GetFileName(process.StartInfo.FileName),
-                                      process.ExitCode));
-                }
-            }
-            catch (System.Threading.ThreadAbortException)
-            {
-                // workflow was aborted ==> kill process so PD can finish abortion
-                process.Kill();
-                throw;
-            }
-            catch (Exception ex)
-            {
-                nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
-                throw;
-            }
-            finally
-            {
-                if (!process.HasExited)
-                {
-                    nd.warnLog("The process [{0}] hasn't finished correctly -> force to exit now", process.StartInfo.FileName);
-                    process.Kill();
+                    catch (System.Threading.ThreadAbortException)
+                    {
+                        // workflow was aborted ==> kill process so PD can finish abortion
+                        process.Kill();
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
+                        throw;
+                    }
+                    finally
+                    {
+                        if (!process.HasExited)
+                        {
+                            nd.warnLog("The process [{0}] hasn't finished correctly -> force to exit now", process.StartInfo.FileName);
+                            process.Kill();
+                        }
+                    }
                 }
             }
 
             nd.logMessage(String.Format("{0} tool processing took {1}.", exec_path, StringHelper.GetDisplayString(timer.Elapsed)));
         }
 
-        /// <summary>
-        /// Return a modified sequence string (OpenMS format) from unmodified sequence + Thermo-formatted modification string
-        /// </summary>
-        public static string ModSequence(string seq, string mods_str)
-        {
-            if (mods_str == "") return seq;
-
-            string[] mods = Regex.Split(mods_str, "; ");
-            var actual_mods = new List<string>();
-
-            // WORKAROUND: PD uses "modifications" like "X1(L)" to indicate that AA X at pos. 1 is actually a leucine
-            // Substitute these before doing anything else, since "X" AAs might also be actually modified in addition
-            // to the "modifications" indicating the actual AA.
-            var tmp_seq = new StringBuilder(seq);
-            string aa_letters = "ARNDCEQGHILKMFPSTWYV";
-            foreach (string m in mods)
-            {
-                bool actual_mod = true;
-                // m is something like "M11(Oxidation)" or "N-Term(Carbamyl)" or "X8(L)"
-                string[] parts = m.Split('(');
-
-                if (!aa_letters.Contains(parts[0].Substring(0, 1)))
-                {
-                    // modified AA character is not an actual AA (probably B, J, X, or Z)
-                    // ==> now, also check if "modification" consists of just 1 letter representing an AA
-                    if (parts[1].Length == 2 && aa_letters.Contains(parts[1][0]))
+                    /// <summary>
+                    /// Return a modified sequence string (OpenMS format) from unmodified sequence + Thermo-formatted modification string
+                    /// </summary>
+                    public static string ModSequence(string seq, string mods_str)
                     {
-                        // substitute
-                        Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
-                        tmp_seq[aa_pos - 1] = parts[1][0];
-                        // discard this "modification"
-                        actual_mod = false;
+                        if (mods_str == "") return seq;
+
+                        string[] mods = Regex.Split(mods_str, "; ");
+                        var actual_mods = new List<string>();
+
+                        // WORKAROUND: PD uses "modifications" like "X1(L)" to indicate that AA X at pos. 1 is actually a leucine
+                        // Substitute these before doing anything else, since "X" AAs might also be actually modified in addition
+                        // to the "modifications" indicating the actual AA.
+                        var tmp_seq = new StringBuilder(seq);
+                        string aa_letters = "ARNDCEQGHILKMFPSTWYV";
+                        foreach (string m in mods)
+                        {
+                            bool actual_mod = true;
+                            // m is something like "M11(Oxidation)" or "N-Term(Carbamyl)" or "X8(L)"
+                            string[] parts = m.Split('(');
+
+                            if (!aa_letters.Contains(parts[0].Substring(0, 1)))
+                            {
+                                // modified AA character is not an actual AA (probably B, J, X, or Z)
+                                // ==> now, also check if "modification" consists of just 1 letter representing an AA
+                                if (parts[1].Length == 2 && aa_letters.Contains(parts[1][0]))
+                                {
+                                    // substitute
+                                    Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
+                                    tmp_seq[aa_pos - 1] = parts[1][0];
+                                    // discard this "modification"
+                                    actual_mod = false;
+                                }
+                            }
+                            if (actual_mod)
+                            {
+                                actual_mods.Add(m);
+                            }
+                        }
+                        var unmodified_seq = tmp_seq.ToString();
+
+                        var result = "";
+                        var n_term_mod = "";
+                        var c_term_mod = "";
+                        Int32 last_pos = 0;
+
+                        // assumption: modifications are in ascending order of AA position
+                        foreach (string mm in actual_mods)
+                        {
+                            // remove (Prot) if present (e.g. "N-Term(Prot)(Acetyl)")
+                            var m = mm.Replace("(Prot)", "");
+
+                            // have something like "M11(Oxidation)" or "N-Term(Carbamyl)"
+                            string[] parts = m.Split('(');
+
+                            // N-term
+                            if (parts[0].Length >= 6 && parts[0].Substring(0, 6) == "N-Term")
+                            {
+                                n_term_mod = "(" + parts[1];
+                                continue;
+                            }
+                            // C-term
+                            if (parts[0].Length >= 6 && parts[0].Substring(0, 6) == "C-Term")
+                            {
+                                c_term_mod = "(" + parts[1];
+                                continue;
+                            }
+                            // Residue
+                            Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
+                            Int32 substr_len = aa_pos - last_pos;
+                            string mod_str = "(" + parts[1];
+                            string next_chunk = unmodified_seq.Substring(last_pos, substr_len);
+                            result += next_chunk + mod_str;
+                            last_pos = aa_pos;
+                        }
+                        result = n_term_mod + result + unmodified_seq.Substring(last_pos) + c_term_mod;
+
+                        return result;
                     }
-                }
-                if (actual_mod)
-                {
-                    actual_mods.Add(m);
-                }
-            }
-            var unmodified_seq = tmp_seq.ToString();
 
-            var result = "";
-            var n_term_mod = "";
-            var c_term_mod = "";
-            Int32 last_pos = 0;
+                    /// <summary>
+                    /// Remove obsolete CV terms from a set of mzML files that would otherwise lead to delay and millions of warning messages on loading in OpenMS.
+                    /// </summary>
+                    public static void FixCVTerms(List<string> mzml_files, NodeDelegates nd)
+                    {
+                        // remove in particular one obsolete CV term (MS:1000498)
+                        // which otherwise leads to huge delay and millions of warning
+                        // messages when loading the file into OpenMS
+                        foreach (var f in mzml_files)
+                        {
+                            // move to temporary file
+                            var tmp_f = f.Replace(".mzML", "_tmp.mzML");
+                            try
+                            {
+                                File.Move(f, tmp_f);
+                            }
+                            catch (Exception)
+                            {
+                                nd.errorLogMessage(string.Format("Could not move file {0} to {1}", f, tmp_f));
+                            }
 
-            // assumption: modifications are in ascending order of AA position
-            foreach (string mm in actual_mods)
-            {
-                // remove (Prot) if present (e.g. "N-Term(Prot)(Acetyl)")
-                var m = mm.Replace("(Prot)", "");
+                            // open temporary file, remove obsolete CV terms, store with original filename
+                            XDocument doc = XDocument.Load(tmp_f);
+                            var q = from node in doc.Descendants("{http://psi.hupo.org/ms/mzml}cvParam")
+                                    let acc = node.Attribute("accession")
+                                    where acc != null && acc.Value == "MS:1000498"
+                                    select node;
+                            q.ToList().ForEach(x => x.Remove());
+                            try
+                            {
+                                doc.Save(f);
+                            }
+                            catch (Exception)
+                            {
+                                nd.errorLogMessage(string.Format("Could not save file {0}", f));
+                            }
 
-                // have something like "M11(Oxidation)" or "N-Term(Carbamyl)"
-                string[] parts = m.Split('(');
+                            // remove temporary file
+                            try
+                            {
+                                File.Delete(tmp_f);
+                            }
+                            catch (Exception)
+                            {
+                                nd.errorLogMessage(string.Format("Could not delete file {0}", tmp_f));
+                            }
+                        }
+                    }
 
-                // N-term
-                if (parts[0].Length >= 6 && parts[0].Substring(0, 6) == "N-Term")
-                {
-                    n_term_mod = "(" + parts[1];
-                    continue;
-                }
-                // C-term
-                if (parts[0].Length >= 6 && parts[0].Substring(0, 6) == "C-Term")
-                {
-                    c_term_mod = "(" + parts[1];
-                    continue;
-                }
-                // Residue
-                Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
-                Int32 substr_len = aa_pos - last_pos;
-                string mod_str = "(" + parts[1];
-                string next_chunk = unmodified_seq.Substring(last_pos, substr_len);
-                result += next_chunk + mod_str;
-                last_pos = aa_pos;
-            }
-            result = n_term_mod + result + unmodified_seq.Substring(last_pos) + c_term_mod;
+                    /// <summary>
+                    /// Remove duplicates (same accession) from FASTA file
+                    /// </summary>
+                    public static void RemoveDuplicatesInFastaFile(string fasta_file)
+                    {
+                        var result_fasta_text = "";
+                        var accession_set = new HashSet<string>();
+                        var fasta_text = File.ReadAllText(fasta_file);
+                        var fasta_parts = Regex.Split(fasta_text, "^>", RegexOptions.Multiline);
+                        foreach (var fp in fasta_parts)
+                        {
+                            if (fp.IsNullOrEmpty())
+                            {
+                                continue;
+                            }
+                            var accession = fp.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[0];
+                            if (!accession_set.Contains(accession))
+                            {
+                                accession_set.Add(accession);
+                                result_fasta_text += ">";
+                                result_fasta_text += fp;
+                            }
+                        }
+                        File.WriteAllText(fasta_file, result_fasta_text);
+                    }
 
-            return result;
-        }
+                    enum ParseState
+                    {
+                        NONE,
+                        PROTEIN_HIT,
+                        PEPTIDE_IDENTIFICATION,
+                        PEPTIDE_HIT,
+                        PEPTIDE_HIT_USERPARAM,
+                        PEPTIDE_IDENTIFICATION_USERPARAM
+                    };
 
-        /// <summary>
-        /// Remove obsolete CV terms from a set of mzML files that would otherwise lead to delay and millions of warning messages on loading in OpenMS.
-        /// </summary>
-        public static void FixCVTerms(List<string> mzml_files, NodeDelegates nd)
-        {
-            // remove in particular one obsolete CV term (MS:1000498)
-            // which otherwise leads to huge delay and millions of warning
-            // messages when loading the file into OpenMS
-            foreach (var f in mzml_files)
-            {
-                // move to temporary file
-                var tmp_f = f.Replace(".mzML", "_tmp.mzML");
-                try
-                {
-                    File.Move(f, tmp_f);
-                }
-                catch (Exception)
-                {
-                    nd.errorLogMessage(string.Format("Could not move file {0} to {1}", f, tmp_f));
-                }
+                    /*
+                    /// <summary>
+                    /// Parse results in csv_filename and add to EntityDataService
+                    /// </summary>
+                    private void ParseCSVResults(string csv_filename)
+                    {
+                        if (EntityDataService.ContainsEntity<NuXLItem>() == false)
+                        {
+                            EntityDataService.RegisterEntity<NuXLItem>(ProcessingNodeNumber);
+                        }
 
-                // open temporary file, remove obsolete CV terms, store with original filename
-                XDocument doc = XDocument.Load(tmp_f);
-                var q = from node in doc.Descendants("{http://psi.hupo.org/ms/mzml}cvParam")
-                        let acc = node.Attribute("accession")
-                        where acc != null && acc.Value == "MS:1000498"
-                        select node;
-                q.ToList().ForEach(x => x.Remove());
-                try
-                {
-                    doc.Save(f);
-                }
-                catch (Exception)
-                {
-                    nd.errorLogMessage(string.Format("Could not save file {0}", f));
-                }
+                        var nuxl_items = new List<NuXLItem>();
 
-                // remove temporary file
-                try
-                {
-                    File.Delete(tmp_f);
-                }
-                catch (Exception)
-                {
-                    nd.errorLogMessage(string.Format("Could not delete file {0}", tmp_f));
-                }
-            }
-        }
+                        StreamReader reader = File.OpenText(csv_filename);
+                        string line = reader.ReadLine(); // ignore header
 
-        /// <summary>
-        /// Remove duplicates (same accession) from FASTA file
-        /// </summary>
-        public static void RemoveDuplicatesInFastaFile(string fasta_file)
-        {
-            var result_fasta_text = "";
-            var accession_set = new HashSet<string>();
-            var fasta_text = File.ReadAllText(fasta_file);
-            var fasta_parts = Regex.Split(fasta_text, "^>", RegexOptions.Multiline);
-            foreach (var fp in fasta_parts)
-            {
-                if (fp.IsNullOrEmpty())
-                {
-                    continue;
-                }
-                var accession = fp.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[0];
-                if (!accession_set.Contains(accession))
-                {
-                    accession_set.Add(accession);
-                    result_fasta_text += ">";
-                    result_fasta_text += fp;
-                }
-            }
-            File.WriteAllText(fasta_file, result_fasta_text);
-        }
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            string[] items = line.Split(new char[] { '\t' }, StringSplitOptions.None);
 
-        enum ParseState
-        {
-            NONE,
-            PROTEIN_HIT,
-            PEPTIDE_IDENTIFICATION,
-            PEPTIDE_HIT,
-            PEPTIDE_HIT_USERPARAM,
-            PEPTIDE_IDENTIFICATION_USERPARAM
-        };
+                            if (items.Length != 40) continue; // skip empty lines
+
+                            var x = new NuXLItem();
+
+                            x.WorkflowID = WorkflowID;
+                            x.Id = EntityDataService.NextId<NuXLItem>();
+
+                            double dbl_val;
+                            Int32 int_val;
+
+                            x.rt = Double.TryParse(items[0], out dbl_val) ? (dbl_val / 60.0) : 0.0;
+                            x.orig_mz = Double.TryParse(items[1], out dbl_val) ? dbl_val : 0.0;
+                            x.proteins = items[2];
+                            x.peptide = items[3];
+                            x.rna = items[4];
+                            x.charge = Int32.TryParse(items[5], out int_val) ? int_val : 0;
+                            x.score = Double.TryParse(items[6], out dbl_val) ? dbl_val : 0.0;
+                            x.best_loc_score = Double.TryParse(items[7], out dbl_val) ? (dbl_val > 1e-20 ? dbl_val * 100.0 : 0.0) : 0.0;
+                            x.loc_scores = items[8];
+                            x.best_localizations = items[9];
+                            x.peptide_weight = Double.TryParse(items[10], out dbl_val) ? dbl_val : 0.0;
+                            x.rna_weight = Double.TryParse(items[11], out dbl_val) ? dbl_val : 0.0;
+                            x.xl_weight = Double.TryParse(items[12], out dbl_val) ? dbl_val : 0.0;
+                            x.a_1 = Double.TryParse(items[13], out dbl_val) ? dbl_val : 0.0;
+                            x.a_3 = Double.TryParse(items[14], out dbl_val) ? dbl_val : 0.0;
+                            x.c_1 = Double.TryParse(items[15], out dbl_val) ? dbl_val : 0.0;
+                            x.c_3 = Double.TryParse(items[16], out dbl_val) ? dbl_val : 0.0;
+                            x.g_1 = Double.TryParse(items[17], out dbl_val) ? dbl_val : 0.0;
+                            x.g_3 = Double.TryParse(items[18], out dbl_val) ? dbl_val : 0.0;
+                            x.u_1 = Double.TryParse(items[19], out dbl_val) ? dbl_val : 0.0;
+                            x.u_3 = Double.TryParse(items[20], out dbl_val) ? dbl_val : 0.0;
+                            x.abs_prec_error_da = Double.TryParse(items[21], out dbl_val) ? dbl_val : 0.0;
+                            x.rel_prec_error_ppm = Double.TryParse(items[22], out dbl_val) ? dbl_val : 0.0;
+                            x.m_h = Double.TryParse(items[23], out dbl_val) ? dbl_val : 0.0;
+                            x.m_2h = Double.TryParse(items[24], out dbl_val) ? dbl_val : 0.0;
+                            x.m_3h = Double.TryParse(items[25], out dbl_val) ? dbl_val : 0.0;
+                            x.m_4h = Double.TryParse(items[26], out dbl_val) ? dbl_val : 0.0;
+                            x.fragment_annotation = items[39];
+
+                            // don't add unidentified spectra
+                            if (x.peptide == "" && x.rna == "")
+                            {
+                                continue;
+                            }
+
+                            nuxl_items.Add(x);
+                        }
+
+                        EntityDataService.InsertItems(nuxl_items);
+
+                        // establish connection between results and spectra
+                        connectNuXLItemWithSpectra();
+
+                        // add CV column
+                        AddCompVoltageToCsm();
+                    }
+                    */
 
         public static List<NuXLItem> parseIdXML(string id_file)
         {
@@ -633,7 +735,21 @@ namespace PD.OpenMS.AdapterNodes
                                             if (n == "NuXL:Da difference") { x.abs_prec_error_da = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
                                             if (n == "precursor_mz_error_ppm") { x.rel_prec_error_ppm = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
                                             if (n == "fragment_annotation") { x.fragment_annotation = v; continue; }
-                                            continue; 
+
+                                            if (n.StartsWith("A_136")) { x.a_1 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n.StartsWith("A_330")) { x.a_3 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n.StartsWith("C_112")) { x.c_1 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n.StartsWith("C_306")) { x.c_3 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n.StartsWith("G_152")) { x.g_1 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n.StartsWith("G_346")) { x.g_3 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n.StartsWith("U_113")) { x.u_1 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n.StartsWith("U_307")) { x.u_3 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "NuXL:z1 mass") { x.m_h = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "NuXL:z2 mass") { x.m_2h = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "NuXL:z3 mass") { x.m_3h = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+                                            if (n == "NuXL:z4 mass") { x.m_4h = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
+
+                                            continue;
                                         }
 
                                         break;

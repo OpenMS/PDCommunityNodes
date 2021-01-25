@@ -53,6 +53,10 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
             this.msGraphControl.Size = new System.Drawing.Size(940, 412);
             this.msGraphControl.TabIndex = 1;
             this.msGraphControl.Load += new System.EventHandler(this.msGraphControl_Load);
+
+            this.msGraphControl.GraphPane.AllowLabelOverlap = false;
+            this.msGraphControl.GraphPane.AllowCurveOverlap = true;
+
             // 
             // SpectrumView
             // 
@@ -66,7 +70,6 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
             this.Text = "Spectrum View";
             this.Load += new System.EventHandler(this.SpectrumView_Load);
             this.ResumeLayout(false);
-
         }
 
         #endregion

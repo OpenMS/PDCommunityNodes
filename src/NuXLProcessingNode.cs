@@ -163,6 +163,17 @@ namespace PD.OpenMS.AdapterNodes
             MinimumValue = "0",
             Position = 60)]
         public IntegerParameter param_cross_linking_length;
+        
+        [StringSelectionParameter(
+            Category = "2. Cross-links",
+            DisplayName = "Presets",
+            Description = "One of supported cross-linking protocols ('none' = use user provided precursor & fragment adducts and cross-linked NAs).",
+            DefaultValue = "none",
+            SelectionValues = new string[] {
+                "none", "RNA-UV (U)", "RNA-UV (UCGA)", "RNA-UV (4SU)", 
+                "DNA", "RNA-DEB", "DNA-DEB"},
+            Position = 65)]
+        public SimpleSelectionParameter<string> param_cross_linking_presets;
 
         [StringParameter(
             Category = "2. Cross-links",
@@ -946,8 +957,7 @@ namespace PD.OpenMS.AdapterNodes
                 {"fold_change", param_xic_filtering_fold_change.ToString()},
                 {"rt_tol", (param_xic_filtering_rt_threshold.Value * 60.0).ToString()},
                 {"mz_tol", param_xic_filtering_mz_threshold.Value.Tolerance.ToString()},
-                {"threads", "1"}, // TODO: check if multithreading possible
-                //{"threads", param_general_num_threads.ToString()},
+                {"threads", param_general_num_threads.ToString()},
                 {"log",  openms_log_path.ToString()}
             };
             OpenMSCommons.WriteParamsToINI(ini_path, fdr_parameters);
@@ -996,7 +1006,7 @@ namespace PD.OpenMS.AdapterNodes
                             {"max_missing", "1"},
                             {"min_spectra", "6"},
                             {"slope_bound", "0.1"},
-                            {"threads", "1"} // TODO: check if multithreading possible                            
+                            {"threads", param_general_num_threads.ToString()}
                 };
 
                 OpenMSCommons.WriteParamsToINI(ini_path, ffc_parameters);
@@ -1033,7 +1043,7 @@ namespace PD.OpenMS.AdapterNodes
             {
                 {"max_num_peaks_considered", "-1"},
                 {"ignore_charge", "false"},
-                {"threads", "1"} // TODO: check if multithreading possible                            
+                {"threads", param_general_num_threads.ToString()}
             };
             ini_path = Path.Combine(NodeScratchDirectory, MapAlignerIniFileName);
             OpenMSCommons.CreateDefaultINI(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
@@ -1081,7 +1091,7 @@ namespace PD.OpenMS.AdapterNodes
                     {"in", mzml_in_files[i]},
                     {"trafo_in", trafo_in_files[i]},
                     {"out", result_list[i]},
-                    {"threads", "1"}
+                    {"threads", param_general_num_threads.ToString()}
                 };
                 OpenMSCommons.WriteParamsToINI(ini_path, transformer_parameters);
 
@@ -1143,7 +1153,7 @@ namespace PD.OpenMS.AdapterNodes
                             {"out_tsv", result_tsv_filename},
                             {"out", idxml_filename},
                             {"percolator_executable", Path.Combine(openms_dir, PercolatorExecutable)},
-                            {"threads", "1"}, // TODO: fix multi-threading issue
+                            {"threads", param_general_num_threads.ToString()},
                             {"log",  openms_log_path.ToString()}
             };
             OpenMSCommons.WriteParamsToINI(nuxl_ini_file, nuxl_parameters);
@@ -1188,6 +1198,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "missed_cleavages", param_nuxl_missed_cleavages.ToString()));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("peptide", "enzyme", param_nuxl_enzyme.Value));
 
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "presets", param_cross_linking_presets));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "length", param_cross_linking_length));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "sequence", param_cross_linking_sequence));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "CysteineAdduct", param_cross_linking_cysteine_adduct.ToString().ToLower()));
@@ -1271,82 +1282,6 @@ namespace PD.OpenMS.AdapterNodes
             {
                 x.WorkflowID = WorkflowID;
                 x.Id = EntityDataService.NextId<NuXLItem>();
-            }
-
-            EntityDataService.InsertItems(nuxl_items);
-
-            // establish connection between results and spectra
-            connectNuXLItemWithSpectra();
-
-            // add CV column
-            AddCompVoltageToCsm();
-        }
-
-        /// <summary>
-        /// Parse results in csv_filename and add to EntityDataService
-        /// </summary>
-        private void ParseCSVResults(string csv_filename)
-        {
-            if (EntityDataService.ContainsEntity<NuXLItem>() == false)
-            {
-                EntityDataService.RegisterEntity<NuXLItem>(ProcessingNodeNumber);
-            }
-
-            var nuxl_items = new List<NuXLItem>();
-
-            StreamReader reader = File.OpenText(csv_filename);
-            string line = reader.ReadLine(); // ignore header
-
-            while ((line = reader.ReadLine()) != null)
-            {
-                string[] items = line.Split(new char[] { '\t' }, StringSplitOptions.None);
-
-                if (items.Length != 40) continue; // skip empty lines
-
-                var x = new NuXLItem();
-
-                x.WorkflowID = WorkflowID;
-                x.Id = EntityDataService.NextId<NuXLItem>();
-
-                double dbl_val;
-                Int32 int_val;
-
-                x.rt = Double.TryParse(items[0], out dbl_val) ? (dbl_val / 60.0) : 0.0;
-                x.orig_mz = Double.TryParse(items[1], out dbl_val) ? dbl_val : 0.0;
-                x.proteins = items[2];
-                x.peptide = items[3];
-                x.rna = items[4];
-                x.charge = Int32.TryParse(items[5], out int_val) ? int_val : 0;
-                x.score = Double.TryParse(items[6], out dbl_val) ? dbl_val : 0.0;
-                x.best_loc_score = Double.TryParse(items[7], out dbl_val) ? (dbl_val > 1e-20 ? dbl_val * 100.0 : 0.0) : 0.0;
-                x.loc_scores = items[8];
-                x.best_localizations = items[9];
-                x.peptide_weight = Double.TryParse(items[10], out dbl_val) ? dbl_val : 0.0;
-                x.rna_weight = Double.TryParse(items[11], out dbl_val) ? dbl_val : 0.0;
-                x.xl_weight = Double.TryParse(items[12], out dbl_val) ? dbl_val : 0.0;
-                x.a_1 = Double.TryParse(items[13], out dbl_val) ? dbl_val : 0.0;
-                x.a_3 = Double.TryParse(items[14], out dbl_val) ? dbl_val : 0.0;
-                x.c_1 = Double.TryParse(items[15], out dbl_val) ? dbl_val : 0.0;
-                x.c_3 = Double.TryParse(items[16], out dbl_val) ? dbl_val : 0.0;
-                x.g_1 = Double.TryParse(items[17], out dbl_val) ? dbl_val : 0.0;
-                x.g_3 = Double.TryParse(items[18], out dbl_val) ? dbl_val : 0.0;
-                x.u_1 = Double.TryParse(items[19], out dbl_val) ? dbl_val : 0.0;
-                x.u_3 = Double.TryParse(items[20], out dbl_val) ? dbl_val : 0.0;
-                x.abs_prec_error_da = Double.TryParse(items[21], out dbl_val) ? dbl_val : 0.0;
-                x.rel_prec_error_ppm = Double.TryParse(items[22], out dbl_val) ? dbl_val : 0.0;
-                x.m_h = Double.TryParse(items[23], out dbl_val) ? dbl_val : 0.0;
-                x.m_2h = Double.TryParse(items[24], out dbl_val) ? dbl_val : 0.0;
-                x.m_3h = Double.TryParse(items[25], out dbl_val) ? dbl_val : 0.0;
-                x.m_4h = Double.TryParse(items[26], out dbl_val) ? dbl_val : 0.0;
-                x.fragment_annotation = items[39];                
-
-                // don't add unidentified spectra
-                if (x.peptide == "" && x.rna == "")
-                {
-                    continue;
-                }
-
-                nuxl_items.Add(x);
             }
 
             EntityDataService.InsertItems(nuxl_items);
