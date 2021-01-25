@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace NuXLTest
 {
-    class Program
+    class IdXMLParserTest
     {
         static void Main(string[] args)
         {
