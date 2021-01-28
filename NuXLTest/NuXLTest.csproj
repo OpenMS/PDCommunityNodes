@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <StartupObject>NuXLTest.Program</StartupObject>
+    <StartupObject>NuXLTest.IdXMLParserTest</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
