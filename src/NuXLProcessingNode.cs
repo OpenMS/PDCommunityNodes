@@ -82,6 +82,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Preprocess using ID filtering",
             Description = "If set to true, spectra containing regular (non-cross-linked) peptides (max. 1% FDR) are skipped in the search for cross-links.",
             DefaultValue = "true",
+            IsAdvanced = true,
             Position = 10)]
         public BooleanParameter param_general_id_filter;
 
@@ -90,6 +91,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Autotune search settings",
             Description = "If set to true, search tolerances are estimated from a search for non-cross-linked peptides.",
             DefaultValue = "true",
+            IsAdvanced = true,
             Position = 11)]
         public BooleanParameter param_general_autotune;
 
@@ -97,7 +99,8 @@ namespace PD.OpenMS.AdapterNodes
             Category = "1. General",
             DisplayName = "Discard PSMs with high precursor mass errors",
             Description = "If set to true, PSMs are filtered if the precursor mass error is larger than 5 std. devs.",
-            DefaultValue = "true",
+            IsAdvanced = true,
+            DefaultValue = "false",
             Position = 12)]
         public BooleanParameter param_general_discard_bad_pcmass;
 
@@ -105,7 +108,8 @@ namespace PD.OpenMS.AdapterNodes
             Category = "1. General",
             DisplayName = "Filter bad partial loss scores",
             Description = "If set to true, Cross-link PSMs are filtered out early if they show no or nearly no shifted peaks.",
-            DefaultValue = "true",
+            DefaultValue = "false",
+            IsAdvanced = true,
             Position = 13)]
         public BooleanParameter param_general_filter_bad_partial_loss_scores;
 
@@ -113,7 +117,8 @@ namespace PD.OpenMS.AdapterNodes
             Category = "1. General",
             DisplayName = "Preprocess using XIC filtering",
             Description = "Only relevant when a control file is available. Remove XICs at precursor positions that are also found in the control file from the cross-link file.",
-            DefaultValue = "true",
+            DefaultValue = "false",
+            IsAdvanced = true,
             Position = 20)]
         public BooleanParameter param_general_run_xic_filtering;
 
@@ -121,7 +126,8 @@ namespace PD.OpenMS.AdapterNodes
             Category = "1. General",
             DisplayName = "XIC filtering uses RT alignment",
             Description = "Only relevant when a control file is available and 'Preprocess using XIC filtering' is set to 'true'. Specifies whether control file should be aligned to cross-link file.",
-            DefaultValue = "true",
+            IsAdvanced = true,
+            DefaultValue = "false",
             Position = 30)]
         public BooleanParameter param_general_run_map_alignment;
 
@@ -150,7 +156,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "1. General",
             DisplayName = "CPU cores",
             Description = "Maximum number of CPU cores allowed to be used by the algorithms",
-            DefaultValue = "1",
+            DefaultValue = "4",
             MinimumValue = "1",
             Position = 55)]
         public IntegerParameter param_general_num_threads;
@@ -158,9 +164,10 @@ namespace PD.OpenMS.AdapterNodes
         [IntegerParameter(
             Category = "2. Cross-links",
             DisplayName = "Length",
-            Description = "Maximum length of oligonucleotides. 0 = disable search for RNA variants.",
+            Description = "Maximum length of oligonucleotides. 0 = disable search for NA variants.",
             DefaultValue = "1",
             MinimumValue = "0",
+            MaximumValue = "4",
             Position = 60)]
         public IntegerParameter param_cross_linking_length;
         
@@ -170,8 +177,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "One of supported cross-linking protocols ('none' = use user provided precursor & fragment adducts and cross-linked NAs).",
             DefaultValue = "none",
             SelectionValues = new string[] {
-                "none", "RNA-UV (U)", "RNA-UV (UCGA)", "RNA-UV (4SU)", 
-                "DNA", "RNA-DEB", "DNA-DEB"},
+                "none", "RNA-UV (U)", "RNA-UV (UCGA)", "RNA-UV (4SU)", "DNA-UV", "RNA-DEB", "DNA-DEB", "RNA-NM", "DNA-NM"},
             Position = 65)]
         public SimpleSelectionParameter<string> param_cross_linking_presets;
 
@@ -180,6 +186,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Sequence",
             Description = "Sequence to restrict the generation of oligonucleotide chains. (disabled for empty sequence)",
             DefaultValue = "",
+            IsAdvanced = true,
             Position = 70)]
         public StringParameter param_cross_linking_sequence;
 
@@ -202,25 +209,25 @@ namespace PD.OpenMS.AdapterNodes
         public StringParameter param_cross_linking_mapping;
 
         [StringParameter(
-            Category = "2. Cross-links",
+            Category = "2. Cross-link identification",
             DisplayName = "Can cross-link",
             Description = "Format: 'U' if only U forms cross-links. 'CATG' if C, A, G, and T form cross - links. (default: 'U')",
             DefaultValue = "U",
-            IsAdvanced = false,
+            IsAdvanced = true,
             Position = 100)]
         public StringParameter param_cross_linking_can_xls;
 
         [StringParameter(
-            Category = "2. Cross-links",
+            Category = "2. Cross-link identification",
             DisplayName = "Fragment adducts",
             Description = "Format: [target nucleotide]:[formula] or [precursor adduct]->[fragment adduct formula];[name]: e.g., 'U:C9H10N2O5;U-H3PO4' or 'U:U-H2O->C9H11N2O8P1;U-H2O', (default: '[U:C9H10N2O5;U-H3PO4 U:C4H4N2O2;U' U:C4H2N2O1;U'-H2O U:C3O;C3O U:C9H13N2O9P1;U U:C9H11N2O8P1;U-H2O U:C9H12N2O6;U-HPO3]')",
             DefaultValue = "[U:C9H10N2O5;U-H3PO4 U:C4H4N2O2;u U:C4H2N2O1;u-H2O U:C3O;C3O U:C9H13N2O9P1;U U:C9H11N2O8P1;U-H2O U:C9H12N2O6;U-HPO3]",
-            IsAdvanced = false,
+            IsAdvanced = true,
             Position = 101)]
         public StringParameter param_cross_linking_fragment_adducts;
 
         [StringParameter(
-            Category = "2. Cross-links",
+            Category = "2. Cross-link identification",
             DisplayName = "Modifications",
             Description = "Format: empirical formula e.g -H2O, ..., H2O+PO3 (default: '[U:  U:-H2O U:-H2O-HPO3 U:-HPO3]')",
             DefaultValue = "[U: U:-H2O U:-H2O-HPO3 U:-HPO3]",
@@ -240,18 +247,21 @@ namespace PD.OpenMS.AdapterNodes
          */
 
         [BooleanParameter(
-            Category = "2. Cross-links",
+            Category = "2. Cross-link identification",
             DisplayName = "Cysteine adduct",
             Description = "Use this flag if the +152 adduct is expected.",
             DefaultValue = "false",
+            IsAdvanced = true,
             Position = 130)]
         public BooleanParameter param_cross_linking_cysteine_adduct;
 
+/*
         [BooleanParameter(
             Category = "2. Cross-links",
             DisplayName = "Filter fractional mass",
             Description = "Use this flag to filter non-crosslinks by fractional mass.",
             DefaultValue = "false",
+            IsAdvanced = true,
             Position = 140)]
         public BooleanParameter param_cross_linking_filter_fractional_mass;
 
@@ -260,14 +270,15 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Carbon-labeled fragments",
             Description = "Generate fragment shifts assuming full labeling of carbon (e.g. completely labeled U13).",
             DefaultValue = "false",
+            IsAdvanced = true,
             Position = 150)]
         public BooleanParameter param_cross_linking_carbon_labeled_fragments;
-
+*/
         [MassToleranceParameter(
             Category = "3. Peptide identification",
             DisplayName = "Precursor mass tolerance",
             Description = "This parameter specifies the precursor mass tolerance for peptide identification",
-            DefaultValue = "10 ppm",
+            DefaultValue = "6 ppm",
             Position = 160,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_nuxl_precursor_mass_tolerance;
@@ -276,7 +287,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "3. Peptide identification",
             DisplayName = "Fragment mass tolerance",
             Description = "This parameter specifies the fragment mass tolerance for peptide identification",
-            DefaultValue = "10 ppm",
+            DefaultValue = "20 ppm",
             Position = 170,
             IntendedPurpose = ParameterPurpose.MassTolerance)]
         public MassToleranceParameter param_nuxl_fragment_mass_tolerance;
@@ -312,7 +323,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "3. Peptide identification",
             DisplayName = "Peptide length max",
             Description = "Maximum length of peptides.",
-            DefaultValue = "128",
+            DefaultValue = "40",
             MinimumValue = "6",
             Position = 196)]
         public IntegerParameter param_nuxl_peptide_length_max;
@@ -336,9 +347,9 @@ namespace PD.OpenMS.AdapterNodes
         [StringSelectionParameter(
             Category = "3. Peptide identification",
             DisplayName = "Scoring",
-            Description = "The scoring method used (fast=total loss of NAs assumed in prescoring, slow=all partial loss ions scoring)",
-            DefaultValue = "fast",
-            SelectionValues = new string[] {"fast", "slow"},
+            Description = "The scoring method used (no fragment adducts=total loss of all NAs assumed in prescoring, include fragment adducts=all partial loss ions are used in prescoring.)",
+            DefaultValue = "include fragment adducts",
+            SelectionValues = new string[] {"no fragment adducts", "include fragment adducts" },
                 Position = 205)]
         public SimpleSelectionParameter<string> param_nuxl_scoring;
 
@@ -389,6 +400,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Select any known or suspected modification. Static modifications are applied universally, to every instance of the specified residue(s) or terminus. ",
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
+            IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             Position = 250)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
@@ -401,6 +413,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Select any known or suspected modification. Static modifications are applied universally, to every instance of the specified residue(s) or terminus. ",
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
+            IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             Position = 260)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
@@ -413,6 +426,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Select any known or suspected modification. Static modifications are applied universally, to every instance of the specified residue(s) or terminus. ",
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
+            IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             Position = 270)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
@@ -425,6 +439,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Select any known or suspected modification. Static modifications are applied universally, to every instance of the specified residue(s) or terminus. ",
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
+            IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             Position = 280)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
@@ -437,6 +452,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Select any known or suspected modification. Static modifications are applied universally, to every instance of the specified residue(s) or terminus. ",
             ModificationType = ModificationType.Static,
             IsMultiSelect = true,
+            IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.StaticModification,
             Position = 290)]
         [ParameterGroup(GroupName = "Static Modifications", IsDominant = true, IsValueUnique = true)]
@@ -467,6 +483,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "2. Dynamic N-terminal modification",
             Description = "Select any known or suspected modification.",
             ModificationType = ModificationType.Dynamic,
+            IsAdvanced = true,
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
             IntendedPurpose = ParameterPurpose.DynamicTerminalModification,
             Position = 410)]
@@ -475,6 +492,7 @@ namespace PD.OpenMS.AdapterNodes
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "3. Dynamic N-terminal modification",
+            IsAdvanced = true,
             Description = "Select any known or suspected modification.",
             ModificationType = ModificationType.Dynamic,
             PositionType = AminoAcidModificationPositionType.Any_N_Terminus,
@@ -495,6 +513,7 @@ namespace PD.OpenMS.AdapterNodes
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "2. Dynamic C-terminal modification",
+            IsAdvanced = true,
             Description = "Select any known or suspected modification.",
             ModificationType = ModificationType.Dynamic,
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
@@ -505,6 +524,7 @@ namespace PD.OpenMS.AdapterNodes
         [ModificationParameter(
             Category = "3. Peptide identification",
             DisplayName = "3. Dynamic C-terminal modification",
+            IsAdvanced = true,
             Description = "Select any known or suspected modification.",
             ModificationType = ModificationType.Dynamic,
             PositionType = AminoAcidModificationPositionType.Any_C_Terminus,
@@ -578,19 +598,12 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Select any known or suspected modification.",
             ModificationType = ModificationType.Dynamic,
             IsMultiSelect = true,
+            IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.DynamicModification,
             Position = 510)]
         [ParameterGroup(GroupName = "Dynamic Modifications", IsDominant = true, IsValueUnique = true)]
         [ParameterGroup(GroupName = "Modifications", IsDominant = true, IsControlledValueUnique = true)]
         public ModificationParameter param_nuxl_dynamic_mod_6;
-
-        [DoubleParameter(
-            Category = "4. ID filtering",
-            DisplayName = "q-value threshold",
-            Description = "The q-value threshold for PSMs to be kept.",
-            DefaultValue = "0.01",
-            Position = 520)]
-        public DoubleParameter param_id_filtering_q_value_threshold;
 
         [IntegerParameter(
             Category = "5. XIC filtering",
@@ -598,14 +611,16 @@ namespace PD.OpenMS.AdapterNodes
             Description = "Minimum fold change required for an eluting peptide in the UV sample to be considered a putative cross-link. Extracted ion chromatograms (XICs) of eluting analytes are compared between control and treatment, If the UV signal is not significantly stronger than the control (according to a minimum fold change threshold), the analyte is considered a co-eluting non-cross-linked species or contaminant and its tandem spectra are removed from the analysis.",
             DefaultValue = "2",
             MinimumValue = "0",
+            IsAdvanced = true,
             Position = 810)]
         public IntegerParameter param_xic_filtering_fold_change;
 
         [DoubleParameter(
             Category = "5. XIC filtering",
-            DisplayName = "Max. RT difference [min]",
-            Description = "This parameter specifies the maximum allowed retention time difference between corresponding XICs.",
+            DisplayName = "max. RT difference [min]",
+            Description = "Maximum allowed retention time difference between corresponding XICs.",
             DefaultValue = "0.33",
+            IsAdvanced = true,
             Position = 820)]
         public DoubleParameter param_xic_filtering_rt_threshold;
 
@@ -613,29 +628,13 @@ namespace PD.OpenMS.AdapterNodes
             Category = "5. XIC filtering",
             DisplayName = "Max. m/z difference",
             Subset = "ppm",
-            Description = "This parameter specifies the maximum allowed m/z difference between corresponding XICs",
+            Description = "Maximum allowed m/z difference between corresponding XICs",
             DefaultValue = "10 ppm",
+            IsAdvanced = true,
             IntendedPurpose = ParameterPurpose.MassTolerance,
             Position = 830)]
         public MassToleranceParameter param_xic_filtering_mz_threshold;
 
-        [DoubleParameter(
-            Category = "6. RT alignment",
-            DisplayName = "Max. RT difference [min]",
-            Description = "This parameter specifies the maximum allowed retention time difference between corresponding peaks.",
-            DefaultValue = "0.1",
-            Position = 840)]
-        public DoubleParameter param_alignment_rt_threshold;
-
-        [MassToleranceParameter(
-            Category = "6. RT alignment",
-            DisplayName = "Max. m/z difference",
-            Subset = "ppm",
-            Description = "This parameter specifies the maximum allowed m/z difference between corresponding peaks.",
-            DefaultValue = "10 ppm",
-            IntendedPurpose = ParameterPurpose.MassTolerance,
-            Position = 850)]
-        public MassToleranceParameter param_alignment_mz_threshold;
 
 
         // this is needed in order to prevent a WorkflowJobBuilder error upon execution
@@ -1051,7 +1050,7 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteItemListToINI(in_files, ini_path, "in");
             OpenMSCommons.WriteItemListToINI(out_files, ini_path, "trafo_out");
             OpenMSCommons.WriteNestedParamToINI(ini_path, new Triplet("reference", "index", "1")); //use UV file as reference! (transform only control, so RTs stay constant for UV)
-            OpenMSCommons.WriteThresholdsToINI(param_alignment_mz_threshold, param_alignment_rt_threshold, ini_path);
+            OpenMSCommons.WriteThresholdsToINI(param_xic_filtering_mz_threshold, param_xic_filtering_rt_threshold, ini_path);
 
             SendAndLogMessage("Preprocessing -- Map alignment -- MapAlignerPoseClustering");
             OpenMSCommons.RunTOPPTool(exec_path, ini_path, NodeScratchDirectory, m_node_delegates);
@@ -1202,11 +1201,18 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "length", param_cross_linking_length));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "sequence", param_cross_linking_sequence));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "CysteineAdduct", param_cross_linking_cysteine_adduct.ToString().ToLower()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "filter_fractional_mass", param_cross_linking_filter_fractional_mass.ToString().ToLower()));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "carbon_labeled_fragments", param_cross_linking_carbon_labeled_fragments.ToString().ToLower()));
 
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "decoys", "true"));
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "scoring", param_nuxl_scoring));
+
+            if (param_nuxl_scoring == "include fragment adducts")
+            {
+                OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "scoring", "slow"));
+            }
+            else
+            {
+                OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "scoring", "fast"));
+            }
+
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "can_cross_link", param_cross_linking_can_xls));
 
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("report", "top_hits", "1")); // TODO: change?
