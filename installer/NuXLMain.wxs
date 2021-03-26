@@ -8,7 +8,6 @@
         UpgradeCode='350726a2-ce30-4d67-8a1b-de4db1f4cd6d'
         Language='1033' Codepage='1252' Version='2.6.0'
 		>
-					
 		<!-- elevated InstallPrivileges needed because we install into the Proteome Discoverer Folder -->
 		<Package Id='*' 
 			Keywords='Installer' 
@@ -27,6 +26,9 @@
                 AllowSameVersionUpgrades="yes" />
 
 		<Media Id="1" Cabinet="opennuxl.cab" EmbedCab="yes" CompressionLevel="medium" />
+
+  	    <!-- License agreement text -->
+		<WixVariable Id="WixUILicenseRtf" Value="NuXL.rtf" />
 
 		<Property Id="PDROOTFOLDER">
 			<RegistrySearch 
