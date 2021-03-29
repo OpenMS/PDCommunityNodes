@@ -165,7 +165,7 @@ namespace PD.OpenMS.AdapterNodes
             Category = "2. Cross-links",
             DisplayName = "Length",
             Description = "Maximum length of oligonucleotides. 0 = disable search for NA variants.",
-            DefaultValue = "1",
+            DefaultValue = "2",
             MinimumValue = "0",
             MaximumValue = "4",
             Position = 60)]
@@ -879,20 +879,22 @@ namespace PD.OpenMS.AdapterNodes
         /// </summary>
         private void RunWorkflowOnSingleFile(string input_file)
         {
+            SendAndLogMessage("Run workflow on single file");
             ArgumentHelper.AssertStringNotNullOrWhitespace(input_file, "input_file");
 
             // NuXL Search
             string idXML_file = RunNuXL(input_file);
-            //ParseCSVResults(csv_file);
 
             string xl_id_perc = idXML_file.Replace(".idXML", "") + "_perc_1.0000_XLs.idXML";
             string id_perc = idXML_file.Replace(".idXML", "") + "_1.0000_XLs.idXML";
             if (File.Exists(idXML_file.Replace(".idXML", "") + "_perc_1.0000_XLs.idXML"))
-            { 
+            {
+                SendAndLogMessage("Percolator was successful -- Loading percolator cross-link results.");
                 ParseIdXMLResults(xl_id_perc);
             }
             else
             {
+                SendAndLogMessage("Percolator was not successful -- Loading uncalibrated results.");
                 ParseIdXMLResults(id_perc);
             }
         }
@@ -921,10 +923,12 @@ namespace PD.OpenMS.AdapterNodes
             string id_perc = idXML_file.Replace(".idXML", "") + "_1.0000_XLs.idXML";
             if (File.Exists(idXML_file.Replace(".idXML", "") + "_perc_1.0000_XLs.idXML"))
             {
+                SendAndLogMessage("Percolator was successful -- Loading percolator cross-link results.");
                 ParseIdXMLResults(xl_id_perc);
             }
             else
             {
+                SendAndLogMessage("Percolator was not successful -- Loading uncalibrated results.");
                 ParseIdXMLResults(id_perc);
             }
         }
@@ -1120,6 +1124,7 @@ namespace PD.OpenMS.AdapterNodes
             // FASTA DB
 
             // concatenate all selected fasta files to a single file for OpenMS
+            SendAndLogMessage("Concatenate all selected fasta files.");
             var fasta_path = Path.Combine(NodeScratchDirectory, "nuxl_db.fasta");
             var tmp_fasta_file = Path.Combine(NodeScratchDirectory, @"tmp.fasta");
             var fasta_file_values = param_general_fasta_dbs.Values;
@@ -1140,11 +1145,13 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             //PeptideIndexer fails when the database contains multiple sequences with the same accession
+            SendAndLogMessage("Remove duplicates in fasta file.");
             OpenMSCommons.RemoveDuplicatesInFastaFile(fasta_path);           
 
             // INI file
             string nuxl_ini_file = Path.Combine(NodeScratchDirectory, NuXLIniFileName);
             string openms_log_path = Path.Combine(NodeScratchDirectory, "nuxl.log");
+            SendAndLogMessage("Create default ini.");
             OpenMSCommons.CreateDefaultINI(exec_path, nuxl_ini_file, NodeScratchDirectory, m_node_delegates);
             Dictionary<string, string> nuxl_parameters = new Dictionary<string, string> {
                             {"in", uv_mzml_filename},
@@ -1204,7 +1211,7 @@ namespace PD.OpenMS.AdapterNodes
 
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "decoys", "true"));
 
-            if (param_nuxl_scoring == "include fragment adducts")
+            if (param_nuxl_scoring.ToString() == "include fragment adducts")
             {
                 OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "scoring", "slow"));
             }

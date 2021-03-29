@@ -177,7 +177,7 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
-
+        //TODO: add version that also checks parent of parent so we don
         public static void WriteItemListToINI(string[] vars, string ini_path, string parent, string name, bool clear_list_first = false)
         {
             XmlDocument doc = new XmlDocument();
@@ -243,6 +243,12 @@ namespace PD.OpenMS.AdapterNodes
         /// </summary>        
         public static void RunTOPPTool(string exec_path, string param_path, string scratch_dir, NodeDelegates nd)
         {
+            // sanity check
+            if (!File.Exists(exec_path))
+            {
+                throw new FileNotFoundException(@"[Tool not in PD folder.]");
+            }
+
             var timer = Stopwatch.StartNew();
 
             var data_path = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(exec_path), @"../share/OpenMS"));
@@ -279,29 +285,32 @@ namespace PD.OpenMS.AdapterNodes
                         {
                             output.AppendLine(e.Data);
 
-                            //store all results (for now?) of OpenMS Tool output
-                            nd.writeLogMessage(MessageLevel.Debug, output.ToString());
+                            if (e.Data.Contains("%"))
+                            {
+                                nd.logTmpMessage(String.Format("{0} {1}", current_work, e.Data));
+                            }
+                            else
+                            {
+                                //store all results (for now?) of OpenMS Tool output
+                                nd.writeLogMessage(MessageLevel.Debug, e.Data);
 
-                            // Parse the output and report progress using the method SendAndLogTemporaryMessage
-                            if (output.ToString().Contains(@"Progress of 'loading mzML file':"))
-                            {
-                                current_work = "Progress of 'loading mzML file':";
-                            }
-                            else if (output.ToString().Contains("Progress of 'loading chromatograms':"))
-                            {
-                                current_work = "Progress of 'loading chromatograms':";
-                            }
-                            else if (output.ToString().Contains("Progress of 'Aligning input maps':"))
-                            {
-                                current_work = "Progress of 'Aligning input maps':";
-                            }
-                            else if (output.ToString().Contains("Progress of 'linking features':"))
-                            {
-                                current_work = "Progress of 'linking features':";
-                            }
-                            else if (output.ToString().Contains("%"))
-                            {
-                                nd.logTmpMessage(String.Format("{0} {1}", current_work, output));
+                                // Parse the output and report progress using the method SendAndLogTemporaryMessage
+                                if (e.Data.Contains(@"Progress of 'loading mzML file':"))
+                                {
+                                    current_work = "Progress of 'loading mzML file':";
+                                }
+                                else if (e.Data.Contains("Progress of 'loading chromatograms':"))
+                                {
+                                    current_work = "Progress of 'loading chromatograms':";
+                                }
+                                else if (e.Data.Contains("Progress of 'Aligning input maps':"))
+                                {
+                                    current_work = "Progress of 'Aligning input maps':";
+                                }
+                                else if (e.Data.Contains("Progress of 'linking features':"))
+                                {
+                                    current_work = "Progress of 'linking features':";
+                                }
                             }
 
                         }
@@ -317,6 +326,7 @@ namespace PD.OpenMS.AdapterNodes
                         else
                         {
                             error.AppendLine(e.Data);
+                            //nd.writeLogMessage(MessageLevel.Error, e.Data);
                         }
                     };
 
@@ -338,15 +348,18 @@ namespace PD.OpenMS.AdapterNodes
                             process.BeginOutputReadLine();
                             process.BeginErrorReadLine();
 
-                            if (process.WaitForExit(1000000) &&
-                                outputWaitHandle.WaitOne(1000) &&
-                                errorWaitHandle.WaitOne(1000))
+                            if (process.WaitForExit(-1) &&
+                                outputWaitHandle.WaitOne(-1) &&
+                                errorWaitHandle.WaitOne(-1))
                             {
                                 // Process completed. Check process.ExitCode here.
                             }
                             else
                             {
-                                // Timed out.
+                                throw new MagellanProcessingException(
+                                String.Format("Process timed out {0}.",
+                                              Path.GetFileName(process.StartInfo.FileName)
+                                              ));
                             }
                         }
                         catch (InvalidOperationException ex)
@@ -369,6 +382,11 @@ namespace PD.OpenMS.AdapterNodes
                         process.Kill();
                         throw;
                     }
+                    catch (ObjectDisposedException ex) 
+                    {
+                        nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
@@ -379,7 +397,8 @@ namespace PD.OpenMS.AdapterNodes
                         if (!process.HasExited)
                         {
                             nd.warnLog("The process [{0}] hasn't finished correctly -> force to exit now", process.StartInfo.FileName);
-                            process.Kill();
+                            // try catch might be needed because auf asynchronous execution
+                            process.Kill();                                                        
                         }
                     }
                 }
