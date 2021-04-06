@@ -754,6 +754,7 @@ namespace PD.OpenMS.AdapterNodes
                                             if (n == "NuXL:Da difference") { x.abs_prec_error_da = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
                                             if (n == "precursor_mz_error_ppm") { x.rel_prec_error_ppm = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
                                             if (n == "fragment_annotation") { x.fragment_annotation = v; continue; }
+                                            if (n == "NuXL:NT") { x.nt = v; continue; }
 
                                             if (n.StartsWith("A_136")) { x.a_1 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
                                             if (n.StartsWith("A_330")) { x.a_3 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }

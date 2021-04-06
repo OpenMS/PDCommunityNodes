@@ -144,6 +144,10 @@
 			<Component Id='RNPxlXICFilterEXE' Guid='a82c0801-a6b3-45c4-8874-e0579e6c9ccd'>
 				<RemoveFile Id='remove_RNPxlXICFilter.exe' Name='RNPxlXICFilter.exe' On="both"/>
 				<File Id='RNPxlXICFilter.exe' Name='RNPxlXICFilter.exe' Source='SourceDir\bin\RNPxlXICFilter.exe' KeyPath='yes' />
+			</Component>
+			<Component Id='libbz2DLL' Guid='6cb4aaae-3e69-45b9-944d-42417a0f4f9c'>
+				<RemoveFile Id='remove_libbz2.dll' Name='libbz2.dll' On="both"/>
+				<File Id='libbz2.dll' Name='libbz2.dll' Source='SourceDir\bin\libbz2.dll' KeyPath='yes' />
 			</Component>			
 		</DirectoryRef>
 		
@@ -165,6 +169,7 @@
 			<ComponentRef Id='MapAlignerPoseClusteringEXE' />
 			<ComponentRef Id='MapRTTransformerEXE' />
 			<ComponentRef Id='RNPxlXICFilterEXE' />
+			<ComponentRef Id='libbz2DLL' />
 <!-- This will include the heat generated components (both wix files need to be passed to candle) -->		
 			<ComponentGroupRef Id='OpenMSShareComponents' />
 		</Feature>	

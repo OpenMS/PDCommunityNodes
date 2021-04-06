@@ -50,6 +50,10 @@ namespace PD.OpenMS.AdapterNodes
         [GridDisplayOptions(VisiblePosition = 10)]
         public string rna { get; set; }
 
+        [EntityProperty(DisplayName = "NT")]
+        [GridDisplayOptions(VisiblePosition = 10)]
+        public string nt { get; set; }
+
         [EntityProperty(DisplayName = "Charge")]
         [GridDisplayOptions(VisiblePosition = 10)]
         [PlottingOptions(PlotType = PlotType.Ordinal)]
