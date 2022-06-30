@@ -4,12 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Xml;
-using System.Xml.Linq;
-using System.Text;
 using System.Web.UI;
 using Thermo.Magellan.BL.Data;
-using Thermo.Magellan.BL.Data.ProcessingNodeScores;
 using Thermo.Magellan.BL.Processing.Interfaces;
 using Thermo.Magellan.BL.Processing;
 using Thermo.Magellan.DataLayer.FileIO;
@@ -17,13 +13,21 @@ using Thermo.Magellan.EntityDataFramework;
 using Thermo.Magellan.MassSpec;
 using Thermo.Magellan.Utilities;
 using Thermo.Magellan.Proteomics;
-using Thermo.Magellan.StudyManagement;
 using Thermo.Magellan.StudyManagement.DataObjects;
 using Thermo.Magellan.Core.Logging;
 using Thermo.Magellan.Core.Exceptions;
 using Thermo.Magellan.PeptideIdentificationNodes;
-using Thermo.Magellan.BL.Data.Constants;
 using Thermo.PD.EntityDataFramework;
+using Thermo.Magellan.Processing.Parameters;
+using Thermo.Magellan.Processing.Parameters.Attributes;
+using Thermo.Magellan.Processing.Workflows;
+using Thermo.Magellan.Processing.Workflows.Enums;
+using Thermo.Magellan.Processing.Workflows.ProcessingNodeScores;
+using Thermo.Magellan.EntityDataFramework.Constants;
+using Thermo.Magellan.Processing.Workflows.Constants;
+using Thermo.Magellan.Proteomics.FastaFileHandling;
+using Thermo.Proteomics.Services.Interfaces;
+using Thermo.Proteomics.Services.Interfaces.Data;
 
 // manual deployment:
 // - build project
@@ -35,32 +39,28 @@ using Thermo.PD.EntityDataFramework;
 
 namespace PD.OpenMS.AdapterNodes
 {
-    # region NodeSetup
+    #region NodeSetup
+    [ProcessingNode("76F2713D-C687-48E1-842D-1B909B929546",
+       Category = ProcessingNodeCategories.SequenceDatabaseSearch,
+       DisplayName = "NuXL",
+       MainVersion = 2,
+       MinorVersion = 0,
+       Description = "Analyze Protein-Nucleic Acid cross-linking data.",
+       Visible = true)]
 
-    [ProcessingNode("5418b2e2-1e65-4af1-8253-0839e4f91a1a",
-        Category = ProcessingNodeCategories.SequenceDatabaseSearch,
-        DisplayName = "NuXL",
-        MainVersion = 1,
-        MinorVersion = 44,
-        Description = "Analyze Protein-Nucleic Acid cross-linking data")]
-
-    [ConnectionPoint("IncomingSpectra",
+    [ConnectionPoint(
+        "IncomingSpectra",
         ConnectionDirection = ConnectionDirection.Incoming,
         ConnectionMultiplicity = ConnectionMultiplicity.Single,
         ConnectionMode = ConnectionMode.Manual,
         ConnectionRequirement = ConnectionRequirement.RequiredAtDesignTime,
         ConnectionDisplayName = ProcessingNodeCategories.SpectrumAndFeatureRetrieval,
         ConnectionDataHandlingType = ConnectionDataHandlingType.InMemory)]
-
     [ConnectionPointDataContract(
         "IncomingSpectra",
         MassSpecDataTypes.MSnSpectra)]
-
-    [ProcessingNodeConstraints(UsageConstraint = UsageConstraint.OnlyOncePerWorkflow)]
-
-    # endregion
-
-    public class NuXLProcessingNode : PeptideAndProteinIdentificationNode, IResultsSink<MassSpectrumCollection>
+    #endregion
+    public class NuXLProcessingNode : PeptideAndProteinIdentificationNode //, IResultsSink<MassSpectrumCollection>
     {
         private const string NuXLToolDirectory = "NuXL/";
         private const string NuXLExecutablePath = @"bin/OpenNuXL.exe";
@@ -73,7 +73,7 @@ namespace PD.OpenMS.AdapterNodes
         private const string MapAlignerIniFileName = @"MapAlignerPoseClustering.ini";
         private const string MapRTTransformerIniFileName = @"MapRTTransformer.ini";
         private const string XICFilterIniFilename = @"RNPxlXICFilter.ini";
-        private const string PercolatorExecutable = @"bin/percolator.exe";        
+        private const string PercolatorExecutable = @"bin/percolator.exe";
 
         #region Parameters
 
@@ -170,7 +170,7 @@ namespace PD.OpenMS.AdapterNodes
             MaximumValue = "4",
             Position = 60)]
         public IntegerParameter param_cross_linking_length;
-        
+
         [StringSelectionParameter(
             Category = "2. Cross-links",
             DisplayName = "Presets",
@@ -255,25 +255,25 @@ namespace PD.OpenMS.AdapterNodes
             Position = 130)]
         public BooleanParameter param_cross_linking_cysteine_adduct;
 
-/*
-        [BooleanParameter(
-            Category = "2. Cross-links",
-            DisplayName = "Filter fractional mass",
-            Description = "Use this flag to filter non-crosslinks by fractional mass.",
-            DefaultValue = "false",
-            IsAdvanced = true,
-            Position = 140)]
-        public BooleanParameter param_cross_linking_filter_fractional_mass;
+        /*
+                [BooleanParameter(
+                    Category = "2. Cross-links",
+                    DisplayName = "Filter fractional mass",
+                    Description = "Use this flag to filter non-crosslinks by fractional mass.",
+                    DefaultValue = "false",
+                    IsAdvanced = true,
+                    Position = 140)]
+                public BooleanParameter param_cross_linking_filter_fractional_mass;
 
-        [BooleanParameter(
-            Category = "2. Cross-links",
-            DisplayName = "Carbon-labeled fragments",
-            Description = "Generate fragment shifts assuming full labeling of carbon (e.g. completely labeled U13).",
-            DefaultValue = "false",
-            IsAdvanced = true,
-            Position = 150)]
-        public BooleanParameter param_cross_linking_carbon_labeled_fragments;
-*/
+                [BooleanParameter(
+                    Category = "2. Cross-links",
+                    DisplayName = "Carbon-labeled fragments",
+                    Description = "Generate fragment shifts assuming full labeling of carbon (e.g. completely labeled U13).",
+                    DefaultValue = "false",
+                    IsAdvanced = true,
+                    Position = 150)]
+                public BooleanParameter param_cross_linking_carbon_labeled_fragments;
+        */
         [MassToleranceParameter(
             Category = "3. Peptide identification",
             DisplayName = "Precursor mass tolerance",
@@ -334,7 +334,7 @@ namespace PD.OpenMS.AdapterNodes
             Description = "The enzyme used for cleaving the proteins",
             DefaultValue = "Trypsin/P",
             SelectionValues = new string[] {
-                "Trypsin", "Lys-C/P", "PepsinA", "no cleavage", "unspecific cleavage", 
+                "Trypsin", "Lys-C/P", "PepsinA", "no cleavage", "unspecific cleavage",
                 "Glu-C+P", "PepsinA + P", "Formic_acid", "CNBr", "Chymotrypsin",
                 "Chymotrypsin/P", "Lys-C", "Lys-N", "TrypChymo", "Trypsin/P", "Arg-C/P",
                 "Asp-N", "V8-DE", "V8-E", "leukocyte elastase", "proline endopeptidase",
@@ -349,7 +349,7 @@ namespace PD.OpenMS.AdapterNodes
             DisplayName = "Scoring",
             Description = "The scoring method used (no fragment adducts=total loss of all NAs assumed in prescoring, include fragment adducts=all partial loss ions are used in prescoring.)",
             DefaultValue = "include fragment adducts",
-            SelectionValues = new string[] {"no fragment adducts", "include fragment adducts" },
+            SelectionValues = new string[] { "no fragment adducts", "include fragment adducts" },
                 Position = 205)]
         public SimpleSelectionParameter<string> param_nuxl_scoring;
 
@@ -671,7 +671,8 @@ namespace PD.OpenMS.AdapterNodes
         /// Portion of mass spectra received.
         /// 
         /// </summary>
-        public new void OnResultsSent(IProcessingNode sender, MassSpectrumCollection spectra)
+        protected override void OnSpectraSentForSearch(IProcessingNode sender, MassSpectrumCollection spectra)
+        //public new void OnResultsSent(IProcessingNode sender, MassSpectrumCollection spectra)
         {
             //persist spectra to make them available in the consensus step
             var spectra_to_store = new MassSpectrumCollection();
@@ -738,6 +739,9 @@ namespace PD.OpenMS.AdapterNodes
             var raw_files = new List<string>(m_num_files);
             var exported_files = new List<string>(m_num_files);
 
+            // spectrum ID mapping
+            var mappingDictionary = new Dictionary<int, MappedSpectrumId>();
+
             // Group spectra by file id
             foreach (var spectrumDescriptorsGroupedByFileId in m_spectrum_descriptors.GroupBy(g => g.Header.FileID))
             {
@@ -755,6 +759,8 @@ namespace PD.OpenMS.AdapterNodes
 
                 ExportSpectraToMzMl(spectrum_descriptors, spectrum_export_file_name);
 
+                CreateSpectrumIdMappingData(spectrum_export_file_name, mappingDictionary);
+
                 m_current_step += 1;
                 ReportTotalProgress((double)m_current_step / m_num_steps);
             }
@@ -766,7 +772,7 @@ namespace PD.OpenMS.AdapterNodes
 
             if (m_num_files == 1)
             {
-                RunWorkflowOnSingleFile(exported_files[0]);
+                RunWorkflowOnSingleFile(exported_files[0], mappingDictionary);
             }
             else // m_num_files == 2
             {
@@ -814,6 +820,8 @@ namespace PD.OpenMS.AdapterNodes
             FireProcessingFinishedEvent(new ResultsArguments());
             ReportTotalProgress(1.0);
         }
+
+
 
         #endregion
 
@@ -877,7 +885,7 @@ namespace PD.OpenMS.AdapterNodes
         /// <summary>
         /// Run the workflow on a single (cross-linked) mzML file
         /// </summary>
-        private void RunWorkflowOnSingleFile(string input_file)
+        private void RunWorkflowOnSingleFile(string input_file, Dictionary<int, MappedSpectrumId> mappingDictionary)
         {
             SendAndLogMessage("Run workflow on single file");
             ArgumentHelper.AssertStringNotNullOrWhitespace(input_file, "input_file");
@@ -890,12 +898,12 @@ namespace PD.OpenMS.AdapterNodes
             if (File.Exists(idXML_file.Replace(".idXML", "") + "_perc_1.0000_XLs.idXML"))
             {
                 SendAndLogMessage("Percolator was successful -- Loading percolator cross-link results.");
-                ParseIdXMLResults(xl_id_perc);
+                ParseIdXMLResults(xl_id_perc, mappingDictionary);
             }
             else
             {
                 SendAndLogMessage("Percolator was not successful -- Loading uncalibrated results.");
-                ParseIdXMLResults(id_perc);
+                ParseIdXMLResults(id_perc, mappingDictionary);
             }
         }
 
@@ -1140,13 +1148,26 @@ namespace PD.OpenMS.AdapterNodes
                 {
                     File.Delete(tmp_fasta_file);
                 }
-                ProcessingServices.FastaFileService.CreateOriginalFastaFile(v, tmp_fasta_file, true);
+
+                //####### ProcessingServices.FastaFileService.CreateOriginalFastaFile(v, tmp_fasta_file, true);
+
+                using (var writer = new FastaFileWriter(tmp_fasta_file))
+                {
+                    foreach (var fastaEntry in ProcessingServices.FastaFileService.ReadAllProteins(v, true))
+                    {
+                        // write proteinId and sequence to FASTA file.
+                        writer.Write(">" + fastaEntry.Item1, fastaEntry.Item2.FastaFileEntry.Sequence);
+                    }
+                }
+
+
+
                 File.AppendAllText(fasta_path, File.ReadAllText(tmp_fasta_file));
             }
 
             //PeptideIndexer fails when the database contains multiple sequences with the same accession
             SendAndLogMessage("Remove duplicates in fasta file.");
-            OpenMSCommons.RemoveDuplicatesInFastaFile(fasta_path);           
+            OpenMSCommons.RemoveDuplicatesInFastaFile(fasta_path);
 
             // INI file
             string nuxl_ini_file = Path.Combine(NodeScratchDirectory, NuXLIniFileName);
@@ -1282,7 +1303,7 @@ namespace PD.OpenMS.AdapterNodes
         }
 
 
-        private void ParseIdXMLResults(string idXML_file)
+        private void ParseIdXMLResults(string idXML_file, Dictionary<int, MappedSpectrumId> mappingDictionary = null)
         {
             if (EntityDataService.ContainsEntity<NuXLItem>() == false)
             {
@@ -1304,10 +1325,205 @@ namespace PD.OpenMS.AdapterNodes
 
             // add CV column
             AddCompVoltageToCsm();
+
+            WriteNuXlItemsAsPsms(nuxl_items, mappingDictionary);
         }
 
+        private void WriteNuXlItemsAsPsms(List<NuXLItem> nuxl_items, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var peptideSpectrumMatchService = ProcessingServices.Get<IPeptideSpectrumMatchService>(true);
+            var psmsCollection = new PeptideSpectrumMatchesCollection();
+
+            foreach (var nuxlItem in nuxl_items)
+            {
+                var peptideMatches = new List<PeptideMatch>();
+                // Create a new peptide hit using the peptide hit service
+                var nuxlPeptideMatch = peptideSpectrumMatchService.CreatePeptideMatch(
+                    nuxlItem.peptide, 0, 0, 0);
+
+                // Add peptide scores
+                nuxlPeptideMatch.AddScore(Scores["MyScore1"].Name, nuxlItem.score);
+                nuxlPeptideMatch.Confidence = MatchConfidence.Low;
+
+                nuxlPeptideMatch.AddProteinID(Convert.ToInt32(nuxlItem.proteins));
+
+                string locSeq = nuxlItem.best_localizations;
+                int position = 0;
+                    for (int i = 0; i < locSeq.Length; i++) 
+                {
+
+                    if (locSeq[i] >= 97 && locSeq[i] <= 122)
+                    {
+                        position = i+ 1;
+                        break;
+                    }
+                }
+
+
+                var modifications = new PeptideUnknownModification(position, nuxlItem.rna_weight, nuxlItem.rna);
+                nuxlPeptideMatch.AddUnknownModification(modifications);
+                peptideMatches.Add(nuxlPeptideMatch);
+
+
+                if (mappingDictionary.ContainsKey(nuxlItem.spectrum_reference))
+                {
+                    var psms = new PeptideSpectrumMatches(
+                     // spectrum.Header.SpectrumID,
+                     mappingDictionary[nuxlItem.spectrum_reference].SpectrumId,
+                     peptideMatches.Count,
+                     peptideMatches);
+                    peptideSpectrumMatchService.CalculateAndAssignRanksAndDeltaScores(MainPsmScore, psms);
+
+                    // // Add all PSMs identified for this spectrum
+                    psmsCollection.Add(psms);
+
+                }
+
+            }
+            PersistTargetPeptideSpectrumMatches(psmsCollection);
+
+
+            var mappedProteinIds = ProcessingServices.Get<IPeptideSpectrumMatchService>(true).TransferAndPersistConnectedTargetProteins(
+                this,
+                psmsCollection,
+                param_general_fasta_dbs.Value);
+
+
+            var psmIDToFirstScan = new Dictionary<int,int>();
+
+            // Add NuXL specific values as columns to PSMs
+            foreach (var psmSpectra in EntityDataService.CreateEntityItemReader().ReadAllFlat<TargetPeptideSpectrumMatch, MSnSpectrumInfo>())
+            {
+                var psm = psmSpectra.Item1;
+                if (psm.IdentifyingNodeNumber == ProcessingNodeNumber)
+                {
+                    foreach (var spectrum in psmSpectra.Item2)
+                    {
+                        var FirstScan = spectrum.FirstScan;
+                        if (psmIDToFirstScan.ContainsKey(FirstScan) == false)
+                        {
+                            psmIDToFirstScan.Add(FirstScan, psm.PeptideID);
+
+                        }
+                    }
+                }
+            }
+
+            // creation of a new column
+
+            AddNAWeightColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddPeptideWeightColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddCrosslinkWeightColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
+
+        }
+
+        private void AddNAWeightColumn(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmNAWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "NA Weight",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToNAWeightMap = new Dictionary<int /*peptideID*/, double? /*NA Weight*/>();
+            foreach(var nuxlitem in nuxl_items) 
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToNAWeightMap.Add(peptideID, nuxlitem.rna_weight);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmNAWeightAccessor, WorkflowID, peptideIDToNAWeightMap);
+
+        }
+
+        private void AddPeptideWeightColumn(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmPeptideWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "Peptide weight",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToPeptideWeightMap = new Dictionary<int /*peptideID*/, double? /*Peptide Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToPeptideWeightMap.Add(peptideID, nuxlitem.peptide_weight);
+                    }
+                }
+
+            }
+            // After we collected the Peptide Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmPeptideWeightAccessor, WorkflowID, peptideIDToPeptideWeightMap);
+
+        }
+
+        private void AddCrosslinkWeightColumn(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmCrosslinkWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "Cross-link Weight",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToCrosslinkWeightMap = new Dictionary<int /*peptideID*/, double? /*Crosslink Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToCrosslinkWeightMap.Add(peptideID, nuxlitem.xl_weight);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmCrosslinkWeightAccessor, WorkflowID, peptideIDToCrosslinkWeightMap);
+
+        }
+
+
         /// <summary>
-        /// For a ModificationParameter object (from the UI parameter settings), return a string list representing the modifications in OpenMS-format.
+        /// For a ModificationParameter object (from the UI parameter settings), return a string list representing the 
+        /// 
+        /// in OpenMS-format.
         /// </summary>
         private List<string> convertParamToModStringArray(ModificationParameter mod_param, string type)
         {
@@ -1355,10 +1571,10 @@ namespace PD.OpenMS.AdapterNodes
             return result;
         }
 
-        protected override void OnSpectraSentForSearch(IProcessingNode sender, MassSpectrumCollection spectra)
-        {
-            //throw new NotImplementedException();
-        }
+        //protected override void OnSpectraSentForSearch(IProcessingNode sender, MassSpectrumCollection spectra)
+        //{
+        //    //throw new NotImplementedException();
+        //}
 
         protected override void OnAllSpectraSentForSearch()
         {
@@ -1502,6 +1718,86 @@ namespace PD.OpenMS.AdapterNodes
                 }
             }
         }
+
+
+
+
+        private void CreateSpectrumIdMappingData(string spectrum_export_file_name, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            // open file reader
+
+            using (StreamReader sr = new StreamReader(spectrum_export_file_name))
+            {
+                // read the file
+
+                string line;
+                var mappingEntry = new MappedSpectrumId();
+
+
+                while ((line = sr.ReadLine()) != null)
+                {
+                    if (line.Trim().StartsWith("<!--FileId:"))
+                    {
+                        if (mappingEntry.SpectrumReference != 0)
+                        {
+                            mappingDictionary.Add(mappingEntry.SpectrumReference, mappingEntry);
+                            mappingEntry = new MappedSpectrumId();
+                        }
+
+                        var lineTokens = line.Split(new[] { ':', ';' });
+
+                        if (lineTokens.Length > 1)
+                        {
+                            mappingEntry.FileId = Convert.ToInt32(lineTokens[1]);
+                        }
+                        if (lineTokens.Length > 3)
+                        {
+                            mappingEntry.FirstScan = Convert.ToInt32(lineTokens[3]);
+                        }
+                        if (lineTokens.Length > 5)
+                        {
+                            mappingEntry.SpectrumId = Convert.ToInt32(lineTokens[5]);
+                        }
+                    }
+
+
+                    if (line.Trim().StartsWith("<spectrum index="))
+                    {
+                        var lineTokens = line.Split(new[] { '"' });
+
+                        if (lineTokens.Length > 3)
+                        {
+                            var spectrumReference = lineTokens[3];
+                            var sref = spectrumReference.Split('=');
+                            if (sref.Length > 1)
+                            {
+                                mappingEntry.SpectrumReference = Convert.ToInt32(sref[1]);
+                            }
+                        }
+
+                    }
+                }
+
+                if (mappingEntry.SpectrumReference != 0)
+                {
+                    mappingDictionary.Add(mappingEntry.SpectrumReference, mappingEntry);
+                }
+            }
+        }
+
+
+
+        private class MappedSpectrumId
+        {
+            public int SpectrumId { get; set; }
+            public int SpectrumReference { get; set; }
+
+            public int FileId { get; set; }
+
+            public int FirstScan { get; set; }
+        }
+
+
 
     }
 }

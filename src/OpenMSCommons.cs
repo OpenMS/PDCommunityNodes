@@ -15,6 +15,7 @@ using Thermo.Magellan.Utilities;
 using Thermo.Magellan.Core.Exceptions;
 using Thermo.Magellan.EntityDataFramework;
 using System.Threading;
+using Thermo.Magellan.Processing.Parameters;
 
 namespace PD.OpenMS.AdapterNodes
 {
@@ -184,7 +185,7 @@ namespace PD.OpenMS.AdapterNodes
             doc.Load(ini_path);
             XmlNodeList itemlist = doc.GetElementsByTagName("ITEMLIST");
             foreach (XmlElement item in itemlist)
-            {                
+            {
                 if ((item.Attributes["name"].Value == name) // ITEMLIST name matches
                     && (item.ParentNode.Attributes["name"].Value == parent)) // parent ITEM name matches
                 {
@@ -382,7 +383,7 @@ namespace PD.OpenMS.AdapterNodes
                         process.Kill();
                         throw;
                     }
-                    catch (ObjectDisposedException ex) 
+                    catch (ObjectDisposedException ex)
                     {
                         nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
                         throw;
@@ -398,7 +399,7 @@ namespace PD.OpenMS.AdapterNodes
                         {
                             nd.warnLog("The process [{0}] hasn't finished correctly -> force to exit now", process.StartInfo.FileName);
                             // try catch might be needed because auf asynchronous execution
-                            process.Kill();                                                        
+                            process.Kill();
                         }
                     }
                 }
@@ -407,248 +408,248 @@ namespace PD.OpenMS.AdapterNodes
             nd.logMessage(String.Format("{0} tool processing took {1}.", exec_path, StringHelper.GetDisplayString(timer.Elapsed)));
         }
 
-                    /// <summary>
-                    /// Return a modified sequence string (OpenMS format) from unmodified sequence + Thermo-formatted modification string
-                    /// </summary>
-                    public static string ModSequence(string seq, string mods_str)
+        /// <summary>
+        /// Return a modified sequence string (OpenMS format) from unmodified sequence + Thermo-formatted modification string
+        /// </summary>
+        public static string ModSequence(string seq, string mods_str)
+        {
+            if (mods_str == "") return seq;
+
+            string[] mods = Regex.Split(mods_str, "; ");
+            var actual_mods = new List<string>();
+
+            // WORKAROUND: PD uses "modifications" like "X1(L)" to indicate that AA X at pos. 1 is actually a leucine
+            // Substitute these before doing anything else, since "X" AAs might also be actually modified in addition
+            // to the "modifications" indicating the actual AA.
+            var tmp_seq = new StringBuilder(seq);
+            string aa_letters = "ARNDCEQGHILKMFPSTWYV";
+            foreach (string m in mods)
+            {
+                bool actual_mod = true;
+                // m is something like "M11(Oxidation)" or "N-Term(Carbamyl)" or "X8(L)"
+                string[] parts = m.Split('(');
+
+                if (!aa_letters.Contains(parts[0].Substring(0, 1)))
+                {
+                    // modified AA character is not an actual AA (probably B, J, X, or Z)
+                    // ==> now, also check if "modification" consists of just 1 letter representing an AA
+                    if (parts[1].Length == 2 && aa_letters.Contains(parts[1][0]))
                     {
-                        if (mods_str == "") return seq;
-
-                        string[] mods = Regex.Split(mods_str, "; ");
-                        var actual_mods = new List<string>();
-
-                        // WORKAROUND: PD uses "modifications" like "X1(L)" to indicate that AA X at pos. 1 is actually a leucine
-                        // Substitute these before doing anything else, since "X" AAs might also be actually modified in addition
-                        // to the "modifications" indicating the actual AA.
-                        var tmp_seq = new StringBuilder(seq);
-                        string aa_letters = "ARNDCEQGHILKMFPSTWYV";
-                        foreach (string m in mods)
-                        {
-                            bool actual_mod = true;
-                            // m is something like "M11(Oxidation)" or "N-Term(Carbamyl)" or "X8(L)"
-                            string[] parts = m.Split('(');
-
-                            if (!aa_letters.Contains(parts[0].Substring(0, 1)))
-                            {
-                                // modified AA character is not an actual AA (probably B, J, X, or Z)
-                                // ==> now, also check if "modification" consists of just 1 letter representing an AA
-                                if (parts[1].Length == 2 && aa_letters.Contains(parts[1][0]))
-                                {
-                                    // substitute
-                                    Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
-                                    tmp_seq[aa_pos - 1] = parts[1][0];
-                                    // discard this "modification"
-                                    actual_mod = false;
-                                }
-                            }
-                            if (actual_mod)
-                            {
-                                actual_mods.Add(m);
-                            }
-                        }
-                        var unmodified_seq = tmp_seq.ToString();
-
-                        var result = "";
-                        var n_term_mod = "";
-                        var c_term_mod = "";
-                        Int32 last_pos = 0;
-
-                        // assumption: modifications are in ascending order of AA position
-                        foreach (string mm in actual_mods)
-                        {
-                            // remove (Prot) if present (e.g. "N-Term(Prot)(Acetyl)")
-                            var m = mm.Replace("(Prot)", "");
-
-                            // have something like "M11(Oxidation)" or "N-Term(Carbamyl)"
-                            string[] parts = m.Split('(');
-
-                            // N-term
-                            if (parts[0].Length >= 6 && parts[0].Substring(0, 6) == "N-Term")
-                            {
-                                n_term_mod = "(" + parts[1];
-                                continue;
-                            }
-                            // C-term
-                            if (parts[0].Length >= 6 && parts[0].Substring(0, 6) == "C-Term")
-                            {
-                                c_term_mod = "(" + parts[1];
-                                continue;
-                            }
-                            // Residue
-                            Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
-                            Int32 substr_len = aa_pos - last_pos;
-                            string mod_str = "(" + parts[1];
-                            string next_chunk = unmodified_seq.Substring(last_pos, substr_len);
-                            result += next_chunk + mod_str;
-                            last_pos = aa_pos;
-                        }
-                        result = n_term_mod + result + unmodified_seq.Substring(last_pos) + c_term_mod;
-
-                        return result;
+                        // substitute
+                        Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
+                        tmp_seq[aa_pos - 1] = parts[1][0];
+                        // discard this "modification"
+                        actual_mod = false;
                     }
+                }
+                if (actual_mod)
+                {
+                    actual_mods.Add(m);
+                }
+            }
+            var unmodified_seq = tmp_seq.ToString();
 
-                    /// <summary>
-                    /// Remove obsolete CV terms from a set of mzML files that would otherwise lead to delay and millions of warning messages on loading in OpenMS.
-                    /// </summary>
-                    public static void FixCVTerms(List<string> mzml_files, NodeDelegates nd)
-                    {
-                        // remove in particular one obsolete CV term (MS:1000498)
-                        // which otherwise leads to huge delay and millions of warning
-                        // messages when loading the file into OpenMS
-                        foreach (var f in mzml_files)
-                        {
-                            // move to temporary file
-                            var tmp_f = f.Replace(".mzML", "_tmp.mzML");
-                            try
-                            {
-                                File.Move(f, tmp_f);
-                            }
-                            catch (Exception)
-                            {
-                                nd.errorLogMessage(string.Format("Could not move file {0} to {1}", f, tmp_f));
-                            }
+            var result = "";
+            var n_term_mod = "";
+            var c_term_mod = "";
+            Int32 last_pos = 0;
 
-                            // open temporary file, remove obsolete CV terms, store with original filename
-                            XDocument doc = XDocument.Load(tmp_f);
-                            var q = from node in doc.Descendants("{http://psi.hupo.org/ms/mzml}cvParam")
-                                    let acc = node.Attribute("accession")
-                                    where acc != null && acc.Value == "MS:1000498"
-                                    select node;
-                            q.ToList().ForEach(x => x.Remove());
-                            try
-                            {
-                                doc.Save(f);
-                            }
-                            catch (Exception)
-                            {
-                                nd.errorLogMessage(string.Format("Could not save file {0}", f));
-                            }
+            // assumption: modifications are in ascending order of AA position
+            foreach (string mm in actual_mods)
+            {
+                // remove (Prot) if present (e.g. "N-Term(Prot)(Acetyl)")
+                var m = mm.Replace("(Prot)", "");
 
-                            // remove temporary file
-                            try
-                            {
-                                File.Delete(tmp_f);
-                            }
-                            catch (Exception)
-                            {
-                                nd.errorLogMessage(string.Format("Could not delete file {0}", tmp_f));
-                            }
-                        }
-                    }
+                // have something like "M11(Oxidation)" or "N-Term(Carbamyl)"
+                string[] parts = m.Split('(');
 
-                    /// <summary>
-                    /// Remove duplicates (same accession) from FASTA file
-                    /// </summary>
-                    public static void RemoveDuplicatesInFastaFile(string fasta_file)
-                    {
-                        var result_fasta_text = "";
-                        var accession_set = new HashSet<string>();
-                        var fasta_text = File.ReadAllText(fasta_file);
-                        var fasta_parts = Regex.Split(fasta_text, "^>", RegexOptions.Multiline);
-                        foreach (var fp in fasta_parts)
-                        {
-                            if (fp.IsNullOrEmpty())
-                            {
-                                continue;
-                            }
-                            var accession = fp.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[0];
-                            if (!accession_set.Contains(accession))
-                            {
-                                accession_set.Add(accession);
-                                result_fasta_text += ">";
-                                result_fasta_text += fp;
-                            }
-                        }
-                        File.WriteAllText(fasta_file, result_fasta_text);
-                    }
+                // N-term
+                if (parts[0].Length >= 6 && parts[0].Substring(0, 6) == "N-Term")
+                {
+                    n_term_mod = "(" + parts[1];
+                    continue;
+                }
+                // C-term
+                if (parts[0].Length >= 6 && parts[0].Substring(0, 6) == "C-Term")
+                {
+                    c_term_mod = "(" + parts[1];
+                    continue;
+                }
+                // Residue
+                Int32 aa_pos = Convert.ToInt32(parts[0].Substring(1));
+                Int32 substr_len = aa_pos - last_pos;
+                string mod_str = "(" + parts[1];
+                string next_chunk = unmodified_seq.Substring(last_pos, substr_len);
+                result += next_chunk + mod_str;
+                last_pos = aa_pos;
+            }
+            result = n_term_mod + result + unmodified_seq.Substring(last_pos) + c_term_mod;
 
-                    enum ParseState
-                    {
-                        NONE,
-                        PROTEIN_HIT,
-                        PEPTIDE_IDENTIFICATION,
-                        PEPTIDE_HIT,
-                        PEPTIDE_HIT_USERPARAM,
-                        PEPTIDE_IDENTIFICATION_USERPARAM
-                    };
+            return result;
+        }
 
-                    /*
-                    /// <summary>
-                    /// Parse results in csv_filename and add to EntityDataService
-                    /// </summary>
-                    private void ParseCSVResults(string csv_filename)
-                    {
-                        if (EntityDataService.ContainsEntity<NuXLItem>() == false)
-                        {
-                            EntityDataService.RegisterEntity<NuXLItem>(ProcessingNodeNumber);
-                        }
+        /// <summary>
+        /// Remove obsolete CV terms from a set of mzML files that would otherwise lead to delay and millions of warning messages on loading in OpenMS.
+        /// </summary>
+        public static void FixCVTerms(List<string> mzml_files, NodeDelegates nd)
+        {
+            // remove in particular one obsolete CV term (MS:1000498)
+            // which otherwise leads to huge delay and millions of warning
+            // messages when loading the file into OpenMS
+            foreach (var f in mzml_files)
+            {
+                // move to temporary file
+                var tmp_f = f.Replace(".mzML", "_tmp.mzML");
+                try
+                {
+                    File.Move(f, tmp_f);
+                }
+                catch (Exception)
+                {
+                    nd.errorLogMessage(string.Format("Could not move file {0} to {1}", f, tmp_f));
+                }
 
-                        var nuxl_items = new List<NuXLItem>();
+                // open temporary file, remove obsolete CV terms, store with original filename
+                XDocument doc = XDocument.Load(tmp_f);
+                var q = from node in doc.Descendants("{http://psi.hupo.org/ms/mzml}cvParam")
+                        let acc = node.Attribute("accession")
+                        where acc != null && acc.Value == "MS:1000498"
+                        select node;
+                q.ToList().ForEach(x => x.Remove());
+                try
+                {
+                    doc.Save(f);
+                }
+                catch (Exception)
+                {
+                    nd.errorLogMessage(string.Format("Could not save file {0}", f));
+                }
 
-                        StreamReader reader = File.OpenText(csv_filename);
-                        string line = reader.ReadLine(); // ignore header
+                // remove temporary file
+                try
+                {
+                    File.Delete(tmp_f);
+                }
+                catch (Exception)
+                {
+                    nd.errorLogMessage(string.Format("Could not delete file {0}", tmp_f));
+                }
+            }
+        }
 
-                        while ((line = reader.ReadLine()) != null)
-                        {
-                            string[] items = line.Split(new char[] { '\t' }, StringSplitOptions.None);
+        /// <summary>
+        /// Remove duplicates (same accession) from FASTA file
+        /// </summary>
+        public static void RemoveDuplicatesInFastaFile(string fasta_file)
+        {
+            var result_fasta_text = "";
+            var accession_set = new HashSet<string>();
+            var fasta_text = File.ReadAllText(fasta_file);
+            var fasta_parts = Regex.Split(fasta_text, "^>", RegexOptions.Multiline);
+            foreach (var fp in fasta_parts)
+            {
+                if (fp.IsNullOrEmpty())
+                {
+                    continue;
+                }
+                var accession = fp.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries)[0];
+                if (!accession_set.Contains(accession))
+                {
+                    accession_set.Add(accession);
+                    result_fasta_text += ">";
+                    result_fasta_text += fp;
+                }
+            }
+            File.WriteAllText(fasta_file, result_fasta_text);
+        }
 
-                            if (items.Length != 40) continue; // skip empty lines
+        enum ParseState
+        {
+            NONE,
+            PROTEIN_HIT,
+            PEPTIDE_IDENTIFICATION,
+            PEPTIDE_HIT,
+            PEPTIDE_HIT_USERPARAM,
+            PEPTIDE_IDENTIFICATION_USERPARAM
+        };
 
-                            var x = new NuXLItem();
+        /*
+        /// <summary>
+        /// Parse results in csv_filename and add to EntityDataService
+        /// </summary>
+        private void ParseCSVResults(string csv_filename)
+        {
+            if (EntityDataService.ContainsEntity<NuXLItem>() == false)
+            {
+                EntityDataService.RegisterEntity<NuXLItem>(ProcessingNodeNumber);
+            }
 
-                            x.WorkflowID = WorkflowID;
-                            x.Id = EntityDataService.NextId<NuXLItem>();
+            var nuxl_items = new List<NuXLItem>();
 
-                            double dbl_val;
-                            Int32 int_val;
+            StreamReader reader = File.OpenText(csv_filename);
+            string line = reader.ReadLine(); // ignore header
 
-                            x.rt = Double.TryParse(items[0], out dbl_val) ? (dbl_val / 60.0) : 0.0;
-                            x.orig_mz = Double.TryParse(items[1], out dbl_val) ? dbl_val : 0.0;
-                            x.proteins = items[2];
-                            x.peptide = items[3];
-                            x.rna = items[4];
-                            x.charge = Int32.TryParse(items[5], out int_val) ? int_val : 0;
-                            x.score = Double.TryParse(items[6], out dbl_val) ? dbl_val : 0.0;
-                            x.best_loc_score = Double.TryParse(items[7], out dbl_val) ? (dbl_val > 1e-20 ? dbl_val * 100.0 : 0.0) : 0.0;
-                            x.loc_scores = items[8];
-                            x.best_localizations = items[9];
-                            x.peptide_weight = Double.TryParse(items[10], out dbl_val) ? dbl_val : 0.0;
-                            x.rna_weight = Double.TryParse(items[11], out dbl_val) ? dbl_val : 0.0;
-                            x.xl_weight = Double.TryParse(items[12], out dbl_val) ? dbl_val : 0.0;
-                            x.a_1 = Double.TryParse(items[13], out dbl_val) ? dbl_val : 0.0;
-                            x.a_3 = Double.TryParse(items[14], out dbl_val) ? dbl_val : 0.0;
-                            x.c_1 = Double.TryParse(items[15], out dbl_val) ? dbl_val : 0.0;
-                            x.c_3 = Double.TryParse(items[16], out dbl_val) ? dbl_val : 0.0;
-                            x.g_1 = Double.TryParse(items[17], out dbl_val) ? dbl_val : 0.0;
-                            x.g_3 = Double.TryParse(items[18], out dbl_val) ? dbl_val : 0.0;
-                            x.u_1 = Double.TryParse(items[19], out dbl_val) ? dbl_val : 0.0;
-                            x.u_3 = Double.TryParse(items[20], out dbl_val) ? dbl_val : 0.0;
-                            x.abs_prec_error_da = Double.TryParse(items[21], out dbl_val) ? dbl_val : 0.0;
-                            x.rel_prec_error_ppm = Double.TryParse(items[22], out dbl_val) ? dbl_val : 0.0;
-                            x.m_h = Double.TryParse(items[23], out dbl_val) ? dbl_val : 0.0;
-                            x.m_2h = Double.TryParse(items[24], out dbl_val) ? dbl_val : 0.0;
-                            x.m_3h = Double.TryParse(items[25], out dbl_val) ? dbl_val : 0.0;
-                            x.m_4h = Double.TryParse(items[26], out dbl_val) ? dbl_val : 0.0;
-                            x.fragment_annotation = items[39];
+            while ((line = reader.ReadLine()) != null)
+            {
+                string[] items = line.Split(new char[] { '\t' }, StringSplitOptions.None);
 
-                            // don't add unidentified spectra
-                            if (x.peptide == "" && x.rna == "")
-                            {
-                                continue;
-                            }
+                if (items.Length != 40) continue; // skip empty lines
 
-                            nuxl_items.Add(x);
-                        }
+                var x = new NuXLItem();
 
-                        EntityDataService.InsertItems(nuxl_items);
+                x.WorkflowID = WorkflowID;
+                x.Id = EntityDataService.NextId<NuXLItem>();
 
-                        // establish connection between results and spectra
-                        connectNuXLItemWithSpectra();
+                double dbl_val;
+                Int32 int_val;
 
-                        // add CV column
-                        AddCompVoltageToCsm();
-                    }
-                    */
+                x.rt = Double.TryParse(items[0], out dbl_val) ? (dbl_val / 60.0) : 0.0;
+                x.orig_mz = Double.TryParse(items[1], out dbl_val) ? dbl_val : 0.0;
+                x.proteins = items[2];
+                x.peptide = items[3];
+                x.rna = items[4];
+                x.charge = Int32.TryParse(items[5], out int_val) ? int_val : 0;
+                x.score = Double.TryParse(items[6], out dbl_val) ? dbl_val : 0.0;
+                x.best_loc_score = Double.TryParse(items[7], out dbl_val) ? (dbl_val > 1e-20 ? dbl_val * 100.0 : 0.0) : 0.0;
+                x.loc_scores = items[8];
+                x.best_localizations = items[9];
+                x.peptide_weight = Double.TryParse(items[10], out dbl_val) ? dbl_val : 0.0;
+                x.rna_weight = Double.TryParse(items[11], out dbl_val) ? dbl_val : 0.0;
+                x.xl_weight = Double.TryParse(items[12], out dbl_val) ? dbl_val : 0.0;
+                x.a_1 = Double.TryParse(items[13], out dbl_val) ? dbl_val : 0.0;
+                x.a_3 = Double.TryParse(items[14], out dbl_val) ? dbl_val : 0.0;
+                x.c_1 = Double.TryParse(items[15], out dbl_val) ? dbl_val : 0.0;
+                x.c_3 = Double.TryParse(items[16], out dbl_val) ? dbl_val : 0.0;
+                x.g_1 = Double.TryParse(items[17], out dbl_val) ? dbl_val : 0.0;
+                x.g_3 = Double.TryParse(items[18], out dbl_val) ? dbl_val : 0.0;
+                x.u_1 = Double.TryParse(items[19], out dbl_val) ? dbl_val : 0.0;
+                x.u_3 = Double.TryParse(items[20], out dbl_val) ? dbl_val : 0.0;
+                x.abs_prec_error_da = Double.TryParse(items[21], out dbl_val) ? dbl_val : 0.0;
+                x.rel_prec_error_ppm = Double.TryParse(items[22], out dbl_val) ? dbl_val : 0.0;
+                x.m_h = Double.TryParse(items[23], out dbl_val) ? dbl_val : 0.0;
+                x.m_2h = Double.TryParse(items[24], out dbl_val) ? dbl_val : 0.0;
+                x.m_3h = Double.TryParse(items[25], out dbl_val) ? dbl_val : 0.0;
+                x.m_4h = Double.TryParse(items[26], out dbl_val) ? dbl_val : 0.0;
+                x.fragment_annotation = items[39];
+
+                // don't add unidentified spectra
+                if (x.peptide == "" && x.rna == "")
+                {
+                    continue;
+                }
+
+                nuxl_items.Add(x);
+            }
+
+            EntityDataService.InsertItems(nuxl_items);
+
+            // establish connection between results and spectra
+            connectNuXLItemWithSpectra();
+
+            // add CV column
+            AddCompVoltageToCsm();
+        }
+        */
 
         public static List<NuXLItem> parseIdXML(string id_file)
         {
@@ -666,6 +667,7 @@ namespace PD.OpenMS.AdapterNodes
                 double dbl_val;
                 double spec_mz = 0;
                 double spec_rt = 0;
+                int spec_ref = 0;
                 Int32 int_val;
                 string protein_identifier = "UNKNOWN";
                 string n = "", v; // name and value of UserParam
@@ -673,7 +675,7 @@ namespace PD.OpenMS.AdapterNodes
                 do
                 {
                     switch (reader.NodeType)
-                    {                        
+                    {
                         case XmlNodeType.Element:
                             if (reader.Name == "ProteinHit")
                             {
@@ -697,31 +699,38 @@ namespace PD.OpenMS.AdapterNodes
                                 s = ParseState.PEPTIDE_IDENTIFICATION_USERPARAM;
                             }
 
-//                            Console.Write("<{0}", reader.Name);
+                            //                            Console.Write("<{0}", reader.Name);
                             while (reader.MoveToNextAttribute())
                             {
-                                switch(s)
+                                switch (s)
                                 {
                                     case ParseState.PROTEIN_HIT:
                                         if (reader.Name == "id") { protein_identifier = reader.Value; continue; }
                                         if (reader.Name == "accession") { mapId2Acc.Add(protein_identifier, reader.Value); continue; } // line must to be after id
                                         break;
-                                    case ParseState.PEPTIDE_IDENTIFICATION:                                  
+                                    case ParseState.PEPTIDE_IDENTIFICATION:
                                         if (reader.Name == "MZ") { spec_mz = Double.TryParse(reader.Value, out dbl_val) ? dbl_val : 0.0; continue; }
                                         if (reader.Name == "RT") { spec_rt = Double.TryParse(reader.Value, out dbl_val) ? (dbl_val / 60.0) : 0.0; continue; }
-                                        // if (reader.Name == "spectrum_reference") { x.spectrum_reference = reader.Value; continue; }
+                                        if (reader.Name == "spectrum_reference")
+                                        {
+                                            var specref = reader.Value.Substring(5);
+                                            spec_ref = Int32.TryParse(specref, out int_val) ? int_val : 0;
+
+                                            //x.spectrum_reference = Int32.TryParse(specref, out int_val)? int_val:0; 
+                                            continue;
+                                        }
                                         break;
                                     case ParseState.PEPTIDE_HIT:
                                         if (reader.Name == "score") { x.score = Double.TryParse(reader.Value, out dbl_val) ? dbl_val : 0.0; continue; }
                                         if (reader.Name == "sequence") { x.peptide = reader.Value; continue; }
                                         if (reader.Name == "charge") { x.charge = Int32.TryParse(reader.Value, out int_val) ? int_val : 0; continue; }
-/*                                      if (reader.Name == "aa_before") { aa_before = reader.Value; continue; }
-                                        if (reader.Name == "aa_after") { aa_after = reader.Value; continue; }
-                                        if (reader.Name == "start") { start = reader.Value; continue; }
-                                        if (reader.Name == "end") { end = reader.Value; continue; }
-*/
+                                        /*                                      if (reader.Name == "aa_before") { aa_before = reader.Value; continue; }
+                                                                                if (reader.Name == "aa_after") { aa_after = reader.Value; continue; }
+                                                                                if (reader.Name == "start") { start = reader.Value; continue; }
+                                                                                if (reader.Name == "end") { end = reader.Value; continue; }
+                                        */
                                         if (reader.Name == "protein_refs") // map to protein
-                                        { 
+                                        {
                                             string[] protein_refs = reader.Value.Split(' ');
                                             StringBuilder proteinsStringBuilder = new StringBuilder();
                                             foreach (string r in protein_refs)
@@ -730,19 +739,20 @@ namespace PD.OpenMS.AdapterNodes
                                             }
                                             if (proteinsStringBuilder.Length != 0) proteinsStringBuilder.Length--; // remove last semi-colon
                                             x.proteins = proteinsStringBuilder.ToString();
-                                            continue; 
+                                            continue;
                                         }
 
                                         x.orig_mz = spec_mz;
                                         x.rt = spec_rt;
+                                        x.spectrum_reference = spec_ref;
 
                                         break;
                                     case ParseState.PEPTIDE_IDENTIFICATION_USERPARAM:
                                         break;
                                     case ParseState.PEPTIDE_HIT_USERPARAM:
                                         if (reader.Name == "name") { n = reader.Value; continue; }
-                                        if (reader.Name == "value") 
-                                        { 
+                                        if (reader.Name == "value")
+                                        {
                                             v = reader.Value;
                                             if (n == "NuXL:NA") { x.rna = v; continue; }
                                             if (n == "NuXL:best_localization_score") { x.best_loc_score = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
@@ -777,9 +787,9 @@ namespace PD.OpenMS.AdapterNodes
                                         break;
                                 }
 
-//                              Console.Write(" {0}='{1}'", reader.Name, reader.Value);
+                                //                              Console.Write(" {0}='{1}'", reader.Name, reader.Value);
                             }
-//                            Console.Write(">");
+                            //                            Console.Write(">");
                             break;
                         case XmlNodeType.Text:
                             Console.Write(reader.Value);
@@ -790,8 +800,8 @@ namespace PD.OpenMS.AdapterNodes
                                 nuxl_items.Add(x);
                                 x = new NuXLItem();
                             }
-//                            Console.Write("</{0}>", reader.Name);
-//                            Console.WriteLine("");
+                            //                            Console.Write("</{0}>", reader.Name);
+                            //                            Console.WriteLine("");
                             break;
                     }
                 } while (reader.Read());

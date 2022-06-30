@@ -1,6 +1,5 @@
-﻿using Thermo.Magellan.BL.Data;
-using Thermo.Magellan.BL.Data.Constants;
-using Thermo.Magellan.EntityDataFramework;
+﻿using Thermo.Magellan.EntityDataFramework;
+using Thermo.Magellan.EntityDataFramework.Constants;
 
 namespace PD.OpenMS.AdapterNodes
 {
@@ -165,5 +164,9 @@ namespace PD.OpenMS.AdapterNodes
         [EntityProperty(DisplayName = "Fragment annotation")]
         [GridDisplayOptions(VisiblePosition = 10, DataVisibility = GridVisibility.Hidden)]
         public string fragment_annotation { get; set; }
+
+        [EntityProperty(DisplayName = "Spectrum reference")]
+        [GridDisplayOptions(VisiblePosition = 10, DataVisibility = GridVisibility.Hidden)]
+        public int spectrum_reference { get; set; }
     }
 }
