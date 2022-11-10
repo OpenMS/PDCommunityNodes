@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Text;
+using ZedGraph;
+using pwiz;
 using pwiz.MSGraph;
 using pwiz.Skyline.Controls.Graphs;
 
@@ -49,17 +52,14 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
                     ints.Add(peak.Item2);
                     annotations.Add("");
                 }
-                
+
                 var annot_parts = m_annotations.Split(new [] {'|'}, StringSplitOptions.RemoveEmptyEntries);
                 
                 foreach (var annot_str in annot_parts)
-                { // each annot_str corresponds to one annotated peak
-                    //var parts = annot_str.Substring(1, annot_str.Length - 2).Split(',');
-                    var parts = annot_str.Split(',');
+                {
+                    var parts = annot_str.Substring(1, annot_str.Length - 2).Split(',');
                     double mz = Convert.ToDouble(parts[0]);
-                    // double normalized_intensity = Convert.ToDouble(parts[1]);
-                    // UInt32 charge = Convert.ToUInt32(parts[2]);
-                    string label = parts[3].Substring(1, parts[3].Length - 2); // remove double quotes
+                    string label = parts[2].Substring(1, parts[2].Length - 2); // remove double quotes
 
                     // find peak with closest m/z
                     // TODO: make nicer and more efficient
@@ -114,11 +114,13 @@ namespace Thermo.Discoverer.SampleNodes.CustomValueEditors
         }
 
         private void SpectrumView_Load(object sender, EventArgs e)
-        {            
+        {
+            
         }
 
         private void msGraphControl_Load(object sender, EventArgs e)
-        {            
+        {
+            
         }
     }
 }

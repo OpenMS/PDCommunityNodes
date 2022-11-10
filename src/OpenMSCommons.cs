@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Xml;
 using System.Xml.Linq;
@@ -10,12 +11,10 @@ using System.Web.UI;
 using System.Text.RegularExpressions;
 
 using Thermo.Magellan.BL.Processing.Interfaces;
+using Thermo.Magellan.BL.Processing;
 using Thermo.Magellan.BL.Data;
+using Thermo.Magellan.Exceptions;
 using Thermo.Magellan.Utilities;
-using Thermo.Magellan.Core.Exceptions;
-using Thermo.Magellan.EntityDataFramework;
-using System.Threading;
-using Thermo.Magellan.Processing.Parameters;
 
 namespace PD.OpenMS.AdapterNodes
 {
@@ -40,7 +39,7 @@ namespace PD.OpenMS.AdapterNodes
     }
 
     /// <summary>
-    /// Methods that are shared between several nodes.
+    /// Methods that are shared between several nodes. Cannot be done by inheritance (I think), as multiple inheritance isn't allowed.
     /// </summary>
     public class OpenMSCommons
     {
@@ -178,36 +177,6 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
-        //TODO: add version that also checks parent of parent so we don
-        public static void WriteItemListToINI(string[] vars, string ini_path, string parent, string name, bool clear_list_first = false)
-        {
-            XmlDocument doc = new XmlDocument();
-            doc.Load(ini_path);
-            XmlNodeList itemlist = doc.GetElementsByTagName("ITEMLIST");
-            foreach (XmlElement item in itemlist)
-            {
-                if ((item.Attributes["name"].Value == name) // ITEMLIST name matches
-                    && (item.ParentNode.Attributes["name"].Value == parent)) // parent ITEM name matches
-                {
-                    if (clear_list_first)
-                    {
-                        item.IsEmpty = true;
-                    }
-
-                    foreach (var fn in vars)
-                    {
-                        //We add LISTITEMS to ITEMLISTS
-                        var listitem = doc.CreateElement("LISTITEM");
-                        XmlAttribute newAttribute = doc.CreateAttribute("value");
-                        newAttribute.Value = fn;
-                        listitem.SetAttributeNode(newAttribute);
-                        item.AppendChild(listitem);
-                    }
-                }
-            }
-            doc.Save(ini_path);
-        }
-
         /// <summary>
         /// Write mz and rt parameters for MapAligner or FeatureLinker. Different function than WriteParamsToINI due to specific structure in considered tools
         /// </summary>
@@ -236,20 +205,11 @@ namespace PD.OpenMS.AdapterNodes
             doc.Save(ini_path);
         }
 
-
-
-
         /// <summary>
-        /// Run TOPP tool. Parameters are passed via the OpenMS INI file at param_path.
+        /// Run TOPP tool. Parameters are passed via the OpenMS INI file at param_path
         /// </summary>        
         public static void RunTOPPTool(string exec_path, string param_path, string scratch_dir, NodeDelegates nd)
         {
-            // sanity check
-            if (!File.Exists(exec_path))
-            {
-                throw new FileNotFoundException(@"[Tool not in PD folder.]");
-            }
-
             var timer = Stopwatch.StartNew();
 
             var data_path = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(exec_path), @"../share/OpenMS"));
@@ -261,147 +221,114 @@ namespace PD.OpenMS.AdapterNodes
             process_startinfo.UseShellExecute = false;
             process_startinfo.RedirectStandardOutput = true;
             process_startinfo.CreateNoWindow = false;
-            process_startinfo.RedirectStandardError = true;
 
-            using (Process process = new Process())
+            var process = new Process
             {
-                string current_work = "";
-                process.StartInfo = process_startinfo;
-                process.EnableRaisingEvents = true;
+                StartInfo = process_startinfo
+            };
 
-                StringBuilder output = new StringBuilder();
-                StringBuilder error = new StringBuilder();
+            nd.logTmpMessage(String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
+                                        process.StartInfo.FileName,
+                                        process.StartInfo.WorkingDirectory,
+                                        process.StartInfo.Arguments));
 
-                using (AutoResetEvent outputWaitHandle = new AutoResetEvent(false))
-                using (AutoResetEvent errorWaitHandle = new AutoResetEvent(false))
+            nd.writeLogMessage(MessageLevel.Debug,
+                            String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
+                                          process.StartInfo.FileName,
+                                          process.StartInfo.WorkingDirectory,
+                                          process.StartInfo.Arguments));
+
+            try
+            {
+                process.Start();
+                try
                 {
-                    // triggered when output data was recieved from std_out
-                    process.OutputDataReceived += (sender, e) =>
+                    string current_work = "";
+                    while (process.HasExited == false)
                     {
-                        if (e.Data == null)
+                        var output = process.StandardOutput.ReadLine();
+
+                        // move on if no new announcement. 
+                        if (String.IsNullOrEmpty(output))
                         {
-                            outputWaitHandle.Set();
+                            continue;
                         }
-                        else
+
+                        //store all results (for now?) of OpenMS Tool output
+                        nd.writeLogMessage(MessageLevel.Debug, output);
+
+                        // Parse the output and report progress using the method SendAndLogTemporaryMessage
+                        if (output.Contains(@"Progress of 'loading mzML file':"))
                         {
-                            output.AppendLine(e.Data);
-
-                            if (e.Data.Contains("%"))
-                            {
-                                nd.logTmpMessage(String.Format("{0} {1}", current_work, e.Data));
-                            }
-                            else
-                            {
-                                //store all results (for now?) of OpenMS Tool output
-                                nd.writeLogMessage(MessageLevel.Debug, e.Data);
-
-                                // Parse the output and report progress using the method SendAndLogTemporaryMessage
-                                if (e.Data.Contains(@"Progress of 'loading mzML file':"))
-                                {
-                                    current_work = "Progress of 'loading mzML file':";
-                                }
-                                else if (e.Data.Contains("Progress of 'loading chromatograms':"))
-                                {
-                                    current_work = "Progress of 'loading chromatograms':";
-                                }
-                                else if (e.Data.Contains("Progress of 'Aligning input maps':"))
-                                {
-                                    current_work = "Progress of 'Aligning input maps':";
-                                }
-                                else if (e.Data.Contains("Progress of 'linking features':"))
-                                {
-                                    current_work = "Progress of 'linking features':";
-                                }
-                            }
-
+                            current_work = "Progress of 'loading mzML file':";
                         }
-                    };
+                        else if (output.Contains("Progress of 'loading chromatograms':"))
+                        {
+                            current_work = "Progress of 'loading chromatograms':";
+                        }
+                        else if (output.Contains("Progress of 'Aligning input maps':"))
+                        {
+                            current_work = "Progress of 'Aligning input maps':";
+                        }
+                        else if (output.Contains("Progress of 'linking features':"))
+                        {
+                            current_work = "Progress of 'linking features':";
+                        }
+                        else if (output.Contains("%"))
+                        {
+                            nd.logTmpMessage(String.Format("{0} {1}", current_work, output));
+                        }
+                    }
 
-                    // triggered when output data was recieved from err
-                    process.ErrorDataReceived += (sender, e) =>
+                    // Note: The child process waits until everything is read from the standard output -> A Deadlock could arise here
+                    using (var reader = new StringReader(process.StandardOutput.ReadToEnd()))
                     {
-                        if (e.Data == null)
-                        {
-                            errorWaitHandle.Set();
-                        }
-                        else
-                        {
-                            error.AppendLine(e.Data);
-                            //nd.writeLogMessage(MessageLevel.Error, e.Data);
-                        }
-                    };
+                        string output;
 
-                    nd.logTmpMessage(String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
-                            process.StartInfo.FileName,
-                            process.StartInfo.WorkingDirectory,
-                            process.StartInfo.Arguments));
-
-                    nd.writeLogMessage(MessageLevel.Debug,
-                                    String.Format("Starting process [{0}] in working directory [{1}] with arguments [{2}]",
-                                                  process.StartInfo.FileName,
-                                                  process.StartInfo.WorkingDirectory,
-                                                  process.StartInfo.Arguments));
-                    try
-                    {
-                        process.Start();
-                        try
+                        while ((output = reader.ReadLine()) != null)
                         {
-                            process.BeginOutputReadLine();
-                            process.BeginErrorReadLine();
+                            nd.writeLogMessage(MessageLevel.Debug, output);
 
-                            if (process.WaitForExit(-1) &&
-                                outputWaitHandle.WaitOne(-1) &&
-                                errorWaitHandle.WaitOne(-1))
+                            if (String.IsNullOrEmpty(output) == false)
                             {
-                                // Process completed. Check process.ExitCode here.
-                            }
-                            else
-                            {
-                                throw new MagellanProcessingException(
-                                String.Format("Process timed out {0}.",
-                                              Path.GetFileName(process.StartInfo.FileName)
-                                              ));
+                                nd.logMessage(output, false);
                             }
                         }
-                        catch (InvalidOperationException ex)
-                        {
-                            nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
-                            throw;
-                        }
+                    }
 
-                        if (process.ExitCode != 0)
-                        {
-                            throw new MagellanProcessingException(
-                                String.Format("The exit code of {0} was {1}. (The expected exit code is 0)",
-                                              Path.GetFileName(process.StartInfo.FileName),
-                                              process.ExitCode));
-                        }
-                    }
-                    catch (System.Threading.ThreadAbortException)
-                    {
-                        // workflow was aborted ==> kill process so PD can finish abortion
-                        process.Kill();
-                        throw;
-                    }
-                    catch (ObjectDisposedException ex)
-                    {
-                        nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
-                        throw;
-                    }
-                    catch (Exception ex)
-                    {
-                        nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
-                        throw;
-                    }
-                    finally
-                    {
-                        if (!process.HasExited)
-                        {
-                            nd.warnLog("The process [{0}] hasn't finished correctly -> force to exit now", process.StartInfo.FileName);
-                            // try catch might be needed because auf asynchronous execution
-                            process.Kill();
-                        }
-                    }
+                    process.WaitForExit();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
+                    throw;
+                }
+
+                if (process.ExitCode != 0)
+                {
+                    throw new MagellanProcessingException(
+                        String.Format("The exit code of {0} was {1}. (The expected exit code is 0)",
+                                      Path.GetFileName(process.StartInfo.FileName),
+                                      process.ExitCode));
+                }
+            }
+            catch (System.Threading.ThreadAbortException)
+            {
+                // workflow was aborted ==> kill process so PD can finish abortion
+                process.Kill();
+                throw;
+            }
+            catch (Exception ex)
+            {
+                nd.errorLog(ex, "The following exception was raised during the execution of \"{0}\":", exec_path);
+                throw;
+            }
+            finally
+            {
+                if (!process.HasExited)
+                {
+                    nd.warnLog("The process [{0}] hasn't finished correctly -> force to exit now", process.StartInfo.FileName);
+                    process.Kill();
                 }
             }
 
@@ -561,252 +488,6 @@ namespace PD.OpenMS.AdapterNodes
                 }
             }
             File.WriteAllText(fasta_file, result_fasta_text);
-        }
-
-        enum ParseState
-        {
-            NONE,
-            PROTEIN_HIT,
-            PEPTIDE_IDENTIFICATION,
-            PEPTIDE_HIT,
-            PEPTIDE_HIT_USERPARAM,
-            PEPTIDE_IDENTIFICATION_USERPARAM
-        };
-
-        /*
-        /// <summary>
-        /// Parse results in csv_filename and add to EntityDataService
-        /// </summary>
-        private void ParseCSVResults(string csv_filename)
-        {
-            if (EntityDataService.ContainsEntity<NuXLItem>() == false)
-            {
-                EntityDataService.RegisterEntity<NuXLItem>(ProcessingNodeNumber);
-            }
-
-            var nuxl_items = new List<NuXLItem>();
-
-            StreamReader reader = File.OpenText(csv_filename);
-            string line = reader.ReadLine(); // ignore header
-
-            while ((line = reader.ReadLine()) != null)
-            {
-                string[] items = line.Split(new char[] { '\t' }, StringSplitOptions.None);
-
-                if (items.Length != 40) continue; // skip empty lines
-
-                var x = new NuXLItem();
-
-                x.WorkflowID = WorkflowID;
-                x.Id = EntityDataService.NextId<NuXLItem>();
-
-                double dbl_val;
-                Int32 int_val;
-
-                x.rt = Double.TryParse(items[0], out dbl_val) ? (dbl_val / 60.0) : 0.0;
-                x.orig_mz = Double.TryParse(items[1], out dbl_val) ? dbl_val : 0.0;
-                x.proteins = items[2];
-                x.peptide = items[3];
-                x.rna = items[4];
-                x.charge = Int32.TryParse(items[5], out int_val) ? int_val : 0;
-                x.score = Double.TryParse(items[6], out dbl_val) ? dbl_val : 0.0;
-                x.best_loc_score = Double.TryParse(items[7], out dbl_val) ? (dbl_val > 1e-20 ? dbl_val * 100.0 : 0.0) : 0.0;
-                x.loc_scores = items[8];
-                x.best_localizations = items[9];
-                x.peptide_weight = Double.TryParse(items[10], out dbl_val) ? dbl_val : 0.0;
-                x.rna_weight = Double.TryParse(items[11], out dbl_val) ? dbl_val : 0.0;
-                x.xl_weight = Double.TryParse(items[12], out dbl_val) ? dbl_val : 0.0;
-                x.a_1 = Double.TryParse(items[13], out dbl_val) ? dbl_val : 0.0;
-                x.a_3 = Double.TryParse(items[14], out dbl_val) ? dbl_val : 0.0;
-                x.c_1 = Double.TryParse(items[15], out dbl_val) ? dbl_val : 0.0;
-                x.c_3 = Double.TryParse(items[16], out dbl_val) ? dbl_val : 0.0;
-                x.g_1 = Double.TryParse(items[17], out dbl_val) ? dbl_val : 0.0;
-                x.g_3 = Double.TryParse(items[18], out dbl_val) ? dbl_val : 0.0;
-                x.u_1 = Double.TryParse(items[19], out dbl_val) ? dbl_val : 0.0;
-                x.u_3 = Double.TryParse(items[20], out dbl_val) ? dbl_val : 0.0;
-                x.abs_prec_error_da = Double.TryParse(items[21], out dbl_val) ? dbl_val : 0.0;
-                x.rel_prec_error_ppm = Double.TryParse(items[22], out dbl_val) ? dbl_val : 0.0;
-                x.m_h = Double.TryParse(items[23], out dbl_val) ? dbl_val : 0.0;
-                x.m_2h = Double.TryParse(items[24], out dbl_val) ? dbl_val : 0.0;
-                x.m_3h = Double.TryParse(items[25], out dbl_val) ? dbl_val : 0.0;
-                x.m_4h = Double.TryParse(items[26], out dbl_val) ? dbl_val : 0.0;
-                x.fragment_annotation = items[39];
-
-                // don't add unidentified spectra
-                if (x.peptide == "" && x.rna == "")
-                {
-                    continue;
-                }
-
-                nuxl_items.Add(x);
-            }
-
-            EntityDataService.InsertItems(nuxl_items);
-
-            // establish connection between results and spectra
-            connectNuXLItemWithSpectra();
-
-            // add CV column
-            AddCompVoltageToCsm();
-        }
-        */
-
-        public static List<NuXLItem> parseIdXML(string id_file)
-        {
-            var nuxl_items = new List<NuXLItem>();
-            using (XmlReader reader = XmlReader.Create(id_file))
-            {
-                // Move the reader to first ProteinIdentification
-                reader.MoveToContent();
-                reader.ReadToDescendant("ProteinHit");
-
-                ParseState s = ParseState.NONE;
-
-                // Parse
-                var x = new NuXLItem();
-                double dbl_val;
-                double spec_mz = 0;
-                double spec_rt = 0;
-                int spec_ref = 0;
-                Int32 int_val;
-                string protein_identifier = "UNKNOWN";
-                string n = "", v; // name and value of UserParam
-                Dictionary<string, string> mapId2Acc = new Dictionary<string, string>(); // protein ID (e.g., PH_1) to protein accession 
-                do
-                {
-                    switch (reader.NodeType)
-                    {
-                        case XmlNodeType.Element:
-                            if (reader.Name == "ProteinHit")
-                            {
-                                s = ParseState.PROTEIN_HIT;
-                            }
-                            else if (reader.Name == "PeptideIdentification") // starting a new Spectrum?
-                            {
-                                s = ParseState.PEPTIDE_IDENTIFICATION;
-                            }
-                            else if (reader.Name == "PeptideHit") // starting a new PSM?
-                            {
-                                s = ParseState.PEPTIDE_HIT;
-                                x = new NuXLItem();
-                            }
-                            else if (reader.Name == "UserParam" && s == ParseState.PEPTIDE_HIT)
-                            {
-                                s = ParseState.PEPTIDE_HIT_USERPARAM;
-                            }
-                            else if (reader.Name == "UserParam" && s == ParseState.PEPTIDE_IDENTIFICATION)
-                            {
-                                s = ParseState.PEPTIDE_IDENTIFICATION_USERPARAM;
-                            }
-
-                            //                            Console.Write("<{0}", reader.Name);
-                            while (reader.MoveToNextAttribute())
-                            {
-                                switch (s)
-                                {
-                                    case ParseState.PROTEIN_HIT:
-                                        if (reader.Name == "id") { protein_identifier = reader.Value; continue; }
-                                        if (reader.Name == "accession") { mapId2Acc.Add(protein_identifier, reader.Value); continue; } // line must to be after id
-                                        break;
-                                    case ParseState.PEPTIDE_IDENTIFICATION:
-                                        if (reader.Name == "MZ") { spec_mz = Double.TryParse(reader.Value, out dbl_val) ? dbl_val : 0.0; continue; }
-                                        if (reader.Name == "RT") { spec_rt = Double.TryParse(reader.Value, out dbl_val) ? (dbl_val / 60.0) : 0.0; continue; }
-                                        if (reader.Name == "spectrum_reference")
-                                        {
-                                            var specref = reader.Value.Substring(5);
-                                            spec_ref = Int32.TryParse(specref, out int_val) ? int_val : 0;
-
-                                            //x.spectrum_reference = Int32.TryParse(specref, out int_val)? int_val:0; 
-                                            continue;
-                                        }
-                                        break;
-                                    case ParseState.PEPTIDE_HIT:
-                                        if (reader.Name == "score") { x.score = Double.TryParse(reader.Value, out dbl_val) ? dbl_val : 0.0; continue; }
-                                        if (reader.Name == "sequence") { x.peptide = reader.Value; continue; }
-                                        if (reader.Name == "charge") { x.charge = Int32.TryParse(reader.Value, out int_val) ? int_val : 0; continue; }
-                                        /*                                      if (reader.Name == "aa_before") { aa_before = reader.Value; continue; }
-                                                                                if (reader.Name == "aa_after") { aa_after = reader.Value; continue; }
-                                                                                if (reader.Name == "start") { start = reader.Value; continue; }
-                                                                                if (reader.Name == "end") { end = reader.Value; continue; }
-                                        */
-                                        if (reader.Name == "protein_refs") // map to protein
-                                        {
-                                            string[] protein_refs = reader.Value.Split(' ');
-                                            StringBuilder proteinsStringBuilder = new StringBuilder();
-                                            foreach (string r in protein_refs)
-                                            {
-                                                proteinsStringBuilder.Append(mapId2Acc[r] + ';');
-                                            }
-                                            if (proteinsStringBuilder.Length != 0) proteinsStringBuilder.Length--; // remove last semi-colon
-                                            x.proteins = proteinsStringBuilder.ToString();
-                                            continue;
-                                        }
-
-                                        x.orig_mz = spec_mz;
-                                        x.rt = spec_rt;
-                                        x.spectrum_reference = spec_ref;
-
-                                        break;
-                                    case ParseState.PEPTIDE_IDENTIFICATION_USERPARAM:
-                                        break;
-                                    case ParseState.PEPTIDE_HIT_USERPARAM:
-                                        if (reader.Name == "name") { n = reader.Value; continue; }
-                                        if (reader.Name == "value")
-                                        {
-                                            v = reader.Value;
-                                            if (n == "NuXL:NA") { x.rna = v; continue; }
-                                            if (n == "NuXL:best_localization_score") { x.best_loc_score = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "NuXL:best_localization") { x.best_localizations = v; continue; }
-                                            if (n == "NuXL:localization_scores") { x.loc_scores = v; continue; }
-                                            if (n == "NuXL:peptide_mass_z0") { x.peptide_weight = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "NuXL:NA_MASS_z0") { x.rna_weight = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "NuXL:xl_mass_z0") { x.xl_weight = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "NuXL:Da difference") { x.abs_prec_error_da = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "precursor_mz_error_ppm") { x.rel_prec_error_ppm = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "fragment_annotation") { x.fragment_annotation = v; continue; }
-                                            if (n == "NuXL:NT") { x.nt = v; continue; }
-
-                                            if (n.StartsWith("A_136")) { x.a_1 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n.StartsWith("A_330")) { x.a_3 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n.StartsWith("C_112")) { x.c_1 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n.StartsWith("C_306")) { x.c_3 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n.StartsWith("G_152")) { x.g_1 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n.StartsWith("G_346")) { x.g_3 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n.StartsWith("U_113")) { x.u_1 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n.StartsWith("U_307")) { x.u_3 = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "NuXL:z1 mass") { x.m_h = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "NuXL:z2 mass") { x.m_2h = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "NuXL:z3 mass") { x.m_3h = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-                                            if (n == "NuXL:z4 mass") { x.m_4h = Double.TryParse(v, out dbl_val) ? dbl_val : 0.0; continue; }
-
-                                            continue;
-                                        }
-
-                                        break;
-                                    default:
-                                        break;
-                                }
-
-                                //                              Console.Write(" {0}='{1}'", reader.Name, reader.Value);
-                            }
-                            //                            Console.Write(">");
-                            break;
-                        case XmlNodeType.Text:
-                            Console.Write(reader.Value);
-                            break;
-                        case XmlNodeType.EndElement:
-                            if (reader.Name == "PeptideHit") // finished reading a PSM
-                            {
-                                nuxl_items.Add(x);
-                                x = new NuXLItem();
-                            }
-                            //                            Console.Write("</{0}>", reader.Name);
-                            //                            Console.WriteLine("");
-                            break;
-                    }
-                } while (reader.Read());
-            }
-            return nuxl_items;
         }
     }
 }

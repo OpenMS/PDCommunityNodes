@@ -18,18 +18,16 @@ using Thermo.Magellan.EntityDataFramework;
 using Thermo.Magellan.EntityDataFramework.ReportFile;
 using Thermo.PD.EntityDataFramework;
 using System.Collections.Generic;
-using Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.CustomValueEditors;
-using Infrastructure.Composite;
 
-namespace PD.OpenMS.AdapterNodes
+namespace Thermo.Discoverer.EntityDataFramework.Controls.GenericGridControl.CustomValueEditors
 {
-    /// <summary>
+	/// <summary>
     /// Interaction logic ShowSpectrumButtonValueEditor.xaml. This class essentially handles the OnButtonPressed event, i.e, 
     /// it diaplays a spectrum using an ad-hoc spectrum view.
-    /// </summary>
-    [ApplicationExtension("WPFGridControlExtension", "39DF8074-C254-42E4-B5AC-ECDFC7E3EDDA", typeof(ICustomValueEditor))]
-    public partial class SpectrumButtonValueEditor : ICustomValueEditor
-    {
+	/// </summary>
+    [ApplicationExtension("WPFGridControlExtension", "7875B499-672B-40D7-838E-91B65C7471E2", typeof(ICustomValueEditor))]
+    public partial class ShowSpectrumButtonValueEditor : ICustomValueEditor
+	{
         // HACK: store all entity data services that are passed via PrepareEditorDataField(...) over time instead of just one.
         // 
         // This is currently the only known workaround to make this work with several RNPxl result tabs open at the same time.
@@ -42,16 +40,16 @@ namespace PD.OpenMS.AdapterNodes
         //
         // When result files are closed, their EntityDataServices become invalid and must be removed from this list. Thus, we
         // first remove all invalidated EntityDataServices whenever the "Show Spectrum" button is pressed.
-        private HashSet<IEntityDataService> m_entityDataServices = new HashSet<IEntityDataService>();
+	    private HashSet<IEntityDataService> m_entityDataServices = new HashSet<IEntityDataService>();
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CheckImageValueEditor" /> class.
-        /// </summary>
-        public SpectrumButtonValueEditor()
-        {
-            InitializeComponent();
-            IsToolTipEnabled = false;
-        }
+	    /// <summary>
+		/// Initializes a new instance of the <see cref="CheckImageValueEditor" /> class.
+		/// </summary>
+	    public ShowSpectrumButtonValueEditor()
+		{
+			InitializeComponent();
+			IsToolTipEnabled = false;
+		}
 
 
         /// <summary>
@@ -72,8 +70,6 @@ namespace PD.OpenMS.AdapterNodes
         /// </value>
         public string ButtonText { get { return "Show Spectrum"; } }
 
-        public bool EnterEditMode => throw new NotImplementedException();
-
 
         /// <summary>
         /// Prepares the <see cref="ValueEditor" /> to be used to display the data of a specific entity data property with a custom cell value control.
@@ -87,27 +83,26 @@ namespace PD.OpenMS.AdapterNodes
         /// The only way to provide additional data for the value editor of a column is to add this information somehow to the <see cref="FieldSettings.EditorStyle" /> and to set them to
         /// the value editor instance in an override of <see cref="ValueEditor.ApplyTemplate" /> method.
         /// </remarks>
-        public void PrepareEditorDataField(Field dataField, IEntityDataService entityDataService = null, PropertyColumn propertyColumn = null)
+	    public void PrepareEditorDataField(Field dataField, IEntityDataService entityDataService = null, PropertyColumn propertyColumn = null)
         {
-            PrepareEditorStyle<SpectrumButtonValueEditor>(dataField);
+            PrepareEditorStyle<ShowSpectrumButtonValueEditor>(dataField);
             if (!m_entityDataServices.Contains(entityDataService))
             {
                 m_entityDataServices.Add(entityDataService);
             }
         }
 
-
-        /// <summary>
-        /// Determines whether this instance can edit the specified type.
-        /// </summary>
-        /// <param name="type">The type of the object to edit.</param>
-        /// <returns>
-        /// Deliberately always false.
-        /// </returns>
-        public override bool CanEditType(Type type)
-        {
-            return false;
-        }
+		/// <summary>
+		/// Determines whether this instance can edit the specified type.
+		/// </summary>
+		/// <param name="type">The type of the object to edit.</param>
+		/// <returns>
+		/// Deliberately always false.
+		/// </returns>
+		public override bool CanEditType(Type type)
+		{
+			return false;
+		}
 
         /// <summary>
         /// Determines whether this instance can render the specified type.
@@ -115,9 +110,9 @@ namespace PD.OpenMS.AdapterNodes
         /// <param name="type">The type.</param>
         /// <returns></returns>
 	    public override bool CanRenderType(Type type)
-        {
-            return true;
-        }
+	    {
+	        return true;
+	    }
 
         /// <summary>
         /// Called when button is pressed.
@@ -128,9 +123,9 @@ namespace PD.OpenMS.AdapterNodes
         public void OnButtonPressed(object cellContents)
         {
             // Note: The cell content is a string that contains the ids of the PSM (workflow ID and peptide ID)
-            // and in addition the string describing all fragment annotations concatenated using '§'.
+            // and in addition the string describing all fragment annotations concatenated using ';'.
             // This is a simple hack to enable reading the entire spectrum by its IDs and also handing over the
-            // fragment annotation information without having to read the entire row again.
+            // fragment annotation information without having to read the entire RNPxl row again.
             // The cell contents is set by the node (see RNPxlConsensusNode.cs) especially for this.
 
             // Another hack: as of version 2.0.3, we also add a prefix specifying the result file name, so we know which
@@ -152,7 +147,7 @@ namespace PD.OpenMS.AdapterNodes
                     // when this throws, we assume this EntityDataService is no longer available and remove it from our list
                     // (shouldn't throw an exception if EDS is still valid, even if there is no spectrum info for the specified indices)
                     var r = e.CreateEntityItemReader();
-                    var crash_test = r.Read<MSnSpectrumInfo>((new[] { -1 as object, -1 as object }));
+                    var crash_test = r.Read<MSnSpectrumInfo>((new[] {-1 as object, -1 as object}));
                 }
                 catch (Exception ex)
                 {
@@ -165,7 +160,7 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             // split ID string
-            var strings = ((string)cellContents).Split(new[] { '§' }, StringSplitOptions.None);
+            var strings = ((string)cellContents).Split(new [] {';'}, StringSplitOptions.None);
 
             // we want to be able to view results generated by older versions of RNPxl, so we also allow
             // IDs consisting of 3 parts (no result filename)
@@ -179,7 +174,7 @@ namespace PD.OpenMS.AdapterNodes
             if (strings.Count() == 4)
             {
                 if (!strings[3].StartsWith("REPORT_GUID="))
-                {
+                {   
                     ShowCouldNotShowSpectrumError("Unexpected ID string format. Report GUID is missing. Please report this bug to the OpenMS developers");
                     return;
                 }
@@ -187,8 +182,8 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             string annotations = strings[2];
-            string[] idStrings = { strings[0], strings[1] };
-
+            string[] idStrings = {strings[0], strings[1]};
+            
             object[] ids;
             try
             {
@@ -199,14 +194,14 @@ namespace PD.OpenMS.AdapterNodes
                 ShowCouldNotShowSpectrumError("Unable to decode id data. Please report this bug to the OpenMS developers");
                 return;
             }
-
+            
             // Now, choose which EntityDataService to use. If the result file was specified in the ID string,
             // we know which one to use. However, if the ID string is in the old format (generated by version
             // 2.0.2 or earlier), we have to guess.
             IEntityDataService eds = null;
             if (report_guid != "")
             {
-                foreach (var e in m_entityDataServices)
+                foreach(var e in m_entityDataServices)
                 {
                     if (e.ReportFile.ReportGuid.ToString() == report_guid)
                     {
@@ -227,7 +222,7 @@ namespace PD.OpenMS.AdapterNodes
                     {
                         if (found_eds)
                         {
-                            ShowCouldNotShowSpectrumError("This is most likely due to a bug in the older version of the software with which this result file was generated. Please re-run the analysis using the currently installed version and try again, or close other cross-linking result files if you have multiple tabs open. If both doesn't help, please report this bug to the OpenMS developers");
+                            ShowCouldNotShowSpectrumError("This is most likely due to a bug in the older version of RNPxl with which this result file was generated. Please re-run the analysis using the currently installed version and try again, or close other RNPxl result files if you have multiple tabs open. If both doesn't help, please report this bug to the OpenMS developers");
                             return;
                         }
                         eds = e;
@@ -243,7 +238,7 @@ namespace PD.OpenMS.AdapterNodes
             }
 
             var reader = eds.CreateEntityItemReader();
-
+            
             MSnSpectrumInfo spectrumInfo = null;
             bool no_spectrum_info = false;
             try
@@ -263,7 +258,7 @@ namespace PD.OpenMS.AdapterNodes
 
             // Actually, use the DiscoveryEntityDataService to read the whole spectrum. 
             // In PD this cast should always succeed, but we check anyway.
-            var dds = eds; // as DiscovererEntityDataService;
+            var dds = eds as DiscovererEntityDataService;
 
             if (dds == null)
             {
@@ -271,7 +266,7 @@ namespace PD.OpenMS.AdapterNodes
                 return;
             }
 
-            Thermo.Magellan.MassSpec.MassSpectrum spectrum = null;
+            Magellan.MassSpec.MassSpectrum spectrum = null;
             bool no_spectrum = false;
             try
             {
@@ -290,12 +285,12 @@ namespace PD.OpenMS.AdapterNodes
             string ot = "m/z " + String.Format("{0:0.0000}", spectrumInfo.MassOverCharge) + "  |  RT " + String.Format("{0:0.00}", spectrumInfo.RetentionTime) + "  |  Charge " + spectrumInfo.Charge;
 
             var view = new SpectrumView
-            {
-                Title = ot,
-                Annotations = annotations,
-                // Show centroids when available, otherwise profiles.
-                PeakList = spectrum.HasPeakCentroids ? spectrum.PeakCentroids.Select(c => Tuple.Create(c.Position, c.Intensity)).ToList() : spectrum.ProfilePoints.ToList().Select(p => Tuple.Create(p.Position, p.Intensity)).ToList()
-            };
+                        {
+                            Title = ot,
+                            Annotations = annotations,
+                            // Show centroids when available, otherwise profiles.
+                            PeakList = spectrum.HasPeakCentroids ? spectrum.PeakCentroids.Select(c => Tuple.Create(c.Position, c.Intensity)).ToList() : spectrum.ProfilePoints.ToList().Select(p => Tuple.Create(p.Position, p.Intensity)).ToList()
+                        };
 
             view.ShowDialog();
         }
@@ -305,9 +300,9 @@ namespace PD.OpenMS.AdapterNodes
         /// </summary>
         /// <param name="additionalMessage">The MSG.</param>
 	    private void ShowCouldNotShowSpectrumError(string additionalMessage = "")
-        {
-            MessageBox.Show(additionalMessage == "" ? "Could not show spectrum." : String.Format("Could not show spectrum: {0}.", additionalMessage), "Error");
-        }
+	    {
+	        MessageBox.Show(additionalMessage == "" ? "Could not show spectrum." : String.Format("Could not show spectrum: {0}.", additionalMessage), "Error");
+	    }
 
         /// <summary>
         /// Handles the OnClick event of the PART_LinkButton control.
@@ -315,21 +310,13 @@ namespace PD.OpenMS.AdapterNodes
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RoutedEventArgs"/> instance containing the event data.</param>
 	    private void PART_LinkButton_OnClick(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button != null)
-            {
+	    {
+	        var button = sender as Button;
+	        if (button != null)
+	        {
                 // Pass the Tag to the handler routine.
                 OnButtonPressed(button.Tag);
-            }
-        }
-
-      
-        public void PrepareEditorDataField(Field dataField, CustomValueEditorOptions customValueEditorOptions = null)
-        {
-            PrepareEditorStyle<SpectrumButtonValueEditor>(dataField);
-            m_entityDataServices.Add(customValueEditorOptions?.EntityDataService);
-        }
-
-    }
+	        }
+	    }
+	}
 }
