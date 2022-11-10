@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>PD.OpenMS.AdapterNodes</RootNamespace>
     <AssemblyName>PD.OpenMS.AdapterNodes</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
@@ -21,7 +21,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\</OutputPath>
+    <OutputPath>C:\PDgit\discoverer\PD\Platform\bin_x64\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -31,7 +31,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\</OutputPath>
+    <OutputPath>C:\PDgit\discoverer\PD\Platform\bin_x64\Debug\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -40,7 +40,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\</OutputPath>
+    <OutputPath>..\..\..\..\..\..\PDgit\discoverer\PD\Platform\bin_x64\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -49,7 +49,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\</OutputPath>
+    <OutputPath>..\installer\SourceDir\bin\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -59,21 +59,16 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="InfragisticsWPF4.DataPresenter.v13.1, Version=13.1.20131.2073, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\InfragisticsWPF4.DataPresenter.v13.1.dll</HintPath>
+    <Reference Include="InfragisticsWPF4.DataPresenter.v13.1">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\InfragisticsWPF4.DataPresenter.v13.1.dll</HintPath>
     </Reference>
-    <Reference Include="InfragisticsWPF4.Editors.v13.1, Version=13.1.20131.2073, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\InfragisticsWPF4.Editors.v13.1.dll</HintPath>
+    <Reference Include="InfragisticsWPF4.Editors.v13.1">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\InfragisticsWPF4.Editors.v13.1.dll</HintPath>
     </Reference>
-    <Reference Include="InfragisticsWPF4.v13.1, Version=13.1.20131.2073, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\InfragisticsWPF4.v13.1.dll</HintPath>
+    <Reference Include="InfragisticsWPF4.v13.1">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\InfragisticsWPF4.v13.1.dll</HintPath>
     </Reference>
-    <Reference Include="log4net">
-      <HintPath>..\MetX\Platform\bin_x64\Release\log4net.dll</HintPath>
-    </Reference>
+    <Reference Include="netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
@@ -90,78 +85,93 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Thermo.Discoverer.EntityDataFramework.Controls, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="Thermo.Discoverer.EntityDataFramework.Controls">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Discoverer.EntityDataFramework.Controls.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Discoverer.Infrastructure.Composite, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Discoverer.EntityDataFramework.Controls.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Discoverer.Infrastructure.Composite.dll</HintPath>
     </Reference>
     <Reference Include="Thermo.Magellan.BL.Data">
-      <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.BL.Data.dll</HintPath>
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.BL.Data.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.BL.Processing">
-      <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.BL.Processing.dll</HintPath>
-    </Reference>
-    <Reference Include="Thermo.Magellan.BL.Processing.Interfaces">
-      <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.BL.Processing.Interfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="Thermo.Magellan.BL.Reporting, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="Thermo.Magellan.BL.DomainObjects, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.BL.Reporting.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.BL.DomainObjects.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.BL.Reporting.Interfaces, Version=2.0.1.690, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="Thermo.Magellan.BL.Jobs">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.BL.Jobs.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Magellan.BL.Processing, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.BL.Reporting.Interfaces.dll</HintPath>
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.BL.Processing.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.BL.ReportingData, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="Thermo.Magellan.BL.Processing.Interfaces, Version=1.0.16.1436, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.BL.ReportingData.dll</HintPath>
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.BL.Processing.Interfaces.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.BL.ReportProcessing, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.BL.ReportProcessing.dll</HintPath>
+    <Reference Include="Thermo.Magellan.BL.Reporting.Interfaces">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.BL.Reporting.Interfaces.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.core, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.core.dll</HintPath>
+    <Reference Include="Thermo.Magellan.BL.ReportingData">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.BL.ReportingData.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.DataLayer.FileIO">
-      <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.DataLayer.FileIO.dll</HintPath>
+    <Reference Include="Thermo.Magellan.BL.ReportProcessing">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.BL.ReportProcessing.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Magellan.core">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.core.dll</HintPath>
     </Reference>
     <Reference Include="Thermo.Magellan.EntityDataFramework">
-      <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.EntityDataFramework.dll</HintPath>
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.EntityDataFramework.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.Exceptions">
-      <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.Exceptions.dll</HintPath>
+    <Reference Include="thermo.magellan.fileio">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\thermo.magellan.fileio.dll</HintPath>
     </Reference>
     <Reference Include="Thermo.Magellan.MassSpec">
-      <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.MassSpec.dll</HintPath>
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.MassSpec.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.Math, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.Math.dll</HintPath>
+    <Reference Include="Thermo.Magellan.Math">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.Math.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.Proteomics, Version=2.0.1.690, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="Thermo.Magellan.PeptideIdentificationNodes, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.Proteomics.dll</HintPath>
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.PeptideIdentificationNodes.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.Services, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="Thermo.Magellan.Processing.Parameter, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.Services.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.Processing.Parameter.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.Services.Interfaces, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="Thermo.Magellan.Processing.Workflow, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.Services.Interfaces.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.Processing.Workflow.dll</HintPath>
     </Reference>
-    <Reference Include="Thermo.Magellan.StudyManagement, Version=2.0.0.797, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\Thermo.Magellan.StudyManagement.dll</HintPath>
+    <Reference Include="Thermo.Magellan.ProcessingService.Interfaces">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.ProcessingService.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Magellan.Proteomics">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.Proteomics.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Magellan.Services">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.Services.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Magellan.Services.Interfaces">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.Services.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Magellan.StudyManagement">
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.StudyManagement.dll</HintPath>
     </Reference>
     <Reference Include="Thermo.Magellan.Utilities">
-      <HintPath>..\MetX\Platform\bin_x64\Release\Thermo.Magellan.Utilities.dll</HintPath>
+      <HintPath>C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.Utilities.dll</HintPath>
+    </Reference>
+    <Reference Include="Thermo.Proteomics.Services.Interfaces, Version=3.1.0.141, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Proteomics.Services.Interfaces.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="ZedGraph_OpenMS, Version=5.1.5.23584, Culture=neutral, PublicKeyToken=8b2485f42e5e887d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Thermo\Proteome Discoverer 2.0\System\Release\ZedGraph_OpenMS.dll</HintPath>
+      <HintPath>..\RNPxl\PDCommunityNodes\External\ZedGraph_OpenMS.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -174,10 +184,11 @@
     <Compile Include="CustomValueEditors\ShowSpectrumButtonValueEditor.xaml.cs">
       <DependentUpon>ShowSpectrumButtonValueEditor.xaml</DependentUpon>
     </Compile>
+    <Compile Include="NuXLConsensusNode.cs" />
+    <Compile Include="NuXLItem.cs" />
+    <Compile Include="NuXLProcessingNode.cs" />
     <Compile Include="OpenMSCommons.cs" />
-    <Compile Include="LFQProfilerEntities.cs" />
-    <Compile Include="LFQProfilerConsensusNode.cs" />
-    <Compile Include="LFQProfilerProcessingNode.cs" />
+    <Compile Include="PeptideIdentification.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="pwiz\LabelBoundsCache.cs" />
     <Compile Include="pwiz\MSGraphControl.cs">
@@ -190,9 +201,7 @@
     <Compile Include="pwiz\MSGraphPane.cs" />
     <Compile Include="pwiz\MSPointList.cs" />
     <Compile Include="pwiz\RNPxlSpectrumGraphItem.cs" />
-    <Compile Include="RNPxlConsensusNode.cs" />
-    <Compile Include="RNPxlItem.cs" />
-    <Compile Include="RNPxlProcessingNode.cs" />
+    <Compile Include="SampleFilterNode.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
@@ -218,6 +227,19 @@
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <!-- <PostBuildEvent>echo "Copy nodes and ZedGraph.dll to PD folder" -->
+    <!-- copy /Y "$(TargetDir)$(TargetName).dll" "C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\$(TargetName).dll" -->
+    <!-- copy /Y "$(TargetDir)$(TargetName).pdb" "C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\$(TargetName).pdb" -->
+    <!-- copy /Y "$(TargetDir)ZedGraph_OpenMS.dll" "C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\ZedGraph_OpenMS.dll" -->
+    <!-- echo "Copy nodes and ZedGraph.dll to Installer\SourceDir\bin folder" -->
+    <!-- copy /Y "$(TargetDir)$(TargetName).dll" "$(ProjectDir)\..\Installer\SourceDir\bin\$(TargetName).dll" -->
+    <!-- copy /Y "$(TargetDir)$(TargetName).pdb" "$(ProjectDir)\..\Installer\SourceDir\bin\$(TargetName).pdb" -->
+    <!-- copy /Y "$(TargetDir)ZedGraph_OpenMS.dll" "$(ProjectDir)\..\Installer\SourceDir\bin\ZedGraph_OpenMS.dll" -->
+    <!-- echo "Register nodes in PD" -->
+    <!-- "C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Magellan.Server.exe" -install -->
+    <!-- "C:\Program Files\Thermo\Proteome Discoverer 3.1\Proteome Discoverer 3.1\System\Release\Thermo.Discoverer.exe" -startServer -showServerWindow</PostBuildEvent> -->
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
