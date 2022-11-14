@@ -177,9 +177,10 @@ namespace PD.OpenMS.AdapterNodes
             Description = "One of supported cross-linking protocols ('none' = use user provided precursor & fragment adducts and cross-linked NAs).",
             DefaultValue = "none",
             SelectionValues = new string[] {
-             "none","RNA-UV (U)","RNA-UV (UCGA)", "RNA-UV Extended (U)", "RNA-UV Extended (UCGA)", "RNA-UV (4SU)", "RNA-UV Extended (4SU)",
-             "RNA-UV (6SG)","RNA-UV Extended (6SG)","RNA-DEB","RNA-DEB Extended","RNA-NM","RNA-NM Extended", "DNA-UV", "DNA-UV Extended",  
-             "DNA-DEB", "DNA-DEB Extended", "DNA-NM","DNA-NM Extended", "RNA-FA", "RNA-FA Extended", "DNA-FA", "DNA-FA Extended"},
+                "none", "RNA-UV (U)", "RNA-UV (UCGA)", "RNA-UV Extended (U)", "RNA-UV Extended (UCGA)", "RNA-UV (4SU)", "RNA-UV Extended (4SU)",
+                "RNA-UV (6SG)", "RNA-UV Extended (6SG)", "RNA-DEB", "RNA-DEB Extended", "RNA-NM", "RNA-NM Extended", "DNA-UV",
+                "DNA-UV Extended", "DNA-DEB", "DNA-DEB Extended", "DNA-NM", "DNA-NM Extended", "RNA-FA", "RNA-FA Extended",
+                "DNA-FA", "DNA-FA Extended"},
             Position = 65)]
         public SimpleSelectionParameter<string> param_cross_linking_presets;
 
@@ -638,16 +639,12 @@ namespace PD.OpenMS.AdapterNodes
         public MassToleranceParameter param_xic_filtering_mz_threshold;
 
 
-
-        // this is needed in order to prevent a WorkflowJobBuilder error upon execution
-        // since we inherit from PeptideAndProteinIdentificationNode, which in turn
-        // seems to be necessary in order to be able to persist spectra into the consensus step
         [Score(ProteomicsDataTypes.Psms, isMainScore: true, category: ScoreCategoryType.HigherIsBetter,
-            DisplayName = "DummyScore",
-            Description = "Dummy score to prevent a WorkflowJobBuilder error",
+            DisplayName = "q value",
+            Description = "NuXL q value to prevent a WorkflowJobBuilder error",
             FormatString = "F2",
             Guid = "0d802bb3-6057-4f30-bc00-4576f4ca73c2")]
-        public Score MyScore1;
+        public Score Nuxlqvalue;
 
         #endregion
 
@@ -830,7 +827,7 @@ namespace PD.OpenMS.AdapterNodes
         #region mzML export
 
         /// <summary>
-        /// Exports the correspoding spectra to a new created mzML.
+        /// Exports the corresponding spectra to a new created mzML.
         /// </summary>
         /// <param name="spectrumDescriptorsGroupByFileId">The spectrum descriptors grouped by file identifier.</param>
         /// <returns>The file name of the new created mzML file, containing the exported spectra.</returns>
@@ -1232,18 +1229,18 @@ namespace PD.OpenMS.AdapterNodes
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("NuXL", "sequence", param_cross_linking_sequence));
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("NuXL", "CysteineAdduct", param_cross_linking_cysteine_adduct.ToString().ToLower()));
 
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("NuXL", "decoys", "true"));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "decoys", "true"));
 
             if (param_nuxl_scoring.ToString() == "include fragment adducts")
             {
-                OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("NuXL", "scoring", "slow"));
+                OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "scoring", "slow"));
             }
             else
             {
-                OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("NuXL", "scoring", "fast"));
+                OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "scoring", "fast"));
             }
 
-            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("NuXL", "can_cross_link", param_cross_linking_can_xls));
+            OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("RNPxl", "can_cross_link", param_cross_linking_can_xls));
 
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("report", "top_hits", "1")); // TODO: change?
             OpenMSCommons.WriteNestedParamToINI(nuxl_ini_file, new Triplet("report", "peptideFDR", 0.01)); // TODO: change?
@@ -1306,13 +1303,16 @@ namespace PD.OpenMS.AdapterNodes
 
 
         private void ParseIdXMLResults(string idXML_file, Dictionary<int, MappedSpectrumId> mappingDictionary = null)
+
         {
+
+
             if (EntityDataService.ContainsEntity<NuXLItem>() == false)
             {
                 EntityDataService.RegisterEntity<NuXLItem>(ProcessingNodeNumber);
             }
 
-            var nuxl_items = OpenMSCommons.parseIdXML(idXML_file);
+            var nuxl_items = OpenMSCommons.parseIdXML(idXML_file); //NuXL Output in idXML_file
 
             foreach (var x in nuxl_items)
             {
@@ -1344,27 +1344,76 @@ namespace PD.OpenMS.AdapterNodes
                     nuxlItem.peptide, 0, 0, 0);
 
                 // Add peptide scores
-                nuxlPeptideMatch.AddScore(Scores["MyScore1"].Name, nuxlItem.score);
-                nuxlPeptideMatch.Confidence = MatchConfidence.Low;
+                nuxlPeptideMatch.AddScore(Scores["Nuxlqvalue"].Name, nuxlItem.score);
+                if (nuxlItem.score <= 0.01)
+                {
+                    nuxlPeptideMatch.Confidence = MatchConfidence.High;
+                }
 
-                nuxlPeptideMatch.AddProteinID(Convert.ToInt32(nuxlItem.proteins));
+                else if (nuxlItem.score <= 0.05)
+                {
+                    nuxlPeptideMatch.Confidence = MatchConfidence.Medium;
+                }
+
+                else
+                {
+                    nuxlPeptideMatch.Confidence = MatchConfidence.Low;
+                }
+
+
+
+                var proteinList = nuxlItem.proteins.Split(';');
+
+
+
+                foreach (var protein in proteinList)
+                {
+                    var proteinID = protein;
+                    if (protein.StartsWith("DECOY"))
+                    {
+                        var proteintokens = protein.Split('_');
+                        proteinID = "888" + proteintokens[1];
+
+
+                    }
+
+                    try
+                    {
+                        nuxlPeptideMatch.AddProteinID(Convert.ToInt32(proteinID));
+
+                    }
+
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+
+
+
+                }
+
+
 
                 string locSeq = nuxlItem.best_localizations;
-                int position = 0;
-                    for (int i = 0; i < locSeq.Length; i++) 
+                int position = 1;
+                for (int i = 0; i < locSeq.Length; i++)
                 {
 
                     if (locSeq[i] >= 97 && locSeq[i] <= 122)
                     {
-                        position = i+ 1;
+                        position = i + 1;
                         break;
                     }
                 }
 
 
-                var modifications = new PeptideUnknownModification(position, nuxlItem.rna_weight, nuxlItem.rna);
+                var modifications = new PeptideUnknownModification(position - 1, nuxlItem.rna_weight, nuxlItem.rna);
                 nuxlPeptideMatch.AddUnknownModification(modifications);
                 peptideMatches.Add(nuxlPeptideMatch);
+
+                var sequenceLength = nuxlPeptideMatch.Sequence.Length;
+
+
 
 
                 if (mappingDictionary.ContainsKey(nuxlItem.spectrum_reference))
@@ -1376,12 +1425,15 @@ namespace PD.OpenMS.AdapterNodes
                      peptideMatches);
                     peptideSpectrumMatchService.CalculateAndAssignRanksAndDeltaScores(MainPsmScore, psms);
 
+
+
                     // // Add all PSMs identified for this spectrum
                     psmsCollection.Add(psms);
 
                 }
 
             }
+
             PersistTargetPeptideSpectrumMatches(psmsCollection);
 
 
@@ -1391,7 +1443,7 @@ namespace PD.OpenMS.AdapterNodes
                 param_general_fasta_dbs.Value);
 
 
-            var psmIDToFirstScan = new Dictionary<int,int>();
+            var psmIDToFirstScan = new Dictionary<int, int>();
 
             // Add NuXL specific values as columns to PSMs
             foreach (var psmSpectra in EntityDataService.CreateEntityItemReader().ReadAllFlat<TargetPeptideSpectrumMatch, MSnSpectrumInfo>())
@@ -1416,6 +1468,19 @@ namespace PD.OpenMS.AdapterNodes
             AddNAWeightColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
             AddPeptideWeightColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
             AddCrosslinkWeightColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddA136Column(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddA330Column(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddC112Column(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddC306Column(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddG152Column(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddG346Column(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddU113Column(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddU307Column(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddMHColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddM2HColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddM3HColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddM4HColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
+            AddTestCodeColumn(nuxl_items, psmIDToFirstScan, mappingDictionary);
 
         }
 
@@ -1423,7 +1488,7 @@ namespace PD.OpenMS.AdapterNodes
         {
             var psmNAWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
                 ProcessingNodeInfo,
-                "NA Weight",
+                "NA Mass",
                 GridVisibility.Visible,
                 plotType: PlotType.Numeric,
                 dataPurpose: EntityDataPurpose.Mass,
@@ -1431,7 +1496,7 @@ namespace PD.OpenMS.AdapterNodes
 
 
             var peptideIDToNAWeightMap = new Dictionary<int /*peptideID*/, double? /*NA Weight*/>();
-            foreach(var nuxlitem in nuxl_items) 
+            foreach (var nuxlitem in nuxl_items)
             {
                 // Get peptide ID for NuXL items
 
@@ -1457,7 +1522,7 @@ namespace PD.OpenMS.AdapterNodes
         {
             var psmPeptideWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
                 ProcessingNodeInfo,
-                "Peptide weight",
+                "Peptide Mass",
                 GridVisibility.Visible,
                 plotType: PlotType.Numeric,
                 dataPurpose: EntityDataPurpose.Mass,
@@ -1491,7 +1556,7 @@ namespace PD.OpenMS.AdapterNodes
         {
             var psmCrosslinkWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
                 ProcessingNodeInfo,
-                "Cross-link Weight",
+                "Cross-link Mass",
                 GridVisibility.Visible,
                 plotType: PlotType.Numeric,
                 dataPurpose: EntityDataPurpose.Mass,
@@ -1518,6 +1583,447 @@ namespace PD.OpenMS.AdapterNodes
             }
             // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
             ProcessingServices.EntityDataStorageService.UpdateItems(psmCrosslinkWeightAccessor, WorkflowID, peptideIDToCrosslinkWeightMap);
+
+        }
+
+        private void AddA136Column(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmA136WeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "A136",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToA136WeightMap = new Dictionary<int /*peptideID*/, double? /*A136 Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToA136WeightMap.Add(peptideID, nuxlitem.a_1);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmA136WeightAccessor, WorkflowID, peptideIDToA136WeightMap);
+
+        }
+
+        private void AddA330Column(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmA330WeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "A330",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToA330WeightMap = new Dictionary<int /*peptideID*/, double? /*A330 Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToA330WeightMap.Add(peptideID, nuxlitem.a_3);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmA330WeightAccessor, WorkflowID, peptideIDToA330WeightMap);
+
+        }
+
+        private void AddC112Column(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmC112WeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "C112",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToC112WeightMap = new Dictionary<int /*peptideID*/, double? /*C112 Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToC112WeightMap.Add(peptideID, nuxlitem.c_1);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmC112WeightAccessor, WorkflowID, peptideIDToC112WeightMap);
+
+        }
+
+        private void AddC306Column(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmC306WeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "C306",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToC306WeightMap = new Dictionary<int /*peptideID*/, double? /*C306 Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToC306WeightMap.Add(peptideID, nuxlitem.c_3);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmC306WeightAccessor, WorkflowID, peptideIDToC306WeightMap);
+
+        }
+
+        private void AddG152Column(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmG152WeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "G152",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToG152WeightMap = new Dictionary<int /*peptideID*/, double? /*G152 Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToG152WeightMap.Add(peptideID, nuxlitem.g_1);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmG152WeightAccessor, WorkflowID, peptideIDToG152WeightMap);
+
+        }
+
+        private void AddG346Column(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmG346WeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "G346",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToG346WeightMap = new Dictionary<int /*peptideID*/, double? /*G346 Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToG346WeightMap.Add(peptideID, nuxlitem.g_3);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmG346WeightAccessor, WorkflowID, peptideIDToG346WeightMap);
+
+        }
+
+        private void AddU113Column(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmU113WeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "U113",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToU113WeightMap = new Dictionary<int /*peptideID*/, double? /*U113 Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToU113WeightMap.Add(peptideID, nuxlitem.u_1);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmU113WeightAccessor, WorkflowID, peptideIDToU113WeightMap);
+
+        }
+
+        private void AddU307Column(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmU307WeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "U307",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToU307WeightMap = new Dictionary<int /*peptideID*/, double? /*U307 Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToU307WeightMap.Add(peptideID, nuxlitem.u_3);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmU307WeightAccessor, WorkflowID, peptideIDToU307WeightMap);
+
+        }
+
+        private void AddMHColumn(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmMHWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "M+H",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToMHWeightMap = new Dictionary<int /*peptideID*/, double? /*M+H*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToMHWeightMap.Add(peptideID, nuxlitem.m_h);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmMHWeightAccessor, WorkflowID, peptideIDToMHWeightMap);
+
+        }
+        private void AddM2HColumn(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmM2HWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "M+2H",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToM2HWeightMap = new Dictionary<int /*peptideID*/, double? /*M+2H Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToM2HWeightMap.Add(peptideID, nuxlitem.m_2h);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmM2HWeightAccessor, WorkflowID, peptideIDToM2HWeightMap);
+
+        }
+
+        private void AddM3HColumn(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmM3HWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "M+3H",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToM3HWeightMap = new Dictionary<int /*peptideID*/, double? /*M3H Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToM3HWeightMap.Add(peptideID, nuxlitem.m_3h);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmM3HWeightAccessor, WorkflowID, peptideIDToM3HWeightMap);
+
+        }
+
+        private void AddM4HColumn(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmM4HWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "M+4H",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToM4HWeightMap = new Dictionary<int /*peptideID*/, double? /*M4H Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToM4HWeightMap.Add(peptideID, nuxlitem.m_4h);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmM4HWeightAccessor, WorkflowID, peptideIDToM4HWeightMap);
+
+        }
+
+        private void AddTestCodeColumn(List<NuXLItem> nuxl_items, Dictionary<int, int> psmIDToFirstScan, Dictionary<int, MappedSpectrumId> mappingDictionary)
+        {
+            var psmNAWeightAccessor = ProcessingServices.EntityDataStorageService.GetOrCreateNodeTypeProperty<TargetPeptideSpectrumMatch, double?>(
+                ProcessingNodeInfo,
+                "Test code",
+                GridVisibility.Visible,
+                plotType: PlotType.Numeric,
+                dataPurpose: EntityDataPurpose.Mass,
+                format: "F5");
+
+
+            var peptideIDToTestCodeMap = new Dictionary<int /*peptideID*/, double? /*NA Weight*/>();
+            foreach (var nuxlitem in nuxl_items)
+            {
+                // Get peptide ID for NuXL items
+
+                if (mappingDictionary.ContainsKey(nuxlitem.spectrum_reference))
+                {
+                    var nuxlFirstScan = mappingDictionary[nuxlitem.spectrum_reference].FirstScan;
+
+                    if (psmIDToFirstScan.ContainsKey(nuxlFirstScan))
+                    {
+
+                        var peptideID = psmIDToFirstScan[nuxlFirstScan];
+                        peptideIDToTestCodeMap.Add(peptideID, nuxlitem.rna_weight);
+                    }
+                }
+
+            }
+            // After we collected the NA Weight of all the psms [nuxlitems] of the search node we write the data to the result file
+            ProcessingServices.EntityDataStorageService.UpdateItems(psmNAWeightAccessor, WorkflowID, peptideIDToTestCodeMap);
 
         }
 
